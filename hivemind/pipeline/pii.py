@@ -13,6 +13,14 @@ Design decisions (per user):
 - Auto-reject if placeholder tokens exceed 50% of post-strip token count
 - Typed placeholders for confident entity types; [REDACTED] as fallback
 
+Import strategy:
+- presidio_analyzer and presidio_anonymizer are imported lazily inside
+  PIIPipeline.__init__ and helper functions to avoid loading spacy at module
+  import time. spacy 3.8 uses Pydantic v1 which is incompatible with Python
+  3.14 at import time but works at runtime once the C extensions are loaded.
+  Lazy imports allow `from hivemind.pipeline.pii import strip_pii` to work
+  without triggering the spacy import chain until PIIPipeline is first used.
+
 Exports: PIIPipeline, strip_pii
 """
 
@@ -21,10 +29,12 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from presidio_analyzer import AnalyzerEngine, PatternRecognizer, Pattern
-from presidio_analyzer.predefined_recognizers import GLiNERRecognizer
-from presidio_anonymizer import AnonymizerEngine
-from presidio_anonymizer.entities import OperatorConfig
+if TYPE_CHECKING:
+    # Type-checking only — not imported at runtime until PIIPipeline.__init__
+    from presidio_analyzer import AnalyzerEngine, PatternRecognizer, Pattern
+    from presidio_analyzer.predefined_recognizers import GLiNERRecognizer
+    from presidio_anonymizer import AnonymizerEngine
+    from presidio_anonymizer.entities import OperatorConfig
 
 
 # ---------------------------------------------------------------------------
@@ -36,8 +46,11 @@ _PLACEHOLDER_RE = re.compile(
 )
 
 
-def _build_api_key_patterns() -> list[Pattern]:
+def _build_api_key_patterns() -> list:
     """Return curated regex patterns for API keys, secrets, and private URLs."""
+    # Local import to avoid triggering spacy at module load time
+    from presidio_analyzer import Pattern  # noqa: PLC0415
+
     return [
         # AWS access key ID
         Pattern("aws_key", r"AKIA[0-9A-Z]{16}", 0.9),
@@ -76,8 +89,11 @@ def _build_api_key_patterns() -> list[Pattern]:
     ]
 
 
-def _build_operator_config() -> dict[str, OperatorConfig]:
+def _build_operator_config() -> dict:
     """Return typed-placeholder operator config for Presidio anonymizer."""
+    # Local import to avoid triggering spacy at module load time
+    from presidio_anonymizer.entities import OperatorConfig  # noqa: PLC0415
+
     return {
         # Standard Presidio entity types
         "EMAIL_ADDRESS": OperatorConfig("replace", {"new_value": "[EMAIL]"}),
@@ -110,6 +126,14 @@ class PIIPipeline:
     _instance: "PIIPipeline | None" = None
 
     def __init__(self) -> None:
+        # Lazy imports: presidio pulls in spacy which fails to import on Python 3.14
+        # at module load time due to Pydantic v1 incompatibility. Deferring the import
+        # to __init__ means spacy is only loaded when PIIPipeline is first instantiated
+        # (at server startup lifespan), not when the module is imported.
+        from presidio_analyzer import AnalyzerEngine, PatternRecognizer  # noqa: PLC0415
+        from presidio_analyzer.predefined_recognizers import GLiNERRecognizer  # noqa: PLC0415
+        from presidio_anonymizer import AnonymizerEngine  # noqa: PLC0415
+
         # --- Analyzer setup ---
         self._analyzer = AnalyzerEngine()
 
