@@ -29,7 +29,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. An agent calling `search_knowledge` receives ranked results with tiered response (summary tier first, full content on request) from the commons
   4. An agent can list their own contributions via `list_knowledge` and delete them via `delete_knowledge` with cascade to derived artifacts
   5. Two organizations' agents operate in completely isolated namespaces — neither sees the other's contributions
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Project scaffolding, config, DB models (PendingContribution, KnowledgeItem, DeploymentConfig), Alembic migrations with pgvector
+- [ ] 01-02-PLAN.md — PII stripping pipeline (Presidio + GLiNER + API key patterns) and embedding provider abstraction
+- [ ] 01-03-PLAN.md — MCP server (Streamable HTTP) + auth + add_knowledge tool + search_knowledge tool with tiered response
+- [ ] 01-04-PLAN.md — list_knowledge + delete_knowledge tools + CLI approval workflow (Typer + Rich + questionary)
 
 ### Phase 2: Trust & Security Hardening
 **Goal**: The commons is protected against prompt injection, knowledge poisoning, PII leakage edge cases, and unauthorized access — safe enough to open to external agents at scale with API key authentication and granular role-based access control
@@ -74,7 +80,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Agent Connection Loop | 0/TBD | Not started | - |
+| 1. Agent Connection Loop | 0/4 | Planned | - |
 | 2. Trust & Security Hardening | 0/TBD | Not started | - |
 | 3. Quality Intelligence & SDKs | 0/TBD | Not started | - |
 | 4. Dashboard & Distribution | 0/TBD | Not started | - |
