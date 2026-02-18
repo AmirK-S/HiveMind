@@ -46,6 +46,8 @@ Recent decisions affecting current work:
 - [Roadmap]: Legal/compliance (LEGAL-01 through LEGAL-08) and INFRA-06 (EU data residency) deferred to v2 — ship fast, no European compliance overhead
 - [Roadmap]: Trust requirements simplified to product-focused (PII stripping + approval gate) not GDPR formalism
 - [Pre-build]: Graphiti + FalkorDB + Presidio + GLiNER + FastAPI + Celery + PostgreSQL/pgvector + Next.js recommended by research
+- [01-01]: asyncpg pin changed from <0.29.0 to >=0.30.0 — Python 3.14 cannot build older C extension; 0.31.0 fully compatible with SQLAlchemy 2.x
+- [01-01]: Unique constraint on (content_hash, org_id) not just content_hash — allows two orgs to contribute identical knowledge without UniqueViolation
 - [01-02]: Post-strip token count used for 50% rejection ratio — pre-strip count would inflate ratio when multi-word names collapse to single [NAME] token
 - [01-02]: normalize_embeddings=True enforced at EmbeddingProvider level — pgvector cosine_distance requires unit vectors
 - [01-02]: get_embedder() uses lazy settings import to avoid circular dependency between hivemind.pipeline and hivemind.config
@@ -63,5 +65,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 01-02-PLAN.md — PII pipeline + embedding provider built; Plan 03 (MCP tools) is next
+Stopped at: Completed 01-01-PLAN.md (retroactively) — DB models + Alembic migrations; 01-02 already done; Plan 03 (MCP tools) is next
 Resume file: .planning/phases/01-agent-connection-loop/01-03-PLAN.md

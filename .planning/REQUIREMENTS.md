@@ -42,7 +42,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Access Control
 
-- [ ] **ACL-01**: Each organization has a private namespace isolated from other organizations
+- [x] **ACL-01**: Each organization has a private namespace isolated from other organizations
 - [ ] **ACL-02**: User can explicitly publish knowledge from private namespace to public commons — publication is reversible
 - [ ] **ACL-03**: Agent roles enforced at three levels: namespace (org), category (knowledge type), and individual item
 - [ ] **ACL-04**: Organization admin can manage agents and roles within their namespace
@@ -50,10 +50,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Knowledge Management
 
-- [ ] **KM-01**: Every knowledge item has immutable provenance: source_agent_id, contributed_at, category, org_id, confidence_score, run_id (session), content_hash (SHA-256)
+- [x] **KM-01**: Every knowledge item has immutable provenance: source_agent_id, contributed_at, category, org_id, confidence_score, run_id (session), content_hash (SHA-256)
 - [ ] **KM-02**: Retrieval latency split into two tiers: pure retrieval (vector+BM25+RRF, no LLM) target <200ms P95; full pipeline (with LLM reranking) target <1.5s P95
 - [ ] **KM-03**: Near-duplicate detection compares against top-10 most similar existing items using three-stage dedup: cosine similarity → LSH/MinHash → LLM confirmation above configurable threshold (default 0.95)
-- [ ] **KM-04**: Knowledge items typed by category: bug_fix, config, domain_expertise, workaround, pricing_data, regulatory_rule, tooling, reasoning_trace, failed_approach, version_workaround, general — with framework/library version metadata on applicable items
+- [x] **KM-04**: Knowledge items typed by category: bug_fix, config, domain_expertise, workaround, pricing_data, regulatory_rule, tooling, reasoning_trace, failed_approach, version_workaround, general — with framework/library version metadata on applicable items
 - [ ] **KM-05**: Bi-temporal tracking with two independent timelines: world-time (valid_at, invalid_at — when fact was true) and system-time (created_at, expired_at — when ingested). Invalidation marks facts as expired rather than deleting, enabling point-in-time queries.
 - [ ] **KM-06**: Temporal queries supported ("what was known about X at time T") including version-scoped queries ("what was known about library X version Y")
 - [ ] **KM-07**: LLM-assisted conflict resolution with four outcomes: UPDATE, ADD, NOOP, VERSION_FORK — where VERSION_FORK preserves both old and new knowledge as valid but version-scoped. Explicitly limited to single-hop direct conflicts; multi-hop conflicts flagged for human review.
@@ -90,11 +90,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Infrastructure
 
-- [ ] **INFRA-01**: PostgreSQL + pgvector as primary persistent store (sufficient for v1; abstraction allows Qdrant migration beyond ~50M items at 4.5K QPS with native multitenancy)
+- [x] **INFRA-01**: PostgreSQL + pgvector as primary persistent store (sufficient for v1; abstraction allows Qdrant migration beyond ~50M items at 4.5K QPS with native multitenancy)
 - [ ] **INFRA-02**: Knowledge store abstraction following Graphiti's `GraphDriver` pattern — first graph backend target: Graphiti-on-FalkorDB (sub-10ms queries, Redis-based, native multitenancy)
 - [ ] **INFRA-03**: Near-real-time knowledge availability (seconds, not milliseconds) via webhook push after quality gate
 - [ ] **INFRA-04**: API key authentication with associated tier, request counter, and billing period reset — prerequisite for monetization
-- [ ] **INFRA-05**: Concurrent multi-agent writes handled safely — event sourcing or CRDT approach for shared knowledge to prevent race conditions
+- [x] **INFRA-05**: Concurrent multi-agent writes handled safely — event sourcing or CRDT approach for shared knowledge to prevent race conditions
 
 ## v2 Requirements
 
@@ -182,15 +182,15 @@ Deferred to future release. Tracked but not in current roadmap.
 | SEC-01 | Phase 2 | Pending |
 | SEC-02 | Phase 2 | Pending |
 | SEC-03 | Phase 2 | Pending |
-| ACL-01 | Phase 1 | Pending |
+| ACL-01 | Phase 1 | Complete |
 | ACL-02 | Phase 2 | Pending |
 | ACL-03 | Phase 2 | Pending |
 | ACL-04 | Phase 2 | Pending |
 | ACL-05 | Phase 2 | Pending |
-| KM-01 | Phase 1 | Pending |
+| KM-01 | Phase 1 | Complete |
 | KM-02 | Phase 3 | Pending |
 | KM-03 | Phase 3 | Pending |
-| KM-04 | Phase 1 | Pending |
+| KM-04 | Phase 1 | Complete |
 | KM-05 | Phase 3 | Pending |
 | KM-06 | Phase 3 | Pending |
 | KM-07 | Phase 3 | Pending |
@@ -215,11 +215,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | DIST-07 | Phase 4 | Pending |
 | DIST-08 | Phase 4 | Pending |
 | DIST-09 | Phase 4 | Pending |
-| INFRA-01 | Phase 1 | Pending |
+| INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 2 | Pending |
 | INFRA-03 | Phase 2 | Pending |
 | INFRA-04 | Phase 2 | Pending |
-| INFRA-05 | Phase 1 | Pending |
+| INFRA-05 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 56 total
