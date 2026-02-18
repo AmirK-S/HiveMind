@@ -206,3 +206,135 @@ def get_org_stats(org_id: str) -> dict:
             "total_contributions": total_contributions,
             "agent_count": agent_count,
         }
+
+
+def find_similar_knowledge(
+    content: str,
+    org_id: str,
+    top_n: int = 3,
+    threshold: float = 0.35,
+) -> list[dict]:
+    """Find existing knowledge items most similar to the given content.
+
+    Uses cosine distance (same pattern as search_knowledge.py) to find the
+    top-N most semantically similar items in the knowledge commons.  Returns
+    items where cosine distance <= threshold (i.e. similarity >= 65%).
+
+    This is used by the CLI review panel for near-duplicate detection
+    (TRUST-02 requirement).
+
+    Args:
+        content:   The pending contribution content to compare against.
+        org_id:    Organisation namespace — scopes results to org + public items.
+        top_n:     Maximum number of similar items to return.
+        threshold: Cosine distance cutoff (0.35 ≈ 65% similarity).  Items with
+                   distance > threshold are excluded as insufficiently similar.
+
+    Returns:
+        List of dicts with keys: id, title, category, similarity (%), org_id.
+        Empty list if no items meet the threshold.
+    """
+    from sqlalchemy import func, select  # noqa: PLC0415
+
+    # Generate embedding for the pending contribution content
+    embedding = get_embedder().embed(content)
+
+    with SessionFactory() as session:
+        # Build cosine distance column (same operator as search_knowledge.py line 233)
+        distance_col = KnowledgeItem.embedding.cosine_distance(embedding).label("distance")
+
+        stmt = (
+            select(KnowledgeItem, distance_col)
+            .where(
+                # Org isolation: own private items + public commons
+                (KnowledgeItem.org_id == org_id) | (KnowledgeItem.is_public == True)  # noqa: E712
+            )
+            .where(KnowledgeItem.deleted_at.is_(None))      # exclude soft-deleted
+            .where(KnowledgeItem.embedding.isnot(None))     # skip items without embeddings
+            .order_by(distance_col.asc())                   # lowest distance = most similar
+            .limit(top_n)
+        )
+
+        result = session.execute(stmt)
+        rows = result.all()
+
+    # Filter to only items within the similarity threshold
+    similar = []
+    for item, distance in rows:
+        if distance > threshold:
+            continue  # too dissimilar — skip
+        similar.append({
+            "id": str(item.id),
+            "title": item.content[:80] + ("..." if len(item.content) > 80 else ""),
+            "category": item.category.value,
+            "similarity": round((1 - distance) * 100),  # convert distance to %
+            "org_id": item.org_id,
+        })
+
+    return similar
+
+
+def compute_qi_score(contribution: PendingContribution) -> dict:
+    """Compute a Quality Index pre-screening signal for a pending contribution.
+
+    Synthesises confidence score, is_sensitive_flagged status, and content
+    length into a single 0-100 score with a High/Medium/Low badge.  Used by
+    the CLI review panel (TRUST-02) to help reviewers quickly assess quality
+    without reading every word.
+
+    Scoring rules:
+    - Base score:    confidence * 100
+    - Modifier -30:  is_sensitive_flagged (lower trust — PII may still be present)
+    - Modifier -20:  content length < 50 chars (very short = suspect)
+    - Modifier +10:  content length > 200 chars (detailed = higher value signal)
+    - Clamped to [0, 100]
+
+    Badge thresholds:
+    - score >= 80: High  (green)
+    - score >= 50: Medium (yellow)
+    - score <  50: Low   (red)
+
+    Args:
+        contribution: PendingContribution ORM object (already detached from session).
+
+    Returns:
+        Dict with keys: score, label, color, icon, details (list of str).
+    """
+    # Base score from confidence
+    score = contribution.confidence * 100
+
+    # Apply modifiers
+    if contribution.is_sensitive_flagged:
+        score -= 30  # flagged content carries lower trust
+    if len(contribution.content) < 50:
+        score -= 20  # very short content is suspect
+    elif len(contribution.content) > 200:
+        score += 10  # longer, detailed content is a richer signal
+
+    # Clamp to [0, 100]
+    score = max(0, min(100, score))
+    score = round(score)
+
+    # Determine badge
+    if score >= 80:
+        badge = {"label": "High", "color": "green", "icon": "+++"}
+    elif score >= 50:
+        badge = {"label": "Medium", "color": "yellow", "icon": "++"}
+    else:
+        badge = {"label": "Low", "color": "red", "icon": "+"}
+
+    # Build detail lines (None values are filtered out)
+    details = [
+        f"Confidence: {contribution.confidence:.0%}",
+        "Flagged as sensitive" if contribution.is_sensitive_flagged else None,
+        "Very short content" if len(contribution.content) < 50 else None,
+    ]
+    details = [d for d in details if d is not None]
+
+    return {
+        "score": score,
+        "label": badge["label"],
+        "color": badge["color"],
+        "icon": badge["icon"],
+        "details": details,
+    }
