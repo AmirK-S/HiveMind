@@ -48,7 +48,15 @@ Plans:
   3. A content hash (SHA-256) is attached to every knowledge item and verified on retrieval — tampering is detectable
   4. An organization admin can manage agents and roles, with access enforced at namespace, category, and item levels
   5. An agent can search across both private namespace and public commons in a single query, with results deduplicated
-**Plans**: TBD
+**Plans:** 6 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Pipeline hardening: prompt injection scanner (SEC-01), two-pass PII validation (TRUST-05), markdown-aware code block preservation (TRUST-06), content integrity helpers (SEC-02)
+- [ ] 02-02-PLAN.md — DB schema + config: ApiKey, AutoApproveRule, WebhookEndpoint models + Alembic migrations 003-005 + new settings
+- [ ] 02-03-PLAN.md — Security infrastructure: Casbin RBAC with domain-aware model (ACL-03/04), rate limiting + anti-sybil (SEC-03), API key management (INFRA-04)
+- [ ] 02-04-PLAN.md — Graph + webhook infrastructure: KnowledgeStoreDriver abstraction (INFRA-02), Celery webhook delivery (INFRA-03)
+- [ ] 02-05-PLAN.md — Tool integration: wire injection scanner + auto-approve + hash verification + cross-namespace dedup into MCP tools
+- [ ] 02-06-PLAN.md — Server + CLI integration: extended lifespan, publish_knowledge tool (ACL-02), manage_roles tool (ACL-04), webhook dispatch in approval flow
 
 ### Phase 3: Quality Intelligence & SDKs
 **Goal**: The commons becomes self-improving — quality scores surface the best knowledge, behavioral signals feed back into rankings, temporal tracking handles knowledge evolution, and developers can integrate via REST API and Python/TypeScript SDKs without MCP
@@ -82,6 +90,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Agent Connection Loop | 3/4 | Complete    | 2026-02-18 |
-| 2. Trust & Security Hardening | 0/TBD | Not started | - |
+| 2. Trust & Security Hardening | 0/6 | Planned | - |
 | 3. Quality Intelligence & SDKs | 0/TBD | Not started | - |
 | 4. Dashboard & Distribution | 0/TBD | Not started | - |
