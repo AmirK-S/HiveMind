@@ -1,0 +1,245 @@
+# Requirements: HiveMind
+
+**Defined:** 2026-02-18
+**Core Value:** Agents stop learning alone — when one agent solves a problem, every connected agent benefits.
+**Updated:** 2026-02-18 after deep PDF research ingestion (10 PDFs)
+
+## v1 Requirements
+
+Requirements for initial release. Each maps to roadmap phases.
+
+### MCP Server
+
+- [ ] **MCP-01**: Agent can connect to HiveMind via MCP protocol (Streamable HTTP transport per MCP spec 2025-11-25)
+- [ ] **MCP-02**: Agent can contribute knowledge via `add_knowledge` tool — knowledge must be explicitly contributed by the user, not silently extracted from conversations (GDPR/ePrivacy constraint)
+- [ ] **MCP-03**: Agent can search the commons via `search_knowledge` tool with tiered response (summary tier: title+category+confidence ~30-50 tokens; full tier: complete content on request) to minimize token cost at scale
+- [ ] **MCP-04**: Agent can list their contributed knowledge via `list_knowledge` tool
+- [ ] **MCP-05**: Agent can delete their own contributed knowledge via `delete_knowledge` tool — deletion cascades to derived distillations and summaries (GDPR art. 17 right to erasure)
+- [ ] **MCP-06**: Agent can report outcome after retrieving knowledge ("solved my problem" / "did not help") as an explicit active confirmation signal for quality scoring
+
+### API & SDKs
+
+- [ ] **SDK-01**: Developer can interact with HiveMind via REST API (CRUD operations, API key auth with usage metering per billing period)
+- [ ] **SDK-02**: Developer can integrate via Python SDK
+- [ ] **SDK-03**: Developer can integrate via TypeScript SDK
+
+### Trust & Privacy
+
+- [ ] **TRUST-01**: All inbound knowledge is PII-stripped before storage using: Presidio as orchestrator + Flair `ner-french` or CamemBERT-NER as NLP engine (NOT spaCy default, F1 target >= 0.85) + GLiNER (`knowledgator/gliner-pii-base-v1.0`) for zero-shot coverage + custom French recognizers (FR_PHONE, FR_SIRET with Luhn, FR_SIREN with Luhn, FR_NIR with mod 97, FR_IBAN) + API secret patterns (AWS, GitHub, Google, Stripe, Slack, JWT, RSA keys) + private URL detection
+- [ ] **TRUST-02**: User receives notification when agent proposes sharing knowledge — notification surfaces quality pre-screening signals, similar existing knowledge, and potential contradictions to help informed approval decisions
+- [ ] **TRUST-03**: User can approve or reject each knowledge contribution — presented as GDPR consent act with clear disclosure of what data is shared, anonymization applied, and destination (private namespace vs public commons)
+- [ ] **TRUST-04**: User can configure auto-approve rules per knowledge category
+- [ ] **TRUST-05**: PII stripping audit log includes: detected entity type, confidence score, operator applied per entity type, F2 score of the run, PII leak rate from two-pass validation, and document utility score. Audit log itself encrypted and access-controlled.
+- [ ] **TRUST-06**: Pipeline is markdown-aware — extracts and protects fenced/inline code blocks before anonymization, processes only narrative text, then reinjects code blocks intact
+- [ ] **TRUST-07**: Two-pass validation mandatory: Pass 1 re-runs Analyzer on anonymized text to detect residual leaks; Pass 2 checks output against original PII values verbatim
+- [ ] **TRUST-08**: Anonymization strategy differentiated by entity type: pseudonymization (Faker fr_FR) for PERSON/LOCATION/PHONE, total redaction for NIR/SSN/API keys, masking for SIRET, generalization for dates when appropriate. Pseudonymization mapping table stored encrypted (AES-256).
+- [ ] **TRUST-09**: Per-organization allow-list mechanism to prevent false positives where internal project codenames are misclassified as PERSON/LOCATION entities
+
+### Legal & Compliance
+
+- [ ] **LEGAL-01**: Architecture designed around explicitly contributed data — agents surface knowledge created by users with intent to share, not extracted from prior conversational context (CNIL June 2025 guidance, EDPB Opinion 28/2024)
+- [ ] **LEGAL-02**: DPIA (Data Protection Impact Assessment) documented before launch per GDPR art. 35(3)(b)
+- [ ] **LEGAL-03**: Granular consent mechanism covers separately: (a) extraction, (b) anonymization processing, (c) sharing in commons. Consent revocable with machine unlearning consequences.
+- [ ] **LEGAL-04**: Right to erasure propagation — when user revokes consent, deletion cascades from source knowledge items through all derived distillations, summaries, and quality aggregations
+- [ ] **LEGAL-05**: AI Act transparency — all knowledge items disclosed as AI-assisted content per art. 50. System classified under AI Act risk framework. If knowledge categories touch Annex III domains (health, employment, education), high-risk obligations apply from August 2026.
+- [ ] **LEGAL-06**: Reliability disclaimers displayed on all shared knowledge — non-disclosure of AI nature or reliability limits is a sanctionable misleading omission under Directive 2005/29/CE
+- [ ] **LEGAL-07**: Product liability documentation and verification processes maintained for Directive (EU) 2024/2853 compliance (transposition deadline December 2026)
+
+### Security
+
+- [ ] **SEC-01**: Contributed knowledge scanned for prompt injection and malicious instructions before entering commons — knowledge items injected into agent context windows are a potential attack vector (ClawHavoc precedent: 824 malicious skills in agent ecosystem)
+- [ ] **SEC-02**: Content hash (SHA-256) on every knowledge item for integrity verification — knowledge items cannot be mutated in transit without detection
+- [ ] **SEC-03**: Rate limiting on contributions per agent + coordinated contribution campaign detection (anti-sybil) to prevent knowledge poisoning attacks
+
+### Access Control
+
+- [ ] **ACL-01**: Each organization has a private namespace isolated from other organizations
+- [ ] **ACL-02**: User can explicitly publish knowledge from private namespace to public commons — publication is a consent act with clear disclosure; publication is reversible (org can request removal subject to notice period)
+- [ ] **ACL-03**: Agent roles enforced at three levels: namespace (org), category (knowledge type), and individual item — not just namespace-level roles
+- [ ] **ACL-04**: Organization admin can manage agents and roles within their namespace
+- [ ] **ACL-05**: Cross-namespace search supported — queries can span both private and public commons with deduplication of results appearing in both
+
+### Knowledge Management
+
+- [ ] **KM-01**: Every knowledge item has immutable provenance: source_agent_id, contributed_at, category, org_id, confidence_score, run_id (session), content_hash (SHA-256), anonymization_run_id, consent_ref
+- [ ] **KM-02**: Retrieval latency split into two tiers: pure retrieval (vector+BM25+RRF, no LLM) target <200ms P95; full pipeline (with LLM reranking) target <1.5s P95
+- [ ] **KM-03**: Near-duplicate detection compares against top-10 most similar existing items using three-stage dedup: cosine similarity → LSH/MinHash → LLM confirmation above configurable threshold (default 0.95)
+- [ ] **KM-04**: Knowledge items typed by category: bug_fix, config, domain_expertise, workaround, pricing_data, regulatory_rule, tooling, reasoning_trace, failed_approach, version_workaround, general — with framework/library version metadata on applicable items
+- [ ] **KM-05**: Bi-temporal tracking with two independent timelines: world-time (valid_at, invalid_at — when fact was true) and system-time (created_at, expired_at — when ingested). Invalidation marks facts as expired rather than deleting, enabling point-in-time queries.
+- [ ] **KM-06**: Temporal queries supported ("what was known about X at time T") including version-scoped queries ("what was known about library X version Y")
+- [ ] **KM-07**: LLM-assisted conflict resolution with four outcomes: UPDATE, ADD, NOOP, VERSION_FORK — where VERSION_FORK preserves both old and new knowledge as valid but version-scoped. Explicitly limited to single-hop direct conflicts (<7% accuracy on multi-hop per MemoryAgentBench July 2025); multi-hop conflicts flagged for human review.
+- [ ] **KM-08**: Embedding model pinned at deployment initialization and documented; re-embedding migration procedure documented for model changes. Abstraction layer decouples stored data from embedding model version.
+
+### Quality & Intelligence
+
+- [ ] **QI-01**: Each knowledge item has a quality score (0-1) derived from behavioral signals
+- [ ] **QI-02**: Quality signals include: retrieval frequency, explicit agent outcome reporting ("solved" / "did not help" per MCP-06), contradiction rate, staleness, version freshness. Retrieval frequency and usefulness exposed as separate user-visible metrics on dashboard (not just internal scoring inputs).
+- [ ] **QI-03**: Search results ranked by quality score combined with relevance
+- [ ] **QI-04**: Sleep-time distillation runs as background job — triggered by volume threshold or conflict count. Distillation re-runs PII pipeline on generated summaries, maintains provenance links for erasure propagation (LEGAL-04), and tags outputs as AI-generated per AI Act art. 50.
+- [ ] **QI-05**: Distillation merges duplicates, flags contradictions, generates summaries. Quality pre-screening runs before human approval queue — users review a filtered shortlist, not raw agent output.
+
+### Web Dashboard
+
+- [ ] **DASH-01**: User can view two feeds: private namespace feed (org's agent contributions) and public commons feed (shared pool) — public commons feed is the featured/prominent view demonstrating network effect
+- [ ] **DASH-02**: User can search the knowledge commons from the dashboard
+- [ ] **DASH-03**: User can view per-user and per-org contribution AND retrieval statistics — including how many times their contributed knowledge was retrieved by other agents (reciprocity ledger: "you contributed X items, they were retrieved Y times by other orgs")
+- [ ] **DASH-04**: User can view knowledge item detail with full provenance
+- [ ] **DASH-05**: User can approve/reject pending knowledge contributions from the dashboard
+- [ ] **DASH-06**: Public commons health metrics visible: total items, growth rate, retrieval volume, domains covered — demonstrating network effect to attract contributors
+
+### Distribution & Onboarding
+
+- [ ] **DIST-01**: npx one-liner install for the MCP server (zero-friction first connection)
+- [ ] **DIST-02**: Docker image published and maintained on Docker Hub
+- [ ] **DIST-03**: Install configs for all major MCP clients in README: Claude Desktop, Cursor, VS Code, ChatGPT Desktop, Windsurf, Gemini CLI
+- [ ] **DIST-04**: Smithery.ai listing for one-click hosted install
+- [ ] **DIST-05**: OpenClaw skill wrapper (SKILL.md format) so OpenClaw agents can use HiveMind natively
+- [ ] **DIST-06**: Submit to MCP discovery directories: PulseMCP, Glama.ai, mcp.so, AwesomeClaude.ai, official MCP Registry, punkpeye/awesome-mcp-servers
+- [ ] **DIST-07**: LangChain tool wrapper (`HiveMindRetriever`) published to PyPI
+- [ ] **DIST-08**: CrewAI tool wrapper (`HiveMindTool`) compatible with CrewAI tool interface
+- [ ] **DIST-09**: 30-second demo GIF in README showing two agents sharing knowledge via MCP in Claude Desktop or Cursor
+
+### Infrastructure
+
+- [ ] **INFRA-01**: PostgreSQL + pgvector as primary persistent store (sufficient for v1; abstraction allows Qdrant migration beyond ~50M items at 4.5K QPS with native multitenancy)
+- [ ] **INFRA-02**: Knowledge store abstraction following Graphiti's `GraphDriver` pattern — first graph backend target: Graphiti-on-FalkorDB (sub-10ms queries, Redis-based, native multitenancy)
+- [ ] **INFRA-03**: Near-real-time knowledge availability (seconds, not milliseconds) via webhook push after quality gate
+- [ ] **INFRA-04**: API key authentication with associated tier, request counter, and billing period reset — prerequisite for monetization
+- [ ] **INFRA-05**: Concurrent multi-agent writes handled safely — event sourcing or CRDT approach for shared knowledge to prevent race conditions
+- [ ] **INFRA-06**: EU data residency — data stored in EU region (required for French enterprise procurement, GDPR compliance)
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Monetization & Billing
+
+- **MON-01**: Free tier (Discover): €0, 100 requests/month, no credit card required
+- **MON-02**: Paid tiers: Starter €29/month (2,000 req), Pro €79/month (10,000 req + 3 verticals), Business €149/month (50,000 req + API)
+- **MON-03**: Usage metering per API key per billing period with soft and hard limit enforcement
+- **MON-04**: Overage billing: €0.005-0.02/additional request
+- **MON-05**: Annual billing option (2 months free, ~17% discount)
+- **MON-06**: SEPA payment default, prices displayed HT (standard French B2B)
+- **MON-07**: Billing portal: view plan, usage, upgrade/downgrade, download invoices
+
+### B2B Knowledge Packs
+
+- **PACK-01**: Pack registry with versioning and metadata
+- **PACK-02**: First curated vertical pack (real estate — €50-200/month, mature willingness-to-pay)
+- **PACK-03**: Waze flywheel — agents using packs contribute back
+- **PACK-04**: Pack access via MCP tools
+- **PACK-05**: SaaS billing for pack subscriptions
+- **PACK-06**: Creator marketplace with operator agreements requiring warranties (no private conversational data, no trade secrets, no GDPR-covered personal data)
+
+### Crypto Trading Layer
+
+- **CRYPTO-01**: Agent wallets for knowledge transactions
+- **CRYPTO-02**: x402 micropayments for knowledge access (chain-agnostic, Coinbase standard — NOT Solana-specific)
+- **CRYPTO-03**: Dynamic pricing based on knowledge quality and rarity
+- **CRYPTO-04**: Knowledge trading marketplace
+- **CRYPTO-05**: All crypto abstracted from user — payments in euros, automatic conversion
+
+### Additional
+
+- **MISC-01**: Cross-namespace knowledge federation
+- **MISC-02**: A2A integration — expose HiveMind knowledge retrieval as A2A-callable capability (knowledge service, NOT task delegation)
+- **MISC-03**: AGNTCY directory listing for agent discoverability
+- **MISC-04**: LlamaIndex query engine integration
+- **MISC-05**: Knowledge interchange format standard (canonical serialization for export/interop)
+- **MISC-06**: Public knowledge URLs — each public commons item gets a shareable, indexable URL
+- **MISC-07**: Contribution leaderboard (public, opt-in) — top contributors by retrieval count
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Mobile app | Web-first platform |
+| Model training / fine-tuning | HiveMind is retrieval-augmented, not training infrastructure |
+| Building AI agents | HiveMind is infrastructure agents connect to |
+| Fully autonomous sharing (no approval) | Noisy commons risk is existential + prompt injection vector via contributed knowledge (ClawHavoc precedent) |
+| Real-time streaming to agents | Near-real-time sufficient; true streaming adds complexity without quality gating |
+| Monolithic global commons (no namespaces) | Violates GDPR/SOC2 enterprise requirements |
+| General-purpose data marketplace | Horizontal marketplaces generate negligible revenue (The Graph: $100-215K/quarter despite 6.5B requests) |
+| Visible crypto in UI | Abstract all blockchain; users see euros, not tokens |
+| Silent extraction from private conversations | CNIL June 2025 + EDPB Opinion 28/2024 make this incompatible with GDPR — knowledge must be explicitly contributed |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| MCP-01 | — | Pending |
+| MCP-02 | — | Pending |
+| MCP-03 | — | Pending |
+| MCP-04 | — | Pending |
+| MCP-05 | — | Pending |
+| MCP-06 | — | Pending |
+| SDK-01 | — | Pending |
+| SDK-02 | — | Pending |
+| SDK-03 | — | Pending |
+| TRUST-01 | — | Pending |
+| TRUST-02 | — | Pending |
+| TRUST-03 | — | Pending |
+| TRUST-04 | — | Pending |
+| TRUST-05 | — | Pending |
+| TRUST-06 | — | Pending |
+| TRUST-07 | — | Pending |
+| TRUST-08 | — | Pending |
+| TRUST-09 | — | Pending |
+| LEGAL-01 | — | Pending |
+| LEGAL-02 | — | Pending |
+| LEGAL-03 | — | Pending |
+| LEGAL-04 | — | Pending |
+| LEGAL-05 | — | Pending |
+| LEGAL-06 | — | Pending |
+| LEGAL-07 | — | Pending |
+| SEC-01 | — | Pending |
+| SEC-02 | — | Pending |
+| SEC-03 | — | Pending |
+| ACL-01 | — | Pending |
+| ACL-02 | — | Pending |
+| ACL-03 | — | Pending |
+| ACL-04 | — | Pending |
+| ACL-05 | — | Pending |
+| KM-01 | — | Pending |
+| KM-02 | — | Pending |
+| KM-03 | — | Pending |
+| KM-04 | — | Pending |
+| KM-05 | — | Pending |
+| KM-06 | — | Pending |
+| KM-07 | — | Pending |
+| KM-08 | — | Pending |
+| QI-01 | — | Pending |
+| QI-02 | — | Pending |
+| QI-03 | — | Pending |
+| QI-04 | — | Pending |
+| QI-05 | — | Pending |
+| DASH-01 | — | Pending |
+| DASH-02 | — | Pending |
+| DASH-03 | — | Pending |
+| DASH-04 | — | Pending |
+| DASH-05 | — | Pending |
+| DASH-06 | — | Pending |
+| DIST-01 | — | Pending |
+| DIST-02 | — | Pending |
+| DIST-03 | — | Pending |
+| DIST-04 | — | Pending |
+| DIST-05 | — | Pending |
+| DIST-06 | — | Pending |
+| DIST-07 | — | Pending |
+| DIST-08 | — | Pending |
+| DIST-09 | — | Pending |
+| INFRA-01 | — | Pending |
+| INFRA-02 | — | Pending |
+| INFRA-03 | — | Pending |
+| INFRA-04 | — | Pending |
+| INFRA-05 | — | Pending |
+| INFRA-06 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 64 total
+- Mapped to phases: 0
+- Unmapped: 64 ⚠️
+
+---
+*Requirements defined: 2026-02-18*
+*Last updated: 2026-02-18 after deep PDF research ingestion*
