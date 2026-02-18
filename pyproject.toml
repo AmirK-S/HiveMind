@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hivemind"
+version = "0.1.0"
+description = "A shared memory system for AI agents — a collective brain"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # MCP server
+    "fastmcp<3",
+    "fastapi",
+    "uvicorn",
+    # Database
+    "sqlalchemy[asyncio]>=2.0",
+    # asyncpg: research pinned <0.29.0 for Python 3.11 compat; Python 3.14 requires >=0.30
+    "asyncpg>=0.30.0",
+    "pgvector",
+    "alembic",
+    # PII pipeline
+    "presidio-analyzer[gliner]",
+    "presidio-anonymizer",
+    "gliner",
+    # Embeddings
+    "sentence-transformers",
+    # Validation and config
+    "pydantic>=2.0",
+    "pydantic-settings",
+    # CLI
+    "typer",
+    "rich",
+    "questionary",
+    # Supporting
+    "spacy",
+    "python-jose[cryptography]",
+    "httpx",
+    # Async task queue
+    "celery",
+    "redis",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+]
+
+[project.scripts]
+hivemind = "hivemind.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["hivemind"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

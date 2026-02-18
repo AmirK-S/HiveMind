@@ -1,0 +1,45 @@
+"""Centralized settings for HiveMind via Pydantic BaseSettings.
+
+All configuration is read from environment variables with the HIVEMIND_ prefix,
+falling back to the defaults defined here. Set values in a .env file or export
+them in the shell before starting the server.
+"""
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables.
+
+    Environment variable names are formed by uppercasing the field name and
+    prepending the HIVEMIND_ prefix.  Example: HIVEMIND_DATABASE_URL overrides
+    database_url.
+    """
+
+    # Database
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/hivemind"
+
+    # Security
+    secret_key: str = "dev-secret-change-me"
+
+    # Embeddings
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_dimensions: int = 384
+
+    # PII pipeline
+    pii_rejection_threshold: float = 0.50
+
+    # Search
+    default_search_limit: int = 10
+    max_search_limit: int = 50
+
+    model_config = SettingsConfigDict(
+        env_prefix="HIVEMIND_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
+# Module-level singleton — import this throughout the codebase
+settings = Settings()
