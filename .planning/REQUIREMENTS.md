@@ -27,7 +27,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Trust & Privacy
 
-- [ ] **TRUST-01**: All inbound knowledge is PII-stripped before storage using: Presidio as orchestrator + GLiNER (`knowledgator/gliner-pii-base-v1.0`) for zero-shot coverage + API secret patterns (AWS, GitHub, Google, Stripe, Slack, JWT, RSA keys) + private URL detection
+- [x] **TRUST-01**: All inbound knowledge is PII-stripped before storage using: Presidio as orchestrator + GLiNER (`knowledgator/gliner-pii-base-v1.0`) for zero-shot coverage + API secret patterns (AWS, GitHub, Google, Stripe, Slack, JWT, RSA keys) + private URL detection
 - [ ] **TRUST-02**: User receives notification when agent proposes sharing knowledge — notification surfaces quality pre-screening signals and similar existing knowledge
 - [ ] **TRUST-03**: User can approve or reject each knowledge contribution before it enters the commons
 - [ ] **TRUST-04**: User can configure auto-approve rules per knowledge category
@@ -57,7 +57,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **KM-05**: Bi-temporal tracking with two independent timelines: world-time (valid_at, invalid_at — when fact was true) and system-time (created_at, expired_at — when ingested). Invalidation marks facts as expired rather than deleting, enabling point-in-time queries.
 - [ ] **KM-06**: Temporal queries supported ("what was known about X at time T") including version-scoped queries ("what was known about library X version Y")
 - [ ] **KM-07**: LLM-assisted conflict resolution with four outcomes: UPDATE, ADD, NOOP, VERSION_FORK — where VERSION_FORK preserves both old and new knowledge as valid but version-scoped. Explicitly limited to single-hop direct conflicts; multi-hop conflicts flagged for human review.
-- [ ] **KM-08**: Embedding model pinned at deployment initialization and documented; re-embedding migration procedure documented for model changes. Abstraction layer decouples stored data from embedding model version.
+- [x] **KM-08**: Embedding model pinned at deployment initialization and documented; re-embedding migration procedure documented for model changes. Abstraction layer decouples stored data from embedding model version.
 
 ### Quality & Intelligence
 
@@ -173,7 +173,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | SDK-01 | Phase 3 | Pending |
 | SDK-02 | Phase 3 | Pending |
 | SDK-03 | Phase 3 | Pending |
-| TRUST-01 | Phase 1 | Pending |
+| TRUST-01 | Phase 1 | Complete |
 | TRUST-02 | Phase 1 | Pending |
 | TRUST-03 | Phase 1 | Pending |
 | TRUST-04 | Phase 2 | Pending |
@@ -194,7 +194,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | KM-05 | Phase 3 | Pending |
 | KM-06 | Phase 3 | Pending |
 | KM-07 | Phase 3 | Pending |
-| KM-08 | Phase 1 | Pending |
+| KM-08 | Phase 1 | Complete |
 | QI-01 | Phase 3 | Pending |
 | QI-02 | Phase 3 | Pending |
 | QI-03 | Phase 3 | Pending |

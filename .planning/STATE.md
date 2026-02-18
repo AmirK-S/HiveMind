@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 1 of 4 (Agent Connection Loop)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-18 — Roadmap created (v2) from 56 v1 requirements across 4 phases; legal/compliance deferred to v2
+Plan: 2 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-18 — Completed 01-02: PII pipeline + embedding provider (Presidio + GLiNER + SentenceTransformer)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 12% (2 of 4 plans in phase 1; 2 of ~16 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: -
+- Total plans completed: 2
+- Average duration: ~3 min
+- Total execution time: ~6 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-agent-connection-loop | 2 | ~6 min | ~3 min |
 
 **Recent Trend:**
-- Last 5 plans: none yet
-- Trend: -
+- Last 5 plans: 01-01 (~3 min), 01-02 (~3 min)
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -46,6 +46,9 @@ Recent decisions affecting current work:
 - [Roadmap]: Legal/compliance (LEGAL-01 through LEGAL-08) and INFRA-06 (EU data residency) deferred to v2 — ship fast, no European compliance overhead
 - [Roadmap]: Trust requirements simplified to product-focused (PII stripping + approval gate) not GDPR formalism
 - [Pre-build]: Graphiti + FalkorDB + Presidio + GLiNER + FastAPI + Celery + PostgreSQL/pgvector + Next.js recommended by research
+- [01-02]: Post-strip token count used for 50% rejection ratio — pre-strip count would inflate ratio when multi-word names collapse to single [NAME] token
+- [01-02]: normalize_embeddings=True enforced at EmbeddingProvider level — pgvector cosine_distance requires unit vectors
+- [01-02]: get_embedder() uses lazy settings import to avoid circular dependency between hivemind.pipeline and hivemind.config
 
 ### Pending Todos
 
@@ -60,5 +63,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Phase 1 context gathered — ready to run /gsd:plan-phase 1
-Resume file: .planning/phases/01-agent-connection-loop/01-CONTEXT.md
+Stopped at: Completed 01-02-PLAN.md — PII pipeline + embedding provider built; Plan 03 (MCP tools) is next
+Resume file: .planning/phases/01-agent-connection-loop/01-03-PLAN.md
