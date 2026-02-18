@@ -32,8 +32,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 4 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffolding, config, DB models (PendingContribution, KnowledgeItem, DeploymentConfig), Alembic migrations with pgvector
-- [ ] 01-02-PLAN.md — PII stripping pipeline (Presidio + GLiNER + API key patterns) and embedding provider abstraction
+- [x] 01-01-PLAN.md — Project scaffolding, config, DB models (PendingContribution, KnowledgeItem, DeploymentConfig), Alembic migrations with pgvector
+- [x] 01-02-PLAN.md — PII stripping pipeline (Presidio + GLiNER + API key patterns) and embedding provider abstraction
 - [ ] 01-03-PLAN.md — MCP server (Streamable HTTP) + auth + add_knowledge tool + search_knowledge tool with tiered response
 - [ ] 01-04-PLAN.md — list_knowledge + delete_knowledge tools + CLI approval workflow (Typer + Rich + questionary)
 
