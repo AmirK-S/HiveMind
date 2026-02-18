@@ -15,8 +15,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **MCP-01**: Agent can connect to HiveMind via MCP protocol (Streamable HTTP transport per MCP spec 2025-11-25)
 - [x] **MCP-02**: Agent can contribute knowledge via `add_knowledge` tool — knowledge is explicitly contributed, not silently extracted from conversations
 - [x] **MCP-03**: Agent can search the commons via `search_knowledge` tool with tiered response (summary tier: title+category+confidence ~30-50 tokens; full tier: complete content on request) to minimize token cost at scale
-- [ ] **MCP-04**: Agent can list their contributed knowledge via `list_knowledge` tool
-- [ ] **MCP-05**: Agent can delete their own contributed knowledge via `delete_knowledge` tool — deletion cascades to derived distillations and summaries
+- [x] **MCP-04**: Agent can list their contributed knowledge via `list_knowledge` tool
+- [x] **MCP-05**: Agent can delete their own contributed knowledge via `delete_knowledge` tool — deletion cascades to derived distillations and summaries
 - [ ] **MCP-06**: Agent can report outcome after retrieving knowledge ("solved my problem" / "did not help") as an explicit active confirmation signal for quality scoring
 
 ### API & SDKs
@@ -28,8 +28,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Trust & Privacy
 
 - [x] **TRUST-01**: All inbound knowledge is PII-stripped before storage using: Presidio as orchestrator + GLiNER (`knowledgator/gliner-pii-base-v1.0`) for zero-shot coverage + API secret patterns (AWS, GitHub, Google, Stripe, Slack, JWT, RSA keys) + private URL detection
-- [ ] **TRUST-02**: User receives notification when agent proposes sharing knowledge — notification surfaces quality pre-screening signals and similar existing knowledge
-- [ ] **TRUST-03**: User can approve or reject each knowledge contribution before it enters the commons
+- [x] **TRUST-02**: User receives notification when agent proposes sharing knowledge — notification surfaces quality pre-screening signals and similar existing knowledge
+- [x] **TRUST-03**: User can approve or reject each knowledge contribution before it enters the commons
 - [ ] **TRUST-04**: User can configure auto-approve rules per knowledge category
 - [ ] **TRUST-05**: PII stripping runs two-pass validation: Pass 1 re-runs analyzer on anonymized text for residual leaks; Pass 2 checks output against original PII values verbatim
 - [ ] **TRUST-06**: Pipeline is markdown-aware — extracts and protects fenced/inline code blocks before anonymization, processes only narrative text, then reinjects code blocks intact
@@ -167,15 +167,15 @@ Deferred to future release. Tracked but not in current roadmap.
 | MCP-01 | Phase 1 | Complete |
 | MCP-02 | Phase 1 | Complete |
 | MCP-03 | Phase 1 | Complete |
-| MCP-04 | Phase 1 | Pending |
-| MCP-05 | Phase 1 | Pending |
+| MCP-04 | Phase 1 | Complete |
+| MCP-05 | Phase 1 | Complete |
 | MCP-06 | Phase 3 | Pending |
 | SDK-01 | Phase 3 | Pending |
 | SDK-02 | Phase 3 | Pending |
 | SDK-03 | Phase 3 | Pending |
 | TRUST-01 | Phase 1 | Complete |
-| TRUST-02 | Phase 1 | Pending |
-| TRUST-03 | Phase 1 | Pending |
+| TRUST-02 | Phase 1 | Complete |
+| TRUST-03 | Phase 1 | Complete |
 | TRUST-04 | Phase 2 | Pending |
 | TRUST-05 | Phase 2 | Pending |
 | TRUST-06 | Phase 2 | Pending |
