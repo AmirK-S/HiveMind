@@ -28,7 +28,9 @@ from rich.panel import Panel
 
 from hivemind.cli.client import (
     approve_contribution,
+    compute_qi_score,
     fetch_pending,
+    find_similar_knowledge,
     flag_contribution,
     get_org_stats,
     reject_contribution,
@@ -37,6 +39,58 @@ from hivemind.db.models import KnowledgeCategory
 
 # Module-level console used by the review command
 console = Console()
+
+
+# ---------------------------------------------------------------------------
+# TRUST-02 display helpers
+# ---------------------------------------------------------------------------
+
+
+def _build_similar_section(similar_items: list[dict]) -> str:
+    """Build a Rich-formatted string for the similar knowledge section.
+
+    Args:
+        similar_items: List of dicts from find_similar_knowledge().
+
+    Returns:
+        A Rich markup string showing similar items or a 'none found' notice.
+    """
+    if not similar_items:
+        return "\n[dim]No similar items in the commons yet.[/dim]"
+
+    lines = ["\n[bold]Similar Existing Knowledge:[/bold]"]
+    for item in similar_items:
+        pct = item["similarity"]
+        title = item["title"]
+        category = item["category"]
+        if pct >= 80:
+            # Likely duplicate — highlight in yellow
+            lines.append(
+                f"  [yellow]{pct}% similar[/yellow] — {title} [{category}]"
+            )
+        else:
+            lines.append(
+                f"  [dim]{pct}% similar[/dim] — {title} [{category}]"
+            )
+    return "\n".join(lines)
+
+
+def _build_qi_badge(qi: dict) -> str:
+    """Build a Rich-formatted QI pre-screening badge string.
+
+    Args:
+        qi: Dict from compute_qi_score() with keys: score, label, color, icon, details.
+
+    Returns:
+        A Rich markup string with the badge on the first line and dim detail
+        lines below (if any details exist).
+    """
+    color = qi["color"]
+    badge_line = f"[{color}]QI: {qi['icon']} {qi['label']} ({qi['score']})[/{color}]"
+    detail_lines = [f"[dim]  {d}[/dim]" for d in qi.get("details", [])]
+    if detail_lines:
+        return badge_line + "\n" + "\n".join(detail_lines)
+    return badge_line
 
 
 def review(
@@ -92,10 +146,28 @@ def review(
     skipped_count = 0
 
     for idx, item in enumerate(pending):
+        # TRUST-02: Quality pre-screening signal
+        qi = compute_qi_score(item)
+        qi_badge = _build_qi_badge(qi)
+
+        # TRUST-02: Similar existing knowledge lookup (graceful degradation on failure)
+        try:
+            similar_items = find_similar_knowledge(
+                content=item.content,
+                org_id=org_id,
+                top_n=3,
+                threshold=0.35,
+            )
+        except Exception:
+            similar_items = []
+
+        similar_section = _build_similar_section(similar_items)
+
         # Build display content
         meta_line = (
             f"[bold]{item.category.value}[/bold] · "
-            f"Confidence: {item.confidence:.0%}"
+            f"Confidence: {item.confidence:.0%} · "
+            f"{qi_badge}"
         )
         framework_line = ""
         if item.framework:
@@ -105,7 +177,8 @@ def review(
 
         panel_body = (
             f"{meta_line}\n\n"
-            f"{item.content}\n\n"
+            f"{item.content}\n"
+            f"{similar_section}\n\n"
             f"[dim]Agent: {item.source_agent_id} · "
             f"{item.contributed_at.strftime('%Y-%m-%d %H:%M')}[/dim]"
             f"{framework_line}"
