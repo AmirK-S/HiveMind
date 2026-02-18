@@ -164,6 +164,7 @@ async def _fetch_by_id(id: str, org_id: str) -> dict | CallToolResult:
             KnowledgeItem.id == item_uuid,
             # Org isolation: own items OR public items (never expose other orgs' private data)
             (KnowledgeItem.org_id == org_id) | (KnowledgeItem.is_public == True),  # noqa: E712
+            KnowledgeItem.deleted_at.is_(None),  # exclude soft-deleted items
         )
         result = await session.execute(stmt)
         item = result.scalar_one_or_none()
@@ -238,6 +239,7 @@ async def _search(
                 (KnowledgeItem.org_id == org_id) | (KnowledgeItem.is_public == True)  # noqa: E712
             )
             .where(KnowledgeItem.embedding.isnot(None))  # skip items without embeddings
+            .where(KnowledgeItem.deleted_at.is_(None))  # exclude soft-deleted items
         )
 
         if category_enum is not None:

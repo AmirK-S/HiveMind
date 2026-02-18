@@ -167,6 +167,10 @@ class KnowledgeItem(Base):
         nullable=False,
         default=datetime.datetime.utcnow,
     )
+    # Soft-delete timestamp — set by delete_knowledge tool; NULL means active
+    deleted_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
 
     __table_args__ = (
         # Prevents intra-org duplicates; allows same content across orgs (pitfall 4)

@@ -28,28 +28,11 @@ from hivemind.db.session import engine, get_session
 from hivemind.pipeline.embedder import get_embedder
 from hivemind.pipeline.pii import PIIPipeline
 from hivemind.server.tools.add_knowledge import add_knowledge
+from hivemind.server.tools.delete_knowledge import delete_knowledge
+from hivemind.server.tools.list_knowledge import list_knowledge
 from hivemind.server.tools.search_knowledge import search_knowledge
 
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Stub tools — Plan 04 will replace these with full implementations
-# ---------------------------------------------------------------------------
-
-
-async def list_knowledge(
-    category: str | None = None,
-    limit: int = 10,
-    cursor: str | None = None,
-) -> dict:
-    """List knowledge items (stub — implemented in Plan 04)."""
-    return {"error": "Not yet implemented"}
-
-
-async def delete_knowledge(id: str) -> dict:
-    """Delete a knowledge item (stub — implemented in Plan 04)."""
-    return {"error": "Not yet implemented"}
 
 
 # ---------------------------------------------------------------------------
