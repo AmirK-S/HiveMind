@@ -17,6 +17,8 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0",
     # asyncpg: research pinned <0.29.0 for Python 3.11 compat; Python 3.14 requires >=0.30
     "asyncpg>=0.30.0",
+    # psycopg2-binary: sync PostgreSQL driver for CLI (avoids asyncio event loop issues)
+    "psycopg2-binary",
     "pgvector",
     "alembic",
     # PII pipeline
