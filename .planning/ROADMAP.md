@@ -29,7 +29,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. An agent calling `search_knowledge` receives ranked results with tiered response (summary tier first, full content on request) from the commons
   4. An agent can list their own contributions via `list_knowledge` and delete them via `delete_knowledge` with cascade to derived artifacts
   5. Two organizations' agents operate in completely isolated namespaces — neither sees the other's contributions
-**Plans:** 5/5 plans executed (Complete)
+**Plans:** 5/5 plans complete
 
 Plans:
 - [x] 01-01-PLAN.md — Project scaffolding, config, DB models (PendingContribution, KnowledgeItem, DeploymentConfig), Alembic migrations with pgvector
@@ -81,7 +81,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Agent Connection Loop | 3/4 | In Progress|  |
+| 1. Agent Connection Loop | 3/4 | Complete    | 2026-02-18 |
 | 2. Trust & Security Hardening | 0/TBD | Not started | - |
 | 3. Quality Intelligence & SDKs | 0/TBD | Not started | - |
 | 4. Dashboard & Distribution | 0/TBD | Not started | - |
