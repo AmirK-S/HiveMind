@@ -12,7 +12,7 @@ HiveMind ships in four phases optimized for speed-to-first-agent-connection. Pha
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Agent Connection Loop** - Working MCP server with core tools, PII stripping, user approval gate, org namespaces, and knowledge schema — the minimum to get agents connecting and contributing
+- [x] **Phase 1: Agent Connection Loop** - Working MCP server with core tools, PII stripping, user approval gate, org namespaces, and knowledge schema — the minimum to get agents connecting and contributing
 - [ ] **Phase 2: Trust & Security Hardening** - Advanced PII pipeline, prompt injection scanning, rate limiting, role-based access control, cross-namespace search, and API key auth — making the commons safe to open broadly
 - [ ] **Phase 3: Quality Intelligence & SDKs** - Quality scoring from behavioral signals, bi-temporal tracking, conflict resolution, near-duplicate detection, sleep-time distillation, and REST/Python/TypeScript SDKs
 - [ ] **Phase 4: Dashboard & Distribution** - Web dashboard for humans to observe and manage the commons, plus all distribution channels (npx, Docker, Smithery, MCP directories, framework wrappers)
@@ -29,13 +29,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. An agent calling `search_knowledge` receives ranked results with tiered response (summary tier first, full content on request) from the commons
   4. An agent can list their own contributions via `list_knowledge` and delete them via `delete_knowledge` with cascade to derived artifacts
   5. Two organizations' agents operate in completely isolated namespaces — neither sees the other's contributions
-**Plans:** 3/4 plans executed
+**Plans:** 5/5 plans executed (Complete)
 
 Plans:
 - [x] 01-01-PLAN.md — Project scaffolding, config, DB models (PendingContribution, KnowledgeItem, DeploymentConfig), Alembic migrations with pgvector
 - [x] 01-02-PLAN.md — PII stripping pipeline (Presidio + GLiNER + API key patterns) and embedding provider abstraction
-- [ ] 01-03-PLAN.md — MCP server (Streamable HTTP) + auth + add_knowledge tool + search_knowledge tool with tiered response
-- [ ] 01-04-PLAN.md — list_knowledge + delete_knowledge tools + CLI approval workflow (Typer + Rich + questionary)
+- [x] 01-03-PLAN.md — MCP server (Streamable HTTP) + auth + add_knowledge tool + search_knowledge tool with tiered response
+- [x] 01-04-PLAN.md — list_knowledge + delete_knowledge tools + CLI approval workflow (Typer + Rich + questionary)
+- [x] 01-05-PLAN.md — TRUST-02 gap closure: similar knowledge cosine lookup + QI pre-screening badge in review panel
 
 ### Phase 2: Trust & Security Hardening
 **Goal**: The commons is protected against prompt injection, knowledge poisoning, PII leakage edge cases, and unauthorized access — safe enough to open to external agents at scale with API key authentication and granular role-based access control
