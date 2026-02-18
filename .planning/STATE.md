@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 1 of 4 (Agent Connection Loop)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-18 — Completed 01-02: PII pipeline + embedding provider (Presidio + GLiNER + SentenceTransformer)
+Last activity: 2026-02-18 — Completed 01-03: MCP server + auth + add_knowledge + search_knowledge tools
 
-Progress: [██░░░░░░░░] 12% (2 of 4 plans in phase 1; 2 of ~16 total plans)
+Progress: [███░░░░░░░] 19% (3 of 4 plans in phase 1; 3 of ~16 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: ~3 min
-- Total execution time: ~6 min
+- Total plans completed: 3
+- Average duration: ~5 min
+- Total execution time: ~14 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-agent-connection-loop | 2 | ~6 min | ~3 min |
+| 01-agent-connection-loop | 3 | ~14 min | ~5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (~3 min), 01-02 (~3 min)
+- Last 5 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -51,6 +51,9 @@ Recent decisions affecting current work:
 - [01-02]: Post-strip token count used for 50% rejection ratio — pre-strip count would inflate ratio when multi-word names collapse to single [NAME] token
 - [01-02]: normalize_embeddings=True enforced at EmbeddingProvider level — pgvector cosine_distance requires unit vectors
 - [01-02]: get_embedder() uses lazy settings import to avoid circular dependency between hivemind.pipeline and hivemind.config
+- [Phase 01-03]: get_http_headers() from fastmcp.server.dependencies used for Authorization header extraction in tool functions — no middleware+contextvars needed
+- [Phase 01-03]: Tool.from_function(fn) is correct FastMCP v2 API for registering plain async functions as MCP tools via mcp.add_tool()
+- [Phase 01-03]: Lazy presidio/spacy imports in PIIPipeline.__init__ — Python 3.14 Pydantic v1 incompatibility fixed by deferring import to first instantiation
 
 ### Pending Todos
 
@@ -65,5 +68,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 01-01-PLAN.md (retroactively) — DB models + Alembic migrations; 01-02 already done; Plan 03 (MCP tools) is next
-Resume file: .planning/phases/01-agent-connection-loop/01-03-PLAN.md
+Stopped at: Completed 01-03-PLAN.md — MCP server + auth + add_knowledge + search_knowledge tools
+Resume file: .planning/phases/01-agent-connection-loop/01-04-PLAN.md

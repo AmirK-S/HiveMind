@@ -12,9 +12,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### MCP Server
 
-- [ ] **MCP-01**: Agent can connect to HiveMind via MCP protocol (Streamable HTTP transport per MCP spec 2025-11-25)
-- [ ] **MCP-02**: Agent can contribute knowledge via `add_knowledge` tool — knowledge is explicitly contributed, not silently extracted from conversations
-- [ ] **MCP-03**: Agent can search the commons via `search_knowledge` tool with tiered response (summary tier: title+category+confidence ~30-50 tokens; full tier: complete content on request) to minimize token cost at scale
+- [x] **MCP-01**: Agent can connect to HiveMind via MCP protocol (Streamable HTTP transport per MCP spec 2025-11-25)
+- [x] **MCP-02**: Agent can contribute knowledge via `add_knowledge` tool — knowledge is explicitly contributed, not silently extracted from conversations
+- [x] **MCP-03**: Agent can search the commons via `search_knowledge` tool with tiered response (summary tier: title+category+confidence ~30-50 tokens; full tier: complete content on request) to minimize token cost at scale
 - [ ] **MCP-04**: Agent can list their contributed knowledge via `list_knowledge` tool
 - [ ] **MCP-05**: Agent can delete their own contributed knowledge via `delete_knowledge` tool — deletion cascades to derived distillations and summaries
 - [ ] **MCP-06**: Agent can report outcome after retrieving knowledge ("solved my problem" / "did not help") as an explicit active confirmation signal for quality scoring
@@ -164,9 +164,9 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MCP-01 | Phase 1 | Pending |
-| MCP-02 | Phase 1 | Pending |
-| MCP-03 | Phase 1 | Pending |
+| MCP-01 | Phase 1 | Complete |
+| MCP-02 | Phase 1 | Complete |
+| MCP-03 | Phase 1 | Complete |
 | MCP-04 | Phase 1 | Pending |
 | MCP-05 | Phase 1 | Pending |
 | MCP-06 | Phase 3 | Pending |
