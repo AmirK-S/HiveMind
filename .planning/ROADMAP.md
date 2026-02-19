@@ -89,7 +89,15 @@ Plans:
   3. A developer runs a single `npx` command, edits one config file, and makes a successful `search_knowledge` call from Claude Desktop or Cursor — all within 5 minutes
   4. HiveMind is listed in at least 4 MCP discovery directories and has framework wrappers (LangChain, CrewAI, OpenClaw) published to their respective registries
   5. A 30-second demo GIF in the README shows two agents sharing knowledge via MCP in a real client
-**Plans**: TBD
+**Plans:** 6 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — FastAPI backend extensions: SSE stream, contributions approve/reject, stats endpoints
+- [ ] 04-02-PLAN.md — Dashboard foundation: Next.js 15 scaffold, live commons/private feeds with SSE, search page
+- [ ] 04-03-PLAN.md — Dashboard features: contributions review, item detail with provenance, analytics with reciprocity ledger
+- [ ] 04-04-PLAN.md — Distribution infrastructure: npx wrapper, Dockerfile, MCP client configs for 6 clients
+- [ ] 04-05-PLAN.md — Framework wrappers: LangChain HiveMindRetriever, CrewAI HiveMindTool, OpenClaw SKILL.md
+- [ ] 04-06-PLAN.md — Registry submissions: Smithery server-card, Glama.ai, demo GIF, 6 directory submissions
 
 ## Progress
 
@@ -101,4 +109,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Agent Connection Loop | 3/4 | Complete    | 2026-02-18 |
 | 2. Trust & Security Hardening | 6/6 | Complete   | 2026-02-19 |
 | 3. Quality Intelligence & SDKs | 6/7 | Complete    | 2026-02-19 |
-| 4. Dashboard & Distribution | 0/TBD | Not started | - |
+| 4. Dashboard & Distribution | 0/6 | Not started | - |
