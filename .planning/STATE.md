@@ -40,6 +40,7 @@ Progress: [██████████] 96% (19 of ~25 total plans done)
 | Phase 03-quality-intelligence-sdks P07 | 8 | 2 tasks | 30 files |
 | Phase 04-dashboard-distribution P04 | 2 | 3 tasks | 7 files |
 | Phase 04-dashboard-distribution P01 | 5 | 3 tasks | 5 files |
+| Phase 04-dashboard-distribution P06 | 5 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,7 @@ Recent decisions affecting current work:
 - [Phase 04-01]: Dedicated asyncpg connection for LISTEN/NOTIFY — SQLAlchemy pool connections are transactional, not suitable for persistent LISTEN state
 - [Phase 04-01]: dispatch_webhooks called via run_in_executor from async approve/reject endpoints — dispatch_webhooks uses sync SessionFactory and would block async event loop if called directly
 - [Phase 04-01]: SSE private events silently skip events for other orgs — org_id check prevents cross-org data leakage without error
+- [Phase 04-06]: well_known_router registered on top-level FastAPI app before MCP mount — /.well-known/ is a root path outside /api/v1/ scope
 
 ### Pending Todos
 
@@ -130,5 +132,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 04-01-PLAN.md — SSE streaming endpoint, contribution approval/rejection REST endpoints, and commons/org/user stats endpoints
-Resume file: .planning/phases/04-dashboard-distribution/04-02-PLAN.md
+Stopped at: Checkpoint 04-06 Task 3 — Smithery/Glama/VHS artifacts complete; awaiting human submission to MCP directories
+Resume file: .planning/phases/04-dashboard-distribution/04-06-PLAN.md (Task 3 checkpoint)
