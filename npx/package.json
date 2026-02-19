@@ -1,0 +1,17 @@
+{
+  "name": "hivemind-mcp",
+  "version": "0.1.0",
+  "description": "Connect AI agents to the HiveMind shared knowledge commons via MCP",
+  "bin": {
+    "hivemind-mcp": "./bin/hivemind.js"
+  },
+  "dependencies": {
+    "mcp-remote": "latest"
+  },
+  "keywords": ["mcp", "ai", "agents", "knowledge", "hivemind"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/hivemind"
+  }
+}
