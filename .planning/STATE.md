@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Agents stop learning alone — when one agent solves a problem, every connected agent benefits
-**Current focus:** Phase 2 in progress — 02-04 complete, 02-05 up next
+**Current focus:** Phase 2 complete — all 6 plans done; Phase 3 up next
 
 ## Current Position
 
-Phase: 2 of 4 (Trust & Security Hardening) — IN PROGRESS
-Plan: 4 of 6 in current phase (4 done)
-Status: In progress
-Last activity: 2026-02-19 — Completed 02-04: KnowledgeStoreDriver ABC + PgVectorDriver + FalkorDB scaffold + Celery webhook delivery
+Phase: 2 of 4 (Trust & Security Hardening) — COMPLETE
+Plan: 6 of 6 in current phase (6 done)
+Status: Phase complete
+Last activity: 2026-02-19 — Completed 02-06: MCP tool wiring — publish_knowledge, manage_roles, decode_token_async, webhook dispatch in approval flow
 
-Progress: [████████░░] 56% (9 of ~16 total plans done)
+Progress: [█████████░] 69% (11 of ~16 total plans done)
 
 ## Performance Metrics
 
@@ -35,6 +35,8 @@ Progress: [████████░░] 56% (9 of ~16 total plans done)
 - Trend: Stable
 
 *Updated after each plan completion*
+| Phase 02-trust-security-hardening P05 | 3 | 2 tasks | 2 files |
+| Phase 02-trust-security-hardening P06 | 3 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -72,6 +74,13 @@ Recent decisions affecting current work:
 - [02-04]: FalkorDBDriver raises NotImplementedError on all methods except health_check — prevents accidental use while scaffolding Phase 3
 - [02-04]: Lazy imports for graphiti_core inside FalkorDBDriver — optional dep, prevents ImportError when using PgVectorDriver
 - [02-04]: dispatch_webhooks uses sync SessionFactory (cli pattern) — called from sync CLI approval flow, not async server context
+- [Phase 02-05]: Injection scan runs on raw content before PII strip (Step 1.5) — injection patterns may survive redaction if scanned post-strip
+- [Phase 02-05]: check_burst() called with temp uuid4() at Step 1.6 — real contribution_id not available pre-DB commit; temp UUID used for ZSET burst tracking only
+- [Phase 02-05]: Auto-approved items set is_public=False — auto-approve means skip queue not public release; orgs control visibility separately
+- [Phase 02-05]: Tamper-detected items returned with integrity_warning field (not blocked) — DB corruption vs active attack; operator sees WARNING log
+- [Phase 02-trust-security-hardening]: decode_token_async() added as parallel async entry point alongside decode_token() (JWT-only) — avoids modifying existing callers while supporting dual JWT+API-key auth
+- [Phase 02-trust-security-hardening]: AuthContext.tier defaults to None — JWT-authenticated contexts remain backward compatible; tier only populated by API key auth
+- [Phase 02-trust-security-hardening]: publish_knowledge returns 404 for cross-org items regardless of existence — prevents org discovery via error message difference (ACL-01)
 
 ### Pending Todos
 
@@ -86,5 +95,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 02-04-PLAN.md — KnowledgeStoreDriver ABC + PgVectorDriver + FalkorDB scaffold + Celery webhook delivery
-Resume file: .planning/phases/02-trust-security-hardening/02-05-PLAN.md
+Stopped at: Completed 02-06-PLAN.md — MCP tool wiring: publish_knowledge, manage_roles, decode_token_async, webhook dispatch in approval flow
+Resume file: .planning/phases/03-graph-intelligence/ (Phase 3 — next phase)

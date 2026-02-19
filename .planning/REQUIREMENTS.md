@@ -43,9 +43,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Access Control
 
 - [x] **ACL-01**: Each organization has a private namespace isolated from other organizations
-- [ ] **ACL-02**: User can explicitly publish knowledge from private namespace to public commons — publication is reversible
-- [ ] **ACL-03**: Agent roles enforced at three levels: namespace (org), category (knowledge type), and individual item
-- [ ] **ACL-04**: Organization admin can manage agents and roles within their namespace
+- [x] **ACL-02**: User can explicitly publish knowledge from private namespace to public commons — publication is reversible
+- [x] **ACL-03**: Agent roles enforced at three levels: namespace (org), category (knowledge type), and individual item
+- [x] **ACL-04**: Organization admin can manage agents and roles within their namespace
 - [ ] **ACL-05**: Cross-namespace search supported — queries can span both private and public commons with deduplication of results appearing in both
 
 ### Knowledge Management
@@ -91,7 +91,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Infrastructure
 
 - [x] **INFRA-01**: PostgreSQL + pgvector as primary persistent store (sufficient for v1; abstraction allows Qdrant migration beyond ~50M items at 4.5K QPS with native multitenancy)
-- [ ] **INFRA-02**: Knowledge store abstraction following Graphiti's `GraphDriver` pattern — first graph backend target: Graphiti-on-FalkorDB (sub-10ms queries, Redis-based, native multitenancy)
+- [x] **INFRA-02**: Knowledge store abstraction following Graphiti's `GraphDriver` pattern — first graph backend target: Graphiti-on-FalkorDB (sub-10ms queries, Redis-based, native multitenancy)
 - [x] **INFRA-03**: Near-real-time knowledge availability (seconds, not milliseconds) via webhook push after quality gate
 - [x] **INFRA-04**: API key authentication with associated tier, request counter, and billing period reset — prerequisite for monetization
 - [x] **INFRA-05**: Concurrent multi-agent writes handled safely — event sourcing or CRDT approach for shared knowledge to prevent race conditions
@@ -183,9 +183,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | SEC-02 | Phase 2 | Complete |
 | SEC-03 | Phase 2 | Complete |
 | ACL-01 | Phase 1 | Complete |
-| ACL-02 | Phase 2 | Pending |
-| ACL-03 | Phase 2 | Pending |
-| ACL-04 | Phase 2 | Pending |
+| ACL-02 | Phase 2 | Complete |
+| ACL-03 | Phase 2 | Complete |
+| ACL-04 | Phase 2 | Complete |
 | ACL-05 | Phase 2 | Pending |
 | KM-01 | Phase 1 | Complete |
 | KM-02 | Phase 3 | Pending |
@@ -216,7 +216,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | DIST-08 | Phase 4 | Pending |
 | DIST-09 | Phase 4 | Pending |
 | INFRA-01 | Phase 1 | Complete |
-| INFRA-02 | Phase 2 | Pending |
+| INFRA-02 | Phase 2 | Complete |
 | INFRA-03 | Phase 2 | Complete |
 | INFRA-04 | Phase 2 | Complete |
 | INFRA-05 | Phase 1 | Complete |
