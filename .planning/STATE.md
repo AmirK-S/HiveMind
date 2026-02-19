@@ -36,6 +36,7 @@ Progress: [█████████░] 89% (17 of ~19 total plans done)
 - Trend: Stable
 
 *Updated after each plan completion*
+| Phase 03 P05 | 4 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,10 @@ Recent decisions affecting current work:
 - [03-06]: Provenance links stored as JSONB tags (provenance_links on canonical, source_item_ids on summaries) — erasure propagation without new DB columns
 - [03-06]: PIIPipeline imported lazily inside run_distillation() body — prevents loading spacy/GLiNER (~400MB) at Celery worker startup
 - [03-06]: quality_score = 0.6 for distilled summaries — above neutral 0.5 to reward curated content
+- [Phase 03-05]: PostgreSQL native to_tsvector/ts_rank chosen over pg_search/pg_textsearch for hybrid search — avoids OS-level extension installation; RRF pattern identical when pg_search added later
+- [Phase 03-05]: Quality boost formula: rrf_score * (0.7 + 0.3 * quality_score) computed in SQL — zero Python post-processing meets <200ms P95 target
+- [Phase 03-05]: Fire-and-forget asyncio.create_task for retrieval signal recording — non-blocking count tracking preserves search response latency
+- [Phase 03-05]: is_version_current derived from expired_at IS NULL in aggregator — reuses existing VERSION_FORK field set by conflict resolver, avoids complex sibling query
 
 ### Pending Todos
 

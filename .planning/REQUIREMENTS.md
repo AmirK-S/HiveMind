@@ -51,7 +51,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Knowledge Management
 
 - [x] **KM-01**: Every knowledge item has immutable provenance: source_agent_id, contributed_at, category, org_id, confidence_score, run_id (session), content_hash (SHA-256)
-- [ ] **KM-02**: Retrieval latency split into two tiers: pure retrieval (vector+BM25+RRF, no LLM) target <200ms P95; full pipeline (with LLM reranking) target <1.5s P95
+- [x] **KM-02**: Retrieval latency split into two tiers: pure retrieval (vector+BM25+RRF, no LLM) target <200ms P95; full pipeline (with LLM reranking) target <1.5s P95
 - [x] **KM-03**: Near-duplicate detection compares against top-10 most similar existing items using three-stage dedup: cosine similarity → LSH/MinHash → LLM confirmation above configurable threshold (default 0.95)
 - [x] **KM-04**: Knowledge items typed by category: bug_fix, config, domain_expertise, workaround, pricing_data, regulatory_rule, tooling, reasoning_trace, failed_approach, version_workaround, general — with framework/library version metadata on applicable items
 - [x] **KM-05**: Bi-temporal tracking with two independent timelines: world-time (valid_at, invalid_at — when fact was true) and system-time (created_at, expired_at — when ingested). Invalidation marks facts as expired rather than deleting, enabling point-in-time queries.
@@ -63,9 +63,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **QI-01**: Each knowledge item has a quality score (0-1) derived from behavioral signals
 - [x] **QI-02**: Quality signals include: retrieval frequency, explicit agent outcome reporting ("solved" / "did not help" per MCP-06), contradiction rate, staleness, version freshness. Retrieval frequency and usefulness exposed as separate user-visible metrics on dashboard.
-- [ ] **QI-03**: Search results ranked by quality score combined with relevance
-- [ ] **QI-04**: Sleep-time distillation runs as background job — triggered by volume threshold or conflict count. Distillation re-runs PII pipeline on generated summaries and maintains provenance links for erasure propagation.
-- [ ] **QI-05**: Distillation merges duplicates, flags contradictions, generates summaries. Quality pre-screening runs before human approval queue — users review a filtered shortlist, not raw agent output.
+- [x] **QI-03**: Search results ranked by quality score combined with relevance
+- [x] **QI-04**: Sleep-time distillation runs as background job — triggered by volume threshold or conflict count. Distillation re-runs PII pipeline on generated summaries and maintains provenance links for erasure propagation.
+- [x] **QI-05**: Distillation merges duplicates, flags contradictions, generates summaries. Quality pre-screening runs before human approval queue — users review a filtered shortlist, not raw agent output.
 
 ### Web Dashboard
 
@@ -188,7 +188,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | ACL-04 | Phase 2 | Complete |
 | ACL-05 | Phase 2 | Complete |
 | KM-01 | Phase 1 | Complete |
-| KM-02 | Phase 3 | Pending |
+| KM-02 | Phase 3 | Complete |
 | KM-03 | Phase 3 | Complete |
 | KM-04 | Phase 1 | Complete |
 | KM-05 | Phase 3 | Complete |
@@ -197,9 +197,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | KM-08 | Phase 1 | Complete |
 | QI-01 | Phase 3 | Complete |
 | QI-02 | Phase 3 | Complete |
-| QI-03 | Phase 3 | Pending |
-| QI-04 | Phase 3 | Pending |
-| QI-05 | Phase 3 | Pending |
+| QI-03 | Phase 3 | Complete |
+| QI-04 | Phase 3 | Complete |
+| QI-05 | Phase 3 | Complete |
 | DASH-01 | Phase 4 | Pending |
 | DASH-02 | Phase 4 | Pending |
 | DASH-03 | Phase 4 | Pending |
