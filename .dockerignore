@@ -1,0 +1,48 @@
+# Version control
+.git
+.gitignore
+
+# Planning and documentation (not needed in container)
+.planning
+
+# Python bytecode
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Secrets (never copy into image)
+.env
+.env.*
+
+# Virtual environments (rebuilt by uv in Docker build)
+.venv
+
+# Node.js
+node_modules
+dashboard/node_modules
+dashboard/.next
+npx/node_modules
+
+# Research and development artifacts
+deep_research
+sdks
+
+# Python build artifacts
+*.egg-info
+dist
+build
+*.whl
+
+# Test artifacts
+.coverage
+htmlcov
+.pytest_cache
+tests
+
+# Editor and OS artifacts
+.DS_Store
+.idea
+.vscode
+*.swp
+*.swo
