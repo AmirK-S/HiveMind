@@ -39,6 +39,7 @@ from hivemind.server.tools.admin_tools import manage_roles
 from hivemind.server.tools.delete_knowledge import delete_knowledge
 from hivemind.server.tools.list_knowledge import list_knowledge
 from hivemind.server.tools.publish_knowledge import publish_knowledge
+from hivemind.server.tools.report_outcome import report_outcome
 from hivemind.server.tools.search_knowledge import search_knowledge
 from hivemind.webhooks.tasks import configure_celery
 
@@ -192,6 +193,7 @@ mcp = FastMCP(
 
 # Register tools using Tool.from_function() — the correct FastMCP v2 API.
 # mcp.add_tool() expects a Tool instance, not a raw function.
+# Seven total MCP tools registered.
 mcp.add_tool(Tool.from_function(add_knowledge))
 mcp.add_tool(Tool.from_function(search_knowledge))
 mcp.add_tool(Tool.from_function(list_knowledge))
@@ -199,6 +201,8 @@ mcp.add_tool(Tool.from_function(delete_knowledge))
 # Phase 2 tools — publication and RBAC management
 mcp.add_tool(Tool.from_function(publish_knowledge))
 mcp.add_tool(Tool.from_function(manage_roles))
+# Phase 3 tools — quality signal reporting (MCP-06)
+mcp.add_tool(Tool.from_function(report_outcome))
 
 # ---------------------------------------------------------------------------
 # ASGI app: Streamable HTTP at /mcp
