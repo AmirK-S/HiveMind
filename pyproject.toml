@@ -41,6 +41,10 @@ dependencies = [
     # Async task queue
     "celery",
     "redis",
+    # Security: RBAC + rate limiting
+    "pycasbin",
+    "casbin-async-sqlalchemy-adapter",
+    "fastapi-limiter",
 ]
 
 [project.optional-dependencies]
