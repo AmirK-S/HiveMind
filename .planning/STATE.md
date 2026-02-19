@@ -83,6 +83,10 @@ Recent decisions affecting current work:
 - [Phase 03-01]: signal_metadata attribute (not metadata): SQLAlchemy reserves 'metadata' on DeclarativeBase; ORM attr renamed to signal_metadata while DB column stays 'metadata' via mapped_column('metadata', JSONB)
 - [Phase 03-01]: Four explicit nullable DateTime(tz) columns for bi-temporal (not TSTZRANGE): SQLAlchemy DataError friction with DateTimeTZRange; valid_at/invalid_at/expired_at nullable (NULL = no world-time data for existing items)
 - [Phase 03-01]: Quality weights as config-time Settings fields (not deployment_config): environment variables only — weight changes require restart, not runtime DB write
+- [03-02]: Metering integrated into require_api_key dependency (not Starlette middleware) — same DB session as auth, testable via dependency override, avoids BaseHTTPMiddleware streaming pitfalls
+- [03-02]: APIKeyHeader(auto_error=False) used so 401 (not 403) is returned for missing/invalid keys — uniform error message for both absent and invalid API keys
+- [03-02]: billing_period_start may be naive UTC — normalised with replace(tzinfo=UTC) before comparison to avoid TypeError on timezone-aware subtraction
+- [03-02]: REST layer is thin HTTP adapter over _search/_fetch_by_id — no query logic duplication between MCP and REST surfaces
 
 ### Pending Todos
 
@@ -97,5 +101,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 03-01-PLAN.md — Quality infrastructure: migration 006, QualitySignal model, compute_quality_score(), signal recording helpers, Phase 3 config
-Resume file: .planning/phases/03-quality-intelligence-sdks/ (Phase 3 — plan 02 next)
+Stopped at: Completed 03-02-PLAN.md — REST API layer at /api/v1/ with X-API-Key auth, usage metering, knowledge search/fetch/outcomes endpoints, clean OpenAPI operation IDs
+Resume file: .planning/phases/03-quality-intelligence-sdks/ (Phase 3 — plan 03 next)
