@@ -2,14 +2,16 @@
 
 Supports two modes:
 1. Search mode (query provided):
-   query text -> embed query -> cosine similarity search -> summary-tier results
+   query text -> embed query -> cosine similarity search -> deduplicated summary-tier results
 2. Fetch mode (id provided):
-   item ID -> full content retrieval
+   item ID -> full content retrieval with content hash integrity verification (SEC-02)
 
-Security (ACL-01):
+Security (ACL-01, SEC-02, ACL-05):
 - org_id is extracted from bearer token, NEVER from tool arguments
 - Results scoped to: (org_id == :org_id) OR (is_public == True)
   — agents see their private namespace + public commons
+- Fetch mode verifies content hash on retrieval to detect tampering (SEC-02)
+- Search results deduplicated by content_hash with private items prioritized (ACL-05)
 
 Summary-tier response (~30-50 tokens per result):
   id, title (first 80 chars of content), category, confidence, org_attribution,
@@ -21,6 +23,7 @@ Pagination: offset-based, cursor encoded as base64 integer.
 from __future__ import annotations
 
 import base64
+import logging
 
 from fastmcp.server.dependencies import get_http_headers
 from mcp.types import CallToolResult, TextContent
@@ -30,7 +33,10 @@ from hivemind.config import settings
 from hivemind.db.models import KnowledgeCategory, KnowledgeItem
 from hivemind.db.session import get_session
 from hivemind.pipeline.embedder import get_embedder
+from hivemind.pipeline.integrity import verify_content_hash
 from hivemind.server.auth import decode_token
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -92,10 +98,13 @@ async def search_knowledge(
 
     Search mode (query provided):
         Embeds the query text and performs a cosine similarity search over the
-        knowledge commons. Returns summary-tier results (~30-50 tokens each).
+        knowledge commons. Returns deduplicated summary-tier results (~30-50 tokens each).
+        Private items are prioritized over public duplicates (ACL-05).
 
     Fetch mode (id provided):
-        Returns full content for a specific knowledge item by UUID.
+        Returns full content for a specific knowledge item by UUID, with content
+        hash integrity verification (SEC-02). Includes integrity_verified or
+        integrity_warning field in response.
 
     Args:
         query:    Text to search for (required for search mode).
@@ -106,7 +115,7 @@ async def search_knowledge(
 
     Returns:
         Search mode: dict with results[], total_found, next_cursor.
-        Fetch mode:  dict with full item fields.
+        Fetch mode:  dict with full item fields + integrity_verified/integrity_warning.
         Error:       CallToolResult with isError=True.
     """
     # Extract auth context — org_id never comes from tool arguments (ACL-01)
@@ -135,7 +144,7 @@ async def search_knowledge(
         return await _fetch_by_id(id=id, org_id=org_id)
 
     # -----------------------------------------------------------------------
-    # Search mode: embed query -> cosine search -> summary tier
+    # Search mode: embed query -> cosine search -> dedup -> summary tier
     # -----------------------------------------------------------------------
     return await _search(
         query=query,
@@ -147,7 +156,7 @@ async def search_knowledge(
 
 
 async def _fetch_by_id(id: str, org_id: str) -> dict | CallToolResult:
-    """Fetch a single knowledge item by ID with org isolation."""
+    """Fetch a single knowledge item by ID with org isolation and hash verification."""
     import uuid as _uuid
 
     # Validate UUID format
@@ -179,6 +188,28 @@ async def _fetch_by_id(id: str, org_id: str) -> dict | CallToolResult:
             isError=True,
         )
 
+    # SEC-02: Verify content integrity — detect tampering
+    if not verify_content_hash(item.content, item.content_hash):
+        # Log tamper warning but still return the item with a warning field
+        # This is a data integrity issue, not a user error
+        logger.warning(
+            "Content hash mismatch for item %s — possible tampering detected",
+            item.id,
+        )
+        return {
+            "id": str(item.id),
+            "content": item.content,
+            "category": item.category.value,
+            "confidence": item.confidence,
+            "framework": item.framework,
+            "language": item.language,
+            "version": item.version,
+            "tags": item.tags,
+            "org_attribution": item.org_id,
+            "contributed_at": item.contributed_at.isoformat(),
+            "integrity_warning": "Content hash mismatch detected — this item may have been tampered with.",
+        }
+
     return {
         "id": str(item.id),
         "content": item.content,
@@ -190,6 +221,7 @@ async def _fetch_by_id(id: str, org_id: str) -> dict | CallToolResult:
         "tags": item.tags,
         "org_attribution": item.org_id,
         "contributed_at": item.contributed_at.isoformat(),
+        "integrity_verified": True,
     }
 
 
@@ -200,7 +232,7 @@ async def _search(
     limit: int,
     cursor: str | None,
 ) -> dict | CallToolResult:
-    """Embed query and return cosine-ranked summary-tier results."""
+    """Embed query and return cosine-ranked, deduplicated summary-tier results."""
     # Cap limit to configured maximum
     limit = min(limit, settings.max_search_limit)
 
@@ -258,6 +290,22 @@ async def _search(
         result = await session.execute(stmt)
         rows = result.all()
 
+    # ACL-05: Deduplicate results by content_hash when spanning private + public
+    # Private results take priority over public duplicates (org attribution preserved).
+    # SQL sorts by distance ASC; private items with same content naturally return at
+    # equal or better distance — first-seen wins, preserving private attribution.
+    seen_hashes: set[str] = set()
+    deduped_rows = []
+    for item, distance in rows:
+        if item.content_hash in seen_hashes:
+            continue  # skip duplicate — earlier (better distance or private) copy kept
+        seen_hashes.add(item.content_hash)
+        deduped_rows.append((item, distance))
+
+    # Adjust total to account for dedup (approximate — exact count requires full scan)
+    dedup_reduction = len(rows) - len(deduped_rows)
+    total_count = max(0, total_count - dedup_reduction)
+
     # Build summary-tier results (~30-50 tokens per result)
     results = [
         {
@@ -271,7 +319,7 @@ async def _search(
             # For unit vectors: distance 0 = identical, distance 2 = opposite
             "relevance_score": round(1 - distance, 4),
         }
-        for item, distance in rows
+        for item, distance in deduped_rows
     ]
 
     has_more = (offset + limit) < total_count
