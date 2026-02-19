@@ -42,13 +42,33 @@ def configure_celery(redis_url: str) -> None:
     Call this during server lifespan startup (e.g. in the FastAPI/FastMCP
     lifespan context) after the Redis URL is known from settings.
 
+    Also registers the Celery Beat periodic schedule:
+    - quality-signal-aggregation: every 10 minutes (QI-02, QI-03)
+    - distillation-every-30m:     every 30 minutes (QI-04, QI-05)
+
+    Note: Celery Beat only supports time-based triggering.  Condition checks
+    (volume/conflict thresholds) live inside the task body — research Pitfall 6.
+
     Args:
         redis_url: Redis connection URL (e.g. "redis://localhost:6379/0").
     """
+    from celery.schedules import crontab  # noqa: PLC0415
+
     celery_app.conf.broker_url = redis_url
     celery_app.conf.result_backend = redis_url
     celery_app.conf.task_serializer = "json"
     celery_app.conf.accept_content = ["json"]
+
+    celery_app.conf.beat_schedule = {
+        "quality-signal-aggregation": {
+            "task": "hivemind.aggregate_quality_signals",
+            "schedule": crontab(minute="*/10"),  # every 10 minutes
+        },
+        "distillation-every-30m": {
+            "task": "hivemind.distill",
+            "schedule": crontab(minute="*/30"),  # every 30 minutes
+        },
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -156,3 +176,31 @@ def dispatch_webhooks(
         dispatched += 1
 
     return dispatched
+
+
+# ---------------------------------------------------------------------------
+# Sleep-time distillation task
+# ---------------------------------------------------------------------------
+
+
+@celery_app.task(name="hivemind.distill")
+def run_distillation_task() -> dict:
+    """Sleep-time distillation — called by Celery Beat every 30 minutes.
+
+    Evaluates volume/conflict thresholds inside the task body and short-circuits
+    if conditions are not met (Celery Beat only supports time-based triggering;
+    condition logic must live in the task body — research Pitfall 6).
+
+    Merges confirmed duplicates, flags contradiction clusters, generates
+    LLM summaries with mandatory PII re-scan, and pre-screens pending
+    contributions for quality before they reach the review queue.
+
+    Uses lazy import for the distillation module to avoid loading heavy
+    ML models (PII pipeline, embeddings) in the Celery worker on startup.
+
+    Returns:
+        Dict with status and counts for each distillation step.
+    """
+    from hivemind.quality.distillation import run_distillation  # noqa: PLC0415
+
+    return run_distillation()
