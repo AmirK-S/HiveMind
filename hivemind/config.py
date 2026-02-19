@@ -33,6 +33,21 @@ class Settings(BaseSettings):
     default_search_limit: int = 10
     max_search_limit: int = 50
 
+    # Redis (rate limiting, Celery broker)
+    redis_url: str = "redis://localhost:6379/0"
+
+    # Rate limiting / anti-sybil (SEC-03)
+    burst_threshold: int = 50
+    burst_window_seconds: int = 60
+
+    # FalkorDB (INFRA-02)
+    falkordb_host: str = "localhost"
+    falkordb_port: int = 6379
+    falkordb_database: str = "hivemind"
+
+    # Injection scanner (SEC-01)
+    injection_threshold: float = 0.5
+
     model_config = SettingsConfigDict(
         env_prefix="HIVEMIND_",
         env_file=".env",

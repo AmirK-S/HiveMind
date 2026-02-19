@@ -28,6 +28,7 @@ from sqlalchemy import (
     Enum,
     Float,
     Index,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -209,6 +210,151 @@ class DeploymentConfig(Base):
 
     key: Mapped[str] = mapped_column(String(255), primary_key=True)
     value: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.datetime.utcnow,
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.datetime.utcnow,
+        onupdate=datetime.datetime.utcnow,
+    )
+
+
+class ApiKey(Base):
+    """API key for agent/integration authentication with tier-based rate limits (INFRA-04).
+
+    The raw key is never stored — only a SHA-256 hash is persisted.  The first
+    8 characters are stored as key_prefix for safe display and lookup.
+
+    Tiers: "free" (default), "pro", "enterprise" — drive rate-limit thresholds.
+    """
+
+    __tablename__ = "api_keys"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+
+    # Safe display — first 8 chars of the raw key (e.g. "hm_12345")
+    key_prefix: Mapped[str] = mapped_column(String(8), nullable=False)
+
+    # SHA-256 of the full API key — unique; raw key is never stored
+    key_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+
+    # Namespace isolation (ACL-01)
+    org_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    agent_id: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # Tier determines rate-limit thresholds (SEC-03)
+    tier: Mapped[str] = mapped_column(String(20), nullable=False, default="free")
+
+    # Usage tracking for billing-period quota enforcement
+    request_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    billing_period_start: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.datetime.utcnow,
+    )
+    billing_period_reset_days: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=30
+    )
+
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # Timestamps
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.datetime.utcnow,
+    )
+    last_used_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = (
+        # Explicit index on key_hash for O(1) key verification lookups
+        Index("ix_api_keys_key_hash", "key_hash"),
+        # Index on org_id for per-org key listing
+        Index("ix_api_keys_org_id", "org_id"),
+    )
+
+
+class AutoApproveRule(Base):
+    """Per-org, per-category auto-approval configuration (TRUST-04).
+
+    When is_auto_approve is True for a given (org_id, category) pair, the
+    approval pipeline skips the human review step for contributions in that
+    category.  Each org can set different rules per category, but only one
+    rule per (org, category) pair is allowed (unique constraint).
+    """
+
+    __tablename__ = "auto_approve_rules"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+
+    org_id: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # Reuse the existing knowledgecategory enum type — do not create a new one
+    category: Mapped[KnowledgeCategory] = mapped_column(
+        Enum(KnowledgeCategory, name="knowledgecategory"), nullable=False
+    )
+
+    is_auto_approve: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.datetime.utcnow,
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.datetime.utcnow,
+        onupdate=datetime.datetime.utcnow,
+    )
+
+    __table_args__ = (
+        # One rule per (org, category) pair — prevents contradictory entries
+        UniqueConstraint(
+            "org_id", "category", name="uq_auto_approve_rules_org_category"
+        ),
+    )
+
+
+class WebhookEndpoint(Base):
+    """Registered webhook endpoint for near-real-time push delivery (INFRA-03).
+
+    When knowledge is approved or published the delivery worker POSTs a JSON
+    payload to each active endpoint subscribed to the relevant event type.
+
+    event_types is a JSON array of strings, e.g.:
+        ["knowledge.approved", "knowledge.published"]
+    NULL means "subscribe to all events".
+    """
+
+    __tablename__ = "webhook_endpoints"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+
+    org_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # JSON array of event type strings; NULL = subscribe to all events
+    event_types: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # Timestamps
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
