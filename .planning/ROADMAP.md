@@ -68,7 +68,16 @@ Plans:
   3. Near-duplicate knowledge contributed by different agents is detected (three-stage dedup) and consolidated rather than duplicated
   4. A developer can query the commons via REST API with an API key, or via Python/TypeScript SDK, and get results equivalent to MCP search
   5. Temporal queries work — "what was known about X at time T" returns point-in-time accurate results
-**Plans**: TBD
+**Plans:** 7 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Schema migration (quality + temporal columns, quality_signals table) + quality scorer + config settings
+- [ ] 03-02-PLAN.md — REST API layer with API key auth, metering middleware, knowledge + outcomes endpoints
+- [ ] 03-03-PLAN.md — report_outcome MCP tool + REST wiring + bi-temporal query helpers + temporal search filter
+- [ ] 03-04-PLAN.md — Three-stage dedup pipeline (cosine + MinHash + LLM) + conflict resolution (UPDATE/ADD/NOOP/VERSION_FORK) + add_knowledge integration
+- [ ] 03-05-PLAN.md — Hybrid BM25+vector search with RRF + quality-boosted ranking + Celery signal aggregation task
+- [ ] 03-06-PLAN.md — Sleep-time distillation (duplicate merging, contradiction flagging, summary generation, PII re-scan, quality pre-screening)
+- [ ] 03-07-PLAN.md — Python + TypeScript SDK generation from OpenAPI spec + Makefile target + CI drift check
 
 ### Phase 4: Dashboard & Distribution
 **Goal**: A human can open the web dashboard and see the commons growing live, manage approvals and contributions, view analytics — and any developer can discover HiveMind through standard channels and install it in under 5 minutes
@@ -91,5 +100,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Agent Connection Loop | 3/4 | Complete    | 2026-02-18 |
 | 2. Trust & Security Hardening | 6/6 | Complete   | 2026-02-19 |
-| 3. Quality Intelligence & SDKs | 0/TBD | Not started | - |
+| 3. Quality Intelligence & SDKs | 0/7 | Not started | - |
 | 4. Dashboard & Distribution | 0/TBD | Not started | - |
