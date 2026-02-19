@@ -179,6 +179,32 @@ def dispatch_webhooks(
 
 
 # ---------------------------------------------------------------------------
+# Quality signal aggregation task
+# ---------------------------------------------------------------------------
+
+
+@celery_app.task(name="hivemind.aggregate_quality_signals")
+def aggregate_quality_signals_task() -> dict:
+    """Quality signal aggregation — called by Celery Beat every 10 minutes.
+
+    Queries knowledge items that received new behavioral signals since the last
+    aggregation, recomputes their quality_score via the weighted formula in
+    scorer.py, and writes the updated score back to the database.
+
+    Closes the feedback loop: agent outcomes -> signals -> aggregation -> ranking.
+
+    Uses lazy import to avoid loading database models in the worker on startup
+    before the Celery app is fully configured.
+
+    Returns:
+        Dict with items_updated (int) and run_at (ISO 8601 str).
+    """
+    from hivemind.quality.aggregator import aggregate_quality_signals  # noqa: PLC0415
+
+    return aggregate_quality_signals()
+
+
+# ---------------------------------------------------------------------------
 # Sleep-time distillation task
 # ---------------------------------------------------------------------------
 

@@ -102,6 +102,7 @@ async def lifespan(server: FastMCP) -> AsyncIterator[None]:
     # 2.8: Celery — configure broker for webhook delivery (INFRA-03)
     configure_celery(settings.redis_url)
     logger.info("Celery configured for webhook delivery.")
+    logger.info("Celery Beat schedule configured with quality signal aggregation.")
 
     # 3. Store deployment config — KM-08 model drift detection
     await _store_deployment_config(embedder)
