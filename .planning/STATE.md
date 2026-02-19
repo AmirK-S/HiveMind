@@ -62,6 +62,9 @@ Recent decisions affecting current work:
 - [02-01]: Fenced code block regex applied before inline regex (Pitfall 5) — prevents triple-backtick markers matching inline single-backtick pattern
 - [02-01]: Verbatim PII check threshold is len(pii_value) >= 4 (Pitfall 4) — avoids false positives from single-character PII fragments
 - [02-01]: Narrative-only PII analysis in strip() (TRUST-06) — PII inside code blocks is preserved intentionally; stripping it would corrupt code examples
+- [02-02]: create_type=False used in 004_auto_approve_rules migration to reference existing knowledgecategory enum — prevents "type already exists" error on upgrade
+- [02-02]: WebhookEndpoint.event_types stored as JSONB (not a join table) — subscription lists are small, no relational queries needed in Phase 2 scope
+- [02-02]: ApiKey.key_hash has both UniqueConstraint and explicit Index — constraint enforces uniqueness, index provides stable name for future DDL operations
 
 ### Pending Todos
 
@@ -76,5 +79,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 02-01-PLAN.md — prompt injection scanner, content integrity helpers, two-pass markdown-aware PII stripping
-Resume file: .planning/phases/02-trust-security-hardening/02-02-PLAN.md
+Stopped at: Completed 02-02-PLAN.md — ApiKey, AutoApproveRule, WebhookEndpoint ORM models + Alembic migrations 003-005 + Settings extension
+Resume file: .planning/phases/02-trust-security-hardening/02-03-PLAN.md

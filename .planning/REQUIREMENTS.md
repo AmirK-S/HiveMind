@@ -30,15 +30,15 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **TRUST-01**: All inbound knowledge is PII-stripped before storage using: Presidio as orchestrator + GLiNER (`knowledgator/gliner-pii-base-v1.0`) for zero-shot coverage + API secret patterns (AWS, GitHub, Google, Stripe, Slack, JWT, RSA keys) + private URL detection
 - [x] **TRUST-02**: User receives notification when agent proposes sharing knowledge — notification surfaces quality pre-screening signals and similar existing knowledge
 - [x] **TRUST-03**: User can approve or reject each knowledge contribution before it enters the commons
-- [ ] **TRUST-04**: User can configure auto-approve rules per knowledge category
-- [ ] **TRUST-05**: PII stripping runs two-pass validation: Pass 1 re-runs analyzer on anonymized text for residual leaks; Pass 2 checks output against original PII values verbatim
-- [ ] **TRUST-06**: Pipeline is markdown-aware — extracts and protects fenced/inline code blocks before anonymization, processes only narrative text, then reinjects code blocks intact
+- [x] **TRUST-04**: User can configure auto-approve rules per knowledge category
+- [x] **TRUST-05**: PII stripping runs two-pass validation: Pass 1 re-runs analyzer on anonymized text for residual leaks; Pass 2 checks output against original PII values verbatim
+- [x] **TRUST-06**: Pipeline is markdown-aware — extracts and protects fenced/inline code blocks before anonymization, processes only narrative text, then reinjects code blocks intact
 
 ### Security
 
-- [ ] **SEC-01**: Contributed knowledge scanned for prompt injection and malicious instructions before entering commons — knowledge items injected into agent context windows are a potential attack vector (ClawHavoc precedent: 824 malicious skills in agent ecosystem)
-- [ ] **SEC-02**: Content hash (SHA-256) on every knowledge item for integrity verification — knowledge items cannot be mutated in transit without detection
-- [ ] **SEC-03**: Rate limiting on contributions per agent + coordinated contribution campaign detection (anti-sybil) to prevent knowledge poisoning attacks
+- [x] **SEC-01**: Contributed knowledge scanned for prompt injection and malicious instructions before entering commons — knowledge items injected into agent context windows are a potential attack vector (ClawHavoc precedent: 824 malicious skills in agent ecosystem)
+- [x] **SEC-02**: Content hash (SHA-256) on every knowledge item for integrity verification — knowledge items cannot be mutated in transit without detection
+- [x] **SEC-03**: Rate limiting on contributions per agent + coordinated contribution campaign detection (anti-sybil) to prevent knowledge poisoning attacks
 
 ### Access Control
 
@@ -92,8 +92,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **INFRA-01**: PostgreSQL + pgvector as primary persistent store (sufficient for v1; abstraction allows Qdrant migration beyond ~50M items at 4.5K QPS with native multitenancy)
 - [ ] **INFRA-02**: Knowledge store abstraction following Graphiti's `GraphDriver` pattern — first graph backend target: Graphiti-on-FalkorDB (sub-10ms queries, Redis-based, native multitenancy)
-- [ ] **INFRA-03**: Near-real-time knowledge availability (seconds, not milliseconds) via webhook push after quality gate
-- [ ] **INFRA-04**: API key authentication with associated tier, request counter, and billing period reset — prerequisite for monetization
+- [x] **INFRA-03**: Near-real-time knowledge availability (seconds, not milliseconds) via webhook push after quality gate
+- [x] **INFRA-04**: API key authentication with associated tier, request counter, and billing period reset — prerequisite for monetization
 - [x] **INFRA-05**: Concurrent multi-agent writes handled safely — event sourcing or CRDT approach for shared knowledge to prevent race conditions
 
 ## v2 Requirements
@@ -176,12 +176,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | TRUST-01 | Phase 1 | Complete |
 | TRUST-02 | Phase 1 | Complete |
 | TRUST-03 | Phase 1 | Complete |
-| TRUST-04 | Phase 2 | Pending |
-| TRUST-05 | Phase 2 | Pending |
-| TRUST-06 | Phase 2 | Pending |
-| SEC-01 | Phase 2 | Pending |
-| SEC-02 | Phase 2 | Pending |
-| SEC-03 | Phase 2 | Pending |
+| TRUST-04 | Phase 2 | Complete |
+| TRUST-05 | Phase 2 | Complete |
+| TRUST-06 | Phase 2 | Complete |
+| SEC-01 | Phase 2 | Complete |
+| SEC-02 | Phase 2 | Complete |
+| SEC-03 | Phase 2 | Complete |
 | ACL-01 | Phase 1 | Complete |
 | ACL-02 | Phase 2 | Pending |
 | ACL-03 | Phase 2 | Pending |
@@ -217,8 +217,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | DIST-09 | Phase 4 | Pending |
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 2 | Pending |
-| INFRA-03 | Phase 2 | Pending |
-| INFRA-04 | Phase 2 | Pending |
+| INFRA-03 | Phase 2 | Complete |
+| INFRA-04 | Phase 2 | Complete |
 | INFRA-05 | Phase 1 | Complete |
 
 **Coverage:**
