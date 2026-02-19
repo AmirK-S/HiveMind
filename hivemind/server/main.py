@@ -21,9 +21,11 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
 
+from hivemind.api.router import api_router
 from hivemind.config import settings
 from hivemind.db.models import DeploymentConfig
 from hivemind.db.session import engine, get_session
@@ -212,13 +214,28 @@ _mcp_app = mcp.http_app(
     json_response=True,
 )
 
-# Wrap in a FastAPI app to add the /health endpoint and any future REST routes.
+# ---------------------------------------------------------------------------
+# Clean operation IDs for SDK generation (Pattern 6 from Phase 03 research).
+# Generates "rest-api-search_knowledge" style IDs from explicit operation_id
+# names set on each route, ensuring generated SDK method names are readable.
+# ---------------------------------------------------------------------------
+
+
+def custom_generate_unique_id(route: APIRoute) -> str:
+    """Generate deterministic, SDK-friendly operation IDs for REST routes."""
+    if route.tags:
+        return f"{route.tags[0]}-{route.name}"
+    return route.name
+
+
+# Wrap in a FastAPI app to add the /health endpoint and REST routes.
 # We mount the MCP Starlette app under the FastAPI instance.
 app = FastAPI(
     title="HiveMind",
-    description="Shared memory system for AI agents — MCP server",
+    description="Shared memory system for AI agents — MCP server + REST API",
     version="0.1.0",
     lifespan=_mcp_app.lifespan if hasattr(_mcp_app, "lifespan") else None,
+    generate_unique_id_function=custom_generate_unique_id,
 )
 
 
@@ -227,6 +244,10 @@ async def health() -> JSONResponse:
     """Simple health check endpoint for load balancers and readiness probes."""
     return JSONResponse({"status": "ok", "service": "hivemind"})
 
+
+# REST API at /api/v1/ — developer HTTP access without MCP (SDK-01)
+# Mounted AFTER /health so it does not shadow the health endpoint.
+app.include_router(api_router)
 
 # Mount the MCP ASGI app at /mcp
 app.mount("/mcp", _mcp_app)
