@@ -26,6 +26,7 @@ from fastmcp import FastMCP
 from fastmcp.tools import Tool
 
 from hivemind.api.router import api_router
+from hivemind.api.routes.well_known import well_known_router
 from hivemind.config import settings
 from hivemind.db.models import DeploymentConfig
 from hivemind.db.session import engine, get_session
@@ -253,6 +254,11 @@ async def health() -> JSONResponse:
 # REST API at /api/v1/ — developer HTTP access without MCP (SDK-01)
 # Mounted AFTER /health so it does not shadow the health endpoint.
 app.include_router(api_router)
+
+# Well-known MCP discovery endpoints — MUST be registered on top-level app
+# (not api_router) because /.well-known/ is a root path outside /api/v1/.
+# Registered BEFORE the MCP mount to ensure the route is visible to FastAPI.
+app.include_router(well_known_router)
 
 # Mount the MCP ASGI app at /mcp
 app.mount("/mcp", _mcp_app)
