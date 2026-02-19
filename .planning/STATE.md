@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Agents stop learning alone — when one agent solves a problem, every connected agent benefits
-**Current focus:** Phase 3 in progress — 3 of 7 plans done; outcome reporting + temporal queries complete
+**Current focus:** Phase 3 in progress — 4 of 7 plans done; three-stage dedup pipeline and conflict resolution complete
 
 ## Current Position
 
 Phase: 3 of 4 (Quality Intelligence & SDKs)
-Plan: 3 of 7 in current phase (3 done)
+Plan: 4 of 7 in current phase (4 done)
 Status: In progress
-Last activity: 2026-02-19 — Completed 03-03: report_outcome MCP tool, REST outcomes wiring, bi-temporal query helpers, search_knowledge temporal filter
+Last activity: 2026-02-19 — Completed 03-04: three-stage dedup pipeline (cosine/MinHash/LLM), conflict resolver (UPDATE/ADD/NOOP/VERSION_FORK), add_knowledge integration
 
-Progress: [█████████░] 78% (14 of ~18 total plans done)
+Progress: [█████████░] 83% (15 of ~18 total plans done)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: ~3 min
-- Total execution time: ~44 min
+- Total execution time: ~50 min
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [█████████░] 78% (14 of ~18 total plans done)
 |-------|-------|-------|----------|
 | 01-agent-connection-loop | 5 | ~17 min | ~3 min |
 | 02-trust-security-hardening | 6 | ~17 min | ~3 min |
-| 03-quality-intelligence-sdks | 3 (of 7) | ~10 min | ~3 min |
+| 03-quality-intelligence-sdks | 4 (of 7) | ~16 min | ~4 min |
 
 **Recent Trend:**
-- Last 14 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min), 02-01 (~2 min), 02-02 (~2 min), 02-03 (~4 min), 02-04 (~3 min), 02-05 (~3 min), 02-06 (~3 min), 03-01 (~3 min), 03-02 (~3 min), 03-03 (~4 min)
+- Last 15 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min), 02-01 (~2 min), 02-02 (~2 min), 02-03 (~4 min), 02-04 (~3 min), 02-05 (~3 min), 02-06 (~3 min), 03-01 (~3 min), 03-02 (~3 min), 03-03 (~4 min), 03-04 (~6 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -90,6 +90,10 @@ Recent decisions affecting current work:
 - [Phase 03-03]: Deduplication check scopes to outcome signal types only — same run can legitimately retrieve multiple items but should not double-report outcomes
 - [Phase 03-03]: NULL valid_at items always pass temporal filter (OR condition) — backward compat: pre-migration items treated as always-valid
 - [Phase 03-03]: version filter only applied when at_time is also provided — version alone without temporal anchor is ambiguous
+- [03-04]: anthropic_api_key as Settings field (empty default) — LLM stages in dedup and conflict resolver degrade gracefully when key absent; HIVEMIND_ANTHROPIC_API_KEY env var
+- [03-04]: NOOP returns dict with status=duplicate_detected (not isError) — NOOP is correct behavior (duplicate detected), not an error condition
+- [03-04]: VERSION_FORK captures valid_at at resolution time via _fork_valid_at — world-time fork requires new item's valid_at set at resolution not insert time
+- [03-04]: FLAGGED_FOR_REVIEW adds conflict_flagged tag — avoids schema change for rare multi-hop conflict edge case; queryable via JSONB tags field
 
 ### Pending Todos
 
@@ -104,5 +108,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 03-03-PLAN.md — report_outcome MCP tool, REST outcomes wiring, bi-temporal query helpers, search_knowledge temporal filter
-Resume file: .planning/phases/03-quality-intelligence-sdks/ (Phase 3 — plan 04 next)
+Stopped at: Completed 03-04-PLAN.md — three-stage dedup pipeline (cosine/MinHash LSH/LLM), conflict resolver (UPDATE/ADD/NOOP/VERSION_FORK outcomes), add_knowledge integration
+Resume file: .planning/phases/03-quality-intelligence-sdks/ (Phase 3 — plan 05 next)

@@ -52,11 +52,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **KM-01**: Every knowledge item has immutable provenance: source_agent_id, contributed_at, category, org_id, confidence_score, run_id (session), content_hash (SHA-256)
 - [ ] **KM-02**: Retrieval latency split into two tiers: pure retrieval (vector+BM25+RRF, no LLM) target <200ms P95; full pipeline (with LLM reranking) target <1.5s P95
-- [ ] **KM-03**: Near-duplicate detection compares against top-10 most similar existing items using three-stage dedup: cosine similarity → LSH/MinHash → LLM confirmation above configurable threshold (default 0.95)
+- [x] **KM-03**: Near-duplicate detection compares against top-10 most similar existing items using three-stage dedup: cosine similarity → LSH/MinHash → LLM confirmation above configurable threshold (default 0.95)
 - [x] **KM-04**: Knowledge items typed by category: bug_fix, config, domain_expertise, workaround, pricing_data, regulatory_rule, tooling, reasoning_trace, failed_approach, version_workaround, general — with framework/library version metadata on applicable items
 - [x] **KM-05**: Bi-temporal tracking with two independent timelines: world-time (valid_at, invalid_at — when fact was true) and system-time (created_at, expired_at — when ingested). Invalidation marks facts as expired rather than deleting, enabling point-in-time queries.
 - [x] **KM-06**: Temporal queries supported ("what was known about X at time T") including version-scoped queries ("what was known about library X version Y")
-- [ ] **KM-07**: LLM-assisted conflict resolution with four outcomes: UPDATE, ADD, NOOP, VERSION_FORK — where VERSION_FORK preserves both old and new knowledge as valid but version-scoped. Explicitly limited to single-hop direct conflicts; multi-hop conflicts flagged for human review.
+- [x] **KM-07**: LLM-assisted conflict resolution with four outcomes: UPDATE, ADD, NOOP, VERSION_FORK — where VERSION_FORK preserves both old and new knowledge as valid but version-scoped. Explicitly limited to single-hop direct conflicts; multi-hop conflicts flagged for human review.
 - [x] **KM-08**: Embedding model pinned at deployment initialization and documented; re-embedding migration procedure documented for model changes. Abstraction layer decouples stored data from embedding model version.
 
 ### Quality & Intelligence
@@ -189,11 +189,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | ACL-05 | Phase 2 | Complete |
 | KM-01 | Phase 1 | Complete |
 | KM-02 | Phase 3 | Pending |
-| KM-03 | Phase 3 | Pending |
+| KM-03 | Phase 3 | Complete |
 | KM-04 | Phase 1 | Complete |
 | KM-05 | Phase 3 | Complete |
 | KM-06 | Phase 3 | Complete |
-| KM-07 | Phase 3 | Pending |
+| KM-07 | Phase 3 | Complete |
 | KM-08 | Phase 1 | Complete |
 | QI-01 | Phase 3 | Complete |
 | QI-02 | Phase 3 | Complete |
