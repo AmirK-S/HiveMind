@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Agents stop learning alone — when one agent solves a problem, every connected agent benefits
-**Current focus:** Phase 2 in progress — 02-02 complete, 02-03 up next
+**Current focus:** Phase 2 in progress — 02-03 complete, 02-04 up next
 
 ## Current Position
 
 Phase: 2 of 4 (Trust & Security Hardening) — IN PROGRESS
-Plan: 2 of 6 in current phase (2 done)
+Plan: 3 of 6 in current phase (3 done)
 Status: In progress
-Last activity: 2026-02-19 — Completed 02-02: ApiKey, AutoApproveRule, WebhookEndpoint models + 3 Alembic migrations
+Last activity: 2026-02-19 — Completed 02-03: Casbin RBAC module + rate limiting + API key management modules
 
 Progress: [███████░░░] 44% (7 of 11 plans done; 7 of ~16 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: ~4 min
-- Total execution time: ~21 min
+- Total execution time: ~25 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-agent-connection-loop | 5 | ~17 min | ~3 min |
-| 02-trust-security-hardening | 2 | ~4 min | ~2 min |
+| 02-trust-security-hardening | 3 | ~8 min | ~3 min |
 
 **Recent Trend:**
-- Last 7 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min), 02-01 (~2 min), 02-02 (~2 min)
+- Last 8 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min), 02-01 (~2 min), 02-02 (~2 min), 02-03 (~4 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -65,6 +65,9 @@ Recent decisions affecting current work:
 - [02-02]: create_type=False used in 004_auto_approve_rules migration to reference existing knowledgecategory enum — prevents "type already exists" error on upgrade
 - [02-02]: WebhookEndpoint.event_types stored as JSONB (not a join table) — subscription lists are small, no relational queries needed in Phase 2 scope
 - [02-02]: ApiKey.key_hash has both UniqueConstraint and explicit Index — constraint enforces uniqueness, index provides stable name for future DDL operations
+- [Phase 02-trust-security-hardening]: fastapi-limiter 0.2.0 API change: no FastAPILimiter.init(redis); uses pyrate-limiter Limiter objects; init_rate_limiter() stores Redis for ZSET burst detection; endpoint RateLimiter deps in Plan 06
+- [Phase 02-trust-security-hardening]: casbin-async-sqlalchemy-adapter strips +asyncpg from database_url; adapter auto-creates casbin_rule table on first load_policy()
+- [Phase 02-trust-security-hardening]: seed_default_policies() default-permissive: admin (full *) and contributor (read+write) roles seeded per namespace to prevent lockout of existing orgs
 
 ### Pending Todos
 
@@ -79,5 +82,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 02-02-PLAN.md — ApiKey, AutoApproveRule, WebhookEndpoint ORM models + Alembic migrations 003-005 + Settings extension
-Resume file: .planning/phases/02-trust-security-hardening/02-03-PLAN.md
+Stopped at: Completed 02-03-PLAN.md — Casbin RBAC module + rate limiting + API key management security primitives
+Resume file: .planning/phases/02-trust-security-hardening/02-04-PLAN.md
