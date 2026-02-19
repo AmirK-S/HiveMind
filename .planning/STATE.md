@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Agents stop learning alone — when one agent solves a problem, every connected agent benefits
-**Current focus:** Phase 3 in progress — 4 of 7 plans done; three-stage dedup pipeline and conflict resolution complete
+**Current focus:** Phase 3 in progress — 6 of 7 plans done; distillation background job complete, one plan remaining
 
 ## Current Position
 
 Phase: 3 of 4 (Quality Intelligence & SDKs)
-Plan: 4 of 7 in current phase (4 done)
+Plan: 6 of 7 in current phase (6 done)
 Status: In progress
-Last activity: 2026-02-19 — Completed 03-04: three-stage dedup pipeline (cosine/MinHash/LLM), conflict resolver (UPDATE/ADD/NOOP/VERSION_FORK), add_knowledge integration
+Last activity: 2026-02-19 — Completed 03-06: sleep-time distillation Celery task (threshold check, duplicate merging, contradiction flagging, LLM summaries with PII re-scan, quality pre-screening, Beat schedule)
 
-Progress: [█████████░] 83% (15 of ~18 total plans done)
+Progress: [█████████░] 89% (17 of ~19 total plans done)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 17
 - Average duration: ~3 min
-- Total execution time: ~50 min
+- Total execution time: ~58 min
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [█████████░] 83% (15 of ~18 total plans done)
 |-------|-------|-------|----------|
 | 01-agent-connection-loop | 5 | ~17 min | ~3 min |
 | 02-trust-security-hardening | 6 | ~17 min | ~3 min |
-| 03-quality-intelligence-sdks | 4 (of 7) | ~16 min | ~4 min |
+| 03-quality-intelligence-sdks | 6 (of 7) | ~24 min | ~4 min |
 
 **Recent Trend:**
-- Last 15 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min), 02-01 (~2 min), 02-02 (~2 min), 02-03 (~4 min), 02-04 (~3 min), 02-05 (~3 min), 02-06 (~3 min), 03-01 (~3 min), 03-02 (~3 min), 03-03 (~4 min), 03-04 (~6 min)
+- Last 17 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min), 02-01 (~2 min), 02-02 (~2 min), 02-03 (~4 min), 02-04 (~3 min), 02-05 (~3 min), 02-06 (~3 min), 03-01 (~3 min), 03-02 (~3 min), 03-03 (~4 min), 03-04 (~6 min), 03-05 (~4 min), 03-06 (~4 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -94,6 +94,10 @@ Recent decisions affecting current work:
 - [03-04]: NOOP returns dict with status=duplicate_detected (not isError) — NOOP is correct behavior (duplicate detected), not an error condition
 - [03-04]: VERSION_FORK captures valid_at at resolution time via _fork_valid_at — world-time fork requires new item's valid_at set at resolution not insert time
 - [03-04]: FLAGGED_FOR_REVIEW adds conflict_flagged tag — avoids schema change for rare multi-hop conflict edge case; queryable via JSONB tags field
+- [03-06]: Celery Beat threshold check lives inside task body — Beat only supports time-based scheduling; condition gates must be task-internal (Pitfall 6)
+- [03-06]: Provenance links stored as JSONB tags (provenance_links on canonical, source_item_ids on summaries) — erasure propagation without new DB columns
+- [03-06]: PIIPipeline imported lazily inside run_distillation() body — prevents loading spacy/GLiNER (~400MB) at Celery worker startup
+- [03-06]: quality_score = 0.6 for distilled summaries — above neutral 0.5 to reward curated content
 
 ### Pending Todos
 
@@ -108,5 +112,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 03-04-PLAN.md — three-stage dedup pipeline (cosine/MinHash LSH/LLM), conflict resolver (UPDATE/ADD/NOOP/VERSION_FORK outcomes), add_knowledge integration
-Resume file: .planning/phases/03-quality-intelligence-sdks/ (Phase 3 — plan 05 next)
+Stopped at: Completed 03-06-PLAN.md — sleep-time distillation Celery task (threshold check, duplicate merging, contradiction flagging, LLM summaries with PII re-scan, quality pre-screening, Beat schedule)
+Resume file: .planning/phases/03-quality-intelligence-sdks/ (Phase 3 — plan 07 next)
