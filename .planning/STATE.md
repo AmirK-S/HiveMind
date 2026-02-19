@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Agents stop learning alone — when one agent solves a problem, every connected agent benefits
-**Current focus:** Phase 3 in progress — 2 of 7 plans done; REST API layer complete
+**Current focus:** Phase 3 in progress — 3 of 7 plans done; outcome reporting + temporal queries complete
 
 ## Current Position
 
 Phase: 3 of 4 (Quality Intelligence & SDKs)
-Plan: 2 of 7 in current phase (2 done)
+Plan: 3 of 7 in current phase (3 done)
 Status: In progress
-Last activity: 2026-02-19 — Completed 03-02: REST API layer at /api/v1/ with X-API-Key auth, usage metering, knowledge search/fetch/outcomes endpoints
+Last activity: 2026-02-19 — Completed 03-03: report_outcome MCP tool, REST outcomes wiring, bi-temporal query helpers, search_knowledge temporal filter
 
-Progress: [█████████░] 73% (13 of ~18 total plans done)
+Progress: [█████████░] 78% (14 of ~18 total plans done)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: ~3 min
-- Total execution time: ~40 min
+- Total execution time: ~44 min
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [█████████░] 73% (13 of ~18 total plans done)
 |-------|-------|-------|----------|
 | 01-agent-connection-loop | 5 | ~17 min | ~3 min |
 | 02-trust-security-hardening | 6 | ~17 min | ~3 min |
-| 03-quality-intelligence-sdks | 2 (of 7) | ~6 min | ~3 min |
+| 03-quality-intelligence-sdks | 3 (of 7) | ~10 min | ~3 min |
 
 **Recent Trend:**
-- Last 13 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min), 02-01 (~2 min), 02-02 (~2 min), 02-03 (~4 min), 02-04 (~3 min), 02-05 (~3 min), 02-06 (~3 min), 03-01 (~3 min), 03-02 (~3 min)
+- Last 14 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min), 02-01 (~2 min), 02-02 (~2 min), 02-03 (~4 min), 02-04 (~3 min), 02-05 (~3 min), 02-06 (~3 min), 03-01 (~3 min), 03-02 (~3 min), 03-03 (~4 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -87,6 +87,9 @@ Recent decisions affecting current work:
 - [03-02]: APIKeyHeader(auto_error=False) used so 401 (not 403) is returned for missing/invalid keys — uniform error message for both absent and invalid API keys
 - [03-02]: billing_period_start may be naive UTC — normalised with replace(tzinfo=UTC) before comparison to avoid TypeError on timezone-aware subtraction
 - [03-02]: REST layer is thin HTTP adapter over _search/_fetch_by_id — no query logic duplication between MCP and REST surfaces
+- [Phase 03-03]: Deduplication check scopes to outcome signal types only — same run can legitimately retrieve multiple items but should not double-report outcomes
+- [Phase 03-03]: NULL valid_at items always pass temporal filter (OR condition) — backward compat: pre-migration items treated as always-valid
+- [Phase 03-03]: version filter only applied when at_time is also provided — version alone without temporal anchor is ambiguous
 
 ### Pending Todos
 
@@ -101,5 +104,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 03-02-PLAN.md — REST API layer at /api/v1/ with X-API-Key auth, usage metering, knowledge search/fetch/outcomes endpoints, clean OpenAPI operation IDs
-Resume file: .planning/phases/03-quality-intelligence-sdks/ (Phase 3 — plan 03 next)
+Stopped at: Completed 03-03-PLAN.md — report_outcome MCP tool, REST outcomes wiring, bi-temporal query helpers, search_knowledge temporal filter
+Resume file: .planning/phases/03-quality-intelligence-sdks/ (Phase 3 — plan 04 next)
