@@ -1,3 +1,5 @@
+# Fallback demo using REST API (REST/MCP parity from Phase 3).
+# Preferred: Record a Claude Desktop or Cursor session — see README.
 Output scripts/demo.gif
 Set FontSize 14
 Set Width 1200
