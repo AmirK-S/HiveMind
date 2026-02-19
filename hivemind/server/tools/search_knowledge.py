@@ -17,12 +17,18 @@ Summary-tier response (~30-50 tokens per result):
   id, title (first 80 chars of content), category, confidence, org_attribution,
   relevance_score (1 - cosine_distance)
 
+Temporal queries (KM-06):
+- Optional at_time parameter (ISO 8601 string) restricts search to items valid at that time.
+- Items with NULL valid_at are treated as "always valid" (backward compat with pre-migration data).
+- Optional version parameter narrows results to a specific version when used with at_time.
+
 Pagination: offset-based, cursor encoded as base64 integer.
 """
 
 from __future__ import annotations
 
 import base64
+import datetime
 import logging
 
 from fastmcp.server.dependencies import get_http_headers
@@ -35,6 +41,7 @@ from hivemind.db.session import get_session
 from hivemind.pipeline.embedder import get_embedder
 from hivemind.pipeline.integrity import verify_content_hash
 from hivemind.server.auth import decode_token
+from hivemind.temporal.queries import build_temporal_filter
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +100,8 @@ async def search_knowledge(
     category: str | None = None,
     limit: int = 10,
     cursor: str | None = None,
+    at_time: str | None = None,
+    version: str | None = None,
 ) -> dict | CallToolResult:
     """Search or fetch knowledge items from HiveMind.
 
@@ -106,12 +115,24 @@ async def search_knowledge(
         hash integrity verification (SEC-02). Includes integrity_verified or
         integrity_warning field in response.
 
+    Temporal query mode (at_time provided, KM-06):
+        When at_time is given, search results are restricted to items that were
+        valid at that point in time. Items with NULL valid_at are treated as
+        always-valid (backward compatible with pre-temporal-migration data).
+        When combined with version, further restricts results to a specific
+        knowledge version.
+
     Args:
         query:    Text to search for (required for search mode).
         id:       UUID of a specific knowledge item to fetch (fetch mode).
         category: Optional category filter (must be a valid KnowledgeCategory).
         limit:    Maximum results to return (capped at settings.max_search_limit).
         cursor:   Pagination cursor from a previous response's next_cursor field.
+        at_time:  Optional ISO 8601 datetime string for point-in-time queries (KM-06).
+                  When provided, only items valid at this time are returned.
+                  Example: "2026-01-01T00:00:00Z"
+        version:  Optional version string filter (exact match). Only meaningful
+                  when used with at_time for version-scoped temporal queries.
 
     Returns:
         Search mode: dict with results[], total_found, next_cursor.
@@ -152,6 +173,8 @@ async def search_knowledge(
         category=category,
         limit=limit,
         cursor=cursor,
+        at_time=at_time,
+        version=version,
     )
 
 
@@ -231,8 +254,17 @@ async def _search(
     category: str | None,
     limit: int,
     cursor: str | None,
+    at_time: str | None = None,
+    version: str | None = None,
 ) -> dict | CallToolResult:
-    """Embed query and return cosine-ranked, deduplicated summary-tier results."""
+    """Embed query and return cosine-ranked, deduplicated summary-tier results.
+
+    When at_time is provided, applies a bi-temporal filter so only items valid
+    at that point in time are returned (KM-06). Items with NULL valid_at are
+    treated as always-valid (backward compatible with pre-migration data).
+    When version is also provided alongside at_time, results are further
+    narrowed to items matching that exact version string.
+    """
     # Cap limit to configured maximum
     limit = min(limit, settings.max_search_limit)
 
@@ -257,6 +289,23 @@ async def _search(
                 isError=True,
             )
 
+    # Optional temporal filter: parse at_time ISO 8601 string if provided
+    target_time: datetime.datetime | None = None
+    if at_time is not None:
+        try:
+            target_time = datetime.datetime.fromisoformat(at_time)
+        except ValueError:
+            return CallToolResult(
+                content=[TextContent(
+                    type="text",
+                    text=(
+                        f"Invalid at_time format: '{at_time}'. "
+                        "Expected ISO 8601 datetime string, e.g. '2026-01-01T00:00:00Z'."
+                    ),
+                )],
+                isError=True,
+            )
+
     # Embed the query text using the singleton embedding provider
     query_embedding = get_embedder().embed(query)
 
@@ -276,6 +325,14 @@ async def _search(
 
         if category_enum is not None:
             stmt = stmt.where(KnowledgeItem.category == category_enum)
+
+        # Temporal filter (KM-06) — applied only when at_time is specified
+        if target_time is not None:
+            for condition in build_temporal_filter(target_time):
+                stmt = stmt.where(condition)
+            # Optional version-scoped narrowing (must be combined with at_time)
+            if version is not None:
+                stmt = stmt.where(KnowledgeItem.version == version)
 
         # Count total matching items for pagination metadata
         count_subquery = stmt.subquery()
