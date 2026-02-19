@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Agents stop learning alone — when one agent solves a problem, every connected agent benefits
-**Current focus:** Phase 3 in progress — 6 of 7 plans done; distillation background job complete, one plan remaining
+**Current focus:** Phase 3 complete — 7 of 7 plans done; Python + TypeScript SDKs generated from OpenAPI spec
 
 ## Current Position
 
 Phase: 3 of 4 (Quality Intelligence & SDKs)
-Plan: 6 of 7 in current phase (6 done)
-Status: In progress
-Last activity: 2026-02-19 — Completed 03-06: sleep-time distillation Celery task (threshold check, duplicate merging, contradiction flagging, LLM summaries with PII re-scan, quality pre-screening, Beat schedule)
+Plan: 7 of 7 in current phase (7 done — phase complete)
+Status: Phase 3 complete, ready for Phase 4
+Last activity: 2026-02-19 — Completed 03-07: Python and TypeScript SDK generation from OpenAPI spec (openapi-python-client + @hey-api/openapi-ts, Makefile targets, CI drift check)
 
-Progress: [█████████░] 89% (17 of ~19 total plans done)
+Progress: [██████████] 95% (18 of ~19 total plans done)
 
 ## Performance Metrics
 
@@ -37,6 +37,7 @@ Progress: [█████████░] 89% (17 of ~19 total plans done)
 
 *Updated after each plan completion*
 | Phase 03 P05 | 4 min | 2 tasks | 4 files |
+| Phase 03-quality-intelligence-sdks P07 | 8 | 2 tasks | 30 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,9 @@ Recent decisions affecting current work:
 - [Phase 03-05]: Quality boost formula: rrf_score * (0.7 + 0.3 * quality_score) computed in SQL — zero Python post-processing meets <200ms P95 target
 - [Phase 03-05]: Fire-and-forget asyncio.create_task for retrieval signal recording — non-blocking count tracking preserves search response latency
 - [Phase 03-05]: is_version_current derived from expired_at IS NULL in aggregator — reuses existing VERSION_FORK field set by conflict resolver, avoids complex sibling query
+- [Phase 03-07]: openapi.json excluded from git via .gitignore — build artifact only, generated SDKs committed
+- [Phase 03-07]: scripts/export_openapi.py imports FastAPI app directly — no running server needed for SDK generation, DB/Redis deps bypassed
+- [Phase 03-07]: @hey-api/openapi-ts used for TypeScript SDK — actively maintained fork of abandoned openapi-typescript-codegen
 
 ### Pending Todos
 
@@ -117,5 +121,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 03-06-PLAN.md — sleep-time distillation Celery task (threshold check, duplicate merging, contradiction flagging, LLM summaries with PII re-scan, quality pre-screening, Beat schedule)
-Resume file: .planning/phases/03-quality-intelligence-sdks/ (Phase 3 — plan 07 next)
+Stopped at: Completed 03-07-PLAN.md — Python and TypeScript SDK generation from OpenAPI spec (openapi-python-client + @hey-api/openapi-ts, Makefile generate-sdks and check-sdk-drift targets)
+Resume file: .planning/phases/04-/ (Phase 4 — next phase)

@@ -22,8 +22,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### API & SDKs
 
 - [x] **SDK-01**: Developer can interact with HiveMind via REST API (CRUD operations, API key auth with usage metering per billing period)
-- [ ] **SDK-02**: Developer can integrate via Python SDK
-- [ ] **SDK-03**: Developer can integrate via TypeScript SDK
+- [x] **SDK-02**: Developer can integrate via Python SDK
+- [x] **SDK-03**: Developer can integrate via TypeScript SDK
 
 ### Trust & Privacy
 
@@ -171,8 +171,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | MCP-05 | Phase 1 | Complete |
 | MCP-06 | Phase 3 | Complete |
 | SDK-01 | Phase 3 | Complete |
-| SDK-02 | Phase 3 | Pending |
-| SDK-03 | Phase 3 | Pending |
+| SDK-02 | Phase 3 | Complete |
+| SDK-03 | Phase 3 | Complete |
 | TRUST-01 | Phase 1 | Complete |
 | TRUST-02 | Phase 1 | Complete |
 | TRUST-03 | Phase 1 | Complete |
