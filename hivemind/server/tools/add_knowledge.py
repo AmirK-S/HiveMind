@@ -18,7 +18,9 @@ Flow:
   4. Auto-reject if should_reject is True
   5. Compute content hash of cleaned text
   5a. Check auto-approve rules (TRUST-04)
-  5b. Insert directly with embedding (auto-approve path) OR into pending queue (normal path)
+  5b. Run dedup pipeline (KM-03) — three-stage near-duplicate detection
+  5c. If DUPLICATE: run conflict resolution (KM-07) — UPDATE/ADD/NOOP/VERSION_FORK
+  5d. Insert directly with embedding (auto-approve path) OR into pending queue (normal path)
   6. Return contribution_id + status
 """
 
@@ -202,9 +204,63 @@ async def add_knowledge(
     import hashlib
     content_hash = hashlib.sha256(cleaned_content.encode()).hexdigest()
 
-    # Step 5: Insert — either directly (auto-approve) or into pending queue
+    # Step 5: Dedup pipeline — three-stage near-duplicate detection (KM-03)
+    # Runs BEFORE the DB insert to avoid writing duplicates into the commons.
+    # Lazy imports to avoid circular dependencies.
+    from hivemind.dedup.pipeline import run_dedup_pipeline
+    from hivemind.conflict.resolver import apply_conflict_resolution, resolve_conflict
+
+    dedup_result = await run_dedup_pipeline(cleaned_content, auth.org_id)
+
+    # Track VERSION_FORK valid_at for new item insertion
+    _fork_valid_at = None
+
+    if dedup_result.get("action") == "DUPLICATE":
+        # Step 5a: Conflict resolution — classify relationship with the best match
+        top_duplicate = dedup_result["duplicates"][0] if dedup_result.get("duplicates") else {}
+        resolution = await resolve_conflict(cleaned_content, top_duplicate, auth.org_id)
+
+        if resolution["action"] == "NOOP":
+            # Exact or near-exact duplicate — block insertion, return informational
+            return {
+                "contribution_id": resolution.get("existing_item_id", ""),
+                "status": "duplicate_detected",
+                "category": category,
+                "message": (
+                    "Contribution not added: near-duplicate already exists in the commons. "
+                    f"Reason: {resolution.get('reason', 'duplicate')}"
+                ),
+                "duplicate_of": resolution.get("existing_item_id", ""),
+            }
+
+        if resolution["action"] in ("UPDATE", "VERSION_FORK"):
+            # Apply resolution — expire/invalidate the existing item
+            applied = await apply_conflict_resolution(
+                resolution=resolution,
+                new_content=cleaned_content,
+                existing_item_id=resolution.get("existing_item_id", ""),
+                org_id=auth.org_id,
+            )
+            if resolution["action"] == "VERSION_FORK":
+                # Capture valid_at for new item (world-time start of the fork)
+                _fork_valid_at = applied.get("valid_at")
+            # Fall through to insert the new item below
+
+        elif resolution["action"] == "FLAGGED_FOR_REVIEW":
+            # Multi-hop conflict — insert as pending with a conflict flag note
+            # Store the flag in the tags field to avoid schema change
+            if tags is None:
+                tags = []
+            tags = list(tags)
+            if "conflict_flagged" not in tags:
+                tags.append("conflict_flagged")
+            # Fall through to normal pending queue insert below
+
+        # resolution["action"] == "ADD": fall through to normal insert (no DB changes)
+
+    # Step 5b: Insert — either directly (auto-approve) or into pending queue
     async with get_session() as session:
-        # Step 5a: Check auto-approve rules (TRUST-04)
+        # Step 5b-i: Check auto-approve rules (TRUST-04)
         auto_approve_result = await session.execute(
             select(AutoApproveRule).where(
                 AutoApproveRule.org_id == auth.org_id,
@@ -233,6 +289,8 @@ async def add_knowledge(
                 embedding=embedding,
                 contributed_at=datetime.datetime.now(datetime.timezone.utc),
                 approved_at=datetime.datetime.now(datetime.timezone.utc),
+                # VERSION_FORK: new item takes valid_at = fork time (world-time start)
+                valid_at=_fork_valid_at,
             )
             session.add(item)
             await session.commit()
