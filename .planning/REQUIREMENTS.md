@@ -78,14 +78,14 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Distribution & Onboarding
 
-- [ ] **DIST-01**: npx one-liner install for the MCP server (zero-friction first connection)
-- [ ] **DIST-02**: Docker image published and maintained on Docker Hub
-- [ ] **DIST-03**: Install configs for all major MCP clients in README: Claude Desktop, Cursor, VS Code, ChatGPT Desktop, Windsurf, Gemini CLI
+- [x] **DIST-01**: npx one-liner install for the MCP server (zero-friction first connection)
+- [x] **DIST-02**: Docker image published and maintained on Docker Hub
+- [x] **DIST-03**: Install configs for all major MCP clients in README: Claude Desktop, Cursor, VS Code, ChatGPT Desktop, Windsurf, Gemini CLI
 - [ ] **DIST-04**: Smithery.ai listing for one-click hosted install
-- [ ] **DIST-05**: OpenClaw skill wrapper (SKILL.md format) so OpenClaw agents can use HiveMind natively
+- [x] **DIST-05**: OpenClaw skill wrapper (SKILL.md format) so OpenClaw agents can use HiveMind natively
 - [ ] **DIST-06**: Submit to MCP discovery directories: PulseMCP, Glama.ai, mcp.so, AwesomeClaude.ai, official MCP Registry, punkpeye/awesome-mcp-servers
-- [ ] **DIST-07**: LangChain tool wrapper (`HiveMindRetriever`) published to PyPI
-- [ ] **DIST-08**: CrewAI tool wrapper (`HiveMindTool`) compatible with CrewAI tool interface
+- [x] **DIST-07**: LangChain tool wrapper (`HiveMindRetriever`) published to PyPI
+- [x] **DIST-08**: CrewAI tool wrapper (`HiveMindTool`) compatible with CrewAI tool interface
 - [ ] **DIST-09**: 30-second demo GIF in README showing two agents sharing knowledge via MCP in Claude Desktop or Cursor
 
 ### Infrastructure
@@ -206,14 +206,14 @@ Deferred to future release. Tracked but not in current roadmap.
 | DASH-04 | Phase 4 | Pending |
 | DASH-05 | Phase 4 | Pending |
 | DASH-06 | Phase 4 | Pending |
-| DIST-01 | Phase 4 | Pending |
-| DIST-02 | Phase 4 | Pending |
-| DIST-03 | Phase 4 | Pending |
+| DIST-01 | Phase 4 | Complete |
+| DIST-02 | Phase 4 | Complete |
+| DIST-03 | Phase 4 | Complete |
 | DIST-04 | Phase 4 | Pending |
-| DIST-05 | Phase 4 | Pending |
+| DIST-05 | Phase 4 | Complete |
 | DIST-06 | Phase 4 | Pending |
-| DIST-07 | Phase 4 | Pending |
-| DIST-08 | Phase 4 | Pending |
+| DIST-07 | Phase 4 | Complete |
+| DIST-08 | Phase 4 | Complete |
 | DIST-09 | Phase 4 | Pending |
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 2 | Complete |
