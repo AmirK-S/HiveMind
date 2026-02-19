@@ -46,7 +46,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **ACL-02**: User can explicitly publish knowledge from private namespace to public commons — publication is reversible
 - [x] **ACL-03**: Agent roles enforced at three levels: namespace (org), category (knowledge type), and individual item
 - [x] **ACL-04**: Organization admin can manage agents and roles within their namespace
-- [ ] **ACL-05**: Cross-namespace search supported — queries can span both private and public commons with deduplication of results appearing in both
+- [x] **ACL-05**: Cross-namespace search supported — queries can span both private and public commons with deduplication of results appearing in both
 
 ### Knowledge Management
 
@@ -186,7 +186,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | ACL-02 | Phase 2 | Complete |
 | ACL-03 | Phase 2 | Complete |
 | ACL-04 | Phase 2 | Complete |
-| ACL-05 | Phase 2 | Pending |
+| ACL-05 | Phase 2 | Complete |
 | KM-01 | Phase 1 | Complete |
 | KM-02 | Phase 3 | Pending |
 | KM-03 | Phase 3 | Pending |

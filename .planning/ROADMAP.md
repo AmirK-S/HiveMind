@@ -13,7 +13,7 @@ HiveMind ships in four phases optimized for speed-to-first-agent-connection. Pha
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Agent Connection Loop** - Working MCP server with core tools, PII stripping, user approval gate, org namespaces, and knowledge schema — the minimum to get agents connecting and contributing
-- [ ] **Phase 2: Trust & Security Hardening** - Advanced PII pipeline, prompt injection scanning, rate limiting, role-based access control, cross-namespace search, and API key auth — making the commons safe to open broadly
+- [x] **Phase 2: Trust & Security Hardening** - Advanced PII pipeline, prompt injection scanning, rate limiting, role-based access control, cross-namespace search, and API key auth — making the commons safe to open broadly (completed 2026-02-19)
 - [ ] **Phase 3: Quality Intelligence & SDKs** - Quality scoring from behavioral signals, bi-temporal tracking, conflict resolution, near-duplicate detection, sleep-time distillation, and REST/Python/TypeScript SDKs
 - [ ] **Phase 4: Dashboard & Distribution** - Web dashboard for humans to observe and manage the commons, plus all distribution channels (npx, Docker, Smithery, MCP directories, framework wrappers)
 
@@ -48,7 +48,7 @@ Plans:
   3. A content hash (SHA-256) is attached to every knowledge item and verified on retrieval — tampering is detectable
   4. An organization admin can manage agents and roles, with access enforced at namespace, category, and item levels
   5. An agent can search across both private namespace and public commons in a single query, with results deduplicated
-**Plans:** 6 plans
+**Plans:** 6/6 plans complete
 
 Plans:
 - [ ] 02-01-PLAN.md — Pipeline hardening: prompt injection scanner (SEC-01), two-pass PII validation (TRUST-05), markdown-aware code block preservation (TRUST-06), content integrity helpers (SEC-02)
@@ -90,6 +90,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Agent Connection Loop | 3/4 | Complete    | 2026-02-18 |
-| 2. Trust & Security Hardening | 0/6 | Planned | - |
+| 2. Trust & Security Hardening | 6/6 | Complete   | 2026-02-19 |
 | 3. Quality Intelligence & SDKs | 0/TBD | Not started | - |
 | 4. Dashboard & Distribution | 0/TBD | Not started | - |
