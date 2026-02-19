@@ -1,32 +1,41 @@
 """add_knowledge MCP tool for HiveMind.
 
-Security design (ACL-01, TRUST-01):
+Security design (ACL-01, TRUST-01, SEC-01, SEC-03, TRUST-04):
 - org_id is ALWAYS taken from the bearer token, never from tool arguments
+- Raw content is scanned for prompt injection BEFORE PII stripping (SEC-01)
+- Anti-sybil burst detection enforced after injection scan (SEC-03)
 - Raw content is PII-stripped BEFORE any DB insert — raw text is never stored
 - Content with >50% placeholders is auto-rejected (too redacted to be useful)
-- Contributions enter pending_contributions (quarantine), not knowledge_items (commons)
+- Auto-approve rules checked post-hash — matching org+category skips pending queue (TRUST-04)
+- Contributions enter pending_contributions (quarantine) or knowledge_items (auto-approved)
 
 Flow:
   1. Extract and verify bearer token -> AuthContext
   2. Validate input parameters
+  1.5. Scan for prompt injection (SEC-01)
+  1.6. Anti-sybil burst detection (SEC-03)
   3. Strip PII from content
   4. Auto-reject if should_reject is True
   5. Compute content hash of cleaned text
-  6. Insert into pending_contributions
-  7. Return contribution_id + status='queued'
+  5a. Check auto-approve rules (TRUST-04)
+  5b. Insert directly with embedding (auto-approve path) OR into pending queue (normal path)
+  6. Return contribution_id + status
 """
 
 from __future__ import annotations
 
 import datetime
-import hashlib
 
 from fastmcp.server.dependencies import get_http_headers
 from mcp.types import CallToolResult, TextContent
+from sqlalchemy import select
 
-from hivemind.db.models import KnowledgeCategory, PendingContribution
+from hivemind.db.models import AutoApproveRule, KnowledgeCategory, KnowledgeItem, PendingContribution
 from hivemind.db.session import get_session
+from hivemind.pipeline.embedder import get_embedder
+from hivemind.pipeline.injection import InjectionScanner
 from hivemind.pipeline.pii import strip_pii
+from hivemind.security.rate_limit import check_burst, get_redis_connection
 from hivemind.server.auth import decode_token
 
 
@@ -72,10 +81,11 @@ async def add_knowledge(
 ) -> dict | CallToolResult:
     """Contribute a knowledge item to HiveMind.
 
-    The content is PII-stripped before any storage. If more than 50% of the
-    post-strip content is placeholder tokens, the contribution is auto-rejected.
-    On success, the item enters the pending_contributions queue and an operator
-    can approve it via the CLI.
+    The content is scanned for prompt injection, then PII-stripped before any
+    storage. If more than 50% of the post-strip content is placeholder tokens,
+    the contribution is auto-rejected. If an auto-approve rule matches the
+    org+category, the item is inserted directly into the knowledge commons;
+    otherwise it enters the pending_contributions queue for operator review.
 
     Args:
         content:    The knowledge text to contribute (min 10 characters).
@@ -134,6 +144,43 @@ async def add_knowledge(
     except ValueError as exc:
         return _auth_error(str(exc))
 
+    # Step 1.5: Scan for prompt injection BEFORE PII stripping (SEC-01)
+    # Injection patterns may be hidden in text that gets partially redacted —
+    # scan raw content before any modification.
+    is_injection, injection_score = InjectionScanner.get_instance().is_injection(content)
+    if is_injection:
+        return CallToolResult(
+            content=[TextContent(
+                type="text",
+                text=(
+                    f"Rejected: content contains potential prompt injection "
+                    f"(confidence: {injection_score:.0%}). "
+                    f"Malicious instructions are not allowed in the commons."
+                ),
+            )],
+            isError=True,
+        )
+
+    # Step 1.6: Anti-sybil burst detection (SEC-03)
+    # Check if this org is submitting contributions at an anomalous rate.
+    # Uses Redis ZSET sliding window from rate_limit.py.
+    redis_conn = get_redis_connection()
+    if redis_conn is not None:
+        import uuid as _uuid
+        contribution_id = str(_uuid.uuid4())  # temp ID for burst tracking
+        is_burst = await check_burst(auth.org_id, contribution_id, redis_conn)
+        if is_burst:
+            return CallToolResult(
+                content=[TextContent(
+                    type="text",
+                    text=(
+                        "Rate limit exceeded: too many contributions in a short window. "
+                        "Please wait before submitting again."
+                    ),
+                )],
+                isError=True,
+            )
+
     # Step 2: PII-strip the content BEFORE any storage (TRUST-01)
     # Raw content is never persisted — only the cleaned version.
     cleaned_content, should_reject = strip_pii(content)
@@ -152,32 +199,72 @@ async def add_knowledge(
         )
 
     # Step 4: Compute content hash of the cleaned text
+    import hashlib
     content_hash = hashlib.sha256(cleaned_content.encode()).hexdigest()
 
-    # Step 5: Insert into pending_contributions (quarantine — not the commons)
+    # Step 5: Insert — either directly (auto-approve) or into pending queue
     async with get_session() as session:
-        contribution = PendingContribution(
-            org_id=auth.org_id,
-            source_agent_id=auth.agent_id,
-            run_id=run_id,
-            content=cleaned_content,
-            content_hash=content_hash,
-            category=category_enum,
-            confidence=confidence,
-            framework=framework,
-            language=language,
-            version=version,
-            tags={"tags": tags} if tags else None,
-            contributed_at=datetime.datetime.now(datetime.timezone.utc),
+        # Step 5a: Check auto-approve rules (TRUST-04)
+        auto_approve_result = await session.execute(
+            select(AutoApproveRule).where(
+                AutoApproveRule.org_id == auth.org_id,
+                AutoApproveRule.category == category_enum,
+                AutoApproveRule.is_auto_approve == True,  # noqa: E712
+            )
         )
-        session.add(contribution)
-        await session.commit()
-        contribution_id = str(contribution.id)
+        auto_approve_rule = auto_approve_result.scalar_one_or_none()
 
-    # Step 6: Return success — agent moves on (fire-and-forget pattern)
-    return {
-        "contribution_id": contribution_id,
-        "status": "queued",
-        "category": category,
-        "message": "Knowledge contribution queued for review.",
-    }
+        if auto_approve_rule:
+            # Auto-approved: skip pending queue, insert directly with embedding
+            embedding = get_embedder().embed(cleaned_content)
+            item = KnowledgeItem(
+                org_id=auth.org_id,
+                source_agent_id=auth.agent_id,
+                run_id=run_id,
+                content=cleaned_content,
+                content_hash=content_hash,
+                category=category_enum,
+                confidence=confidence,
+                framework=framework,
+                language=language,
+                version=version,
+                tags={"tags": tags} if tags else None,
+                is_public=False,  # auto-approved items start private
+                embedding=embedding,
+                contributed_at=datetime.datetime.now(datetime.timezone.utc),
+                approved_at=datetime.datetime.now(datetime.timezone.utc),
+            )
+            session.add(item)
+            await session.commit()
+            return {
+                "contribution_id": str(item.id),
+                "status": "auto_approved",
+                "category": category,
+                "message": "Knowledge contribution auto-approved and added to the commons.",
+            }
+        else:
+            # Normal flow: insert to pending_contributions queue
+            contribution = PendingContribution(
+                org_id=auth.org_id,
+                source_agent_id=auth.agent_id,
+                run_id=run_id,
+                content=cleaned_content,
+                content_hash=content_hash,
+                category=category_enum,
+                confidence=confidence,
+                framework=framework,
+                language=language,
+                version=version,
+                tags={"tags": tags} if tags else None,
+                contributed_at=datetime.datetime.now(datetime.timezone.utc),
+            )
+            session.add(contribution)
+            await session.commit()
+            contribution_id = str(contribution.id)
+
+        return {
+            "contribution_id": contribution_id,
+            "status": "queued",
+            "category": category,
+            "message": "Knowledge contribution queued for review.",
+        }
