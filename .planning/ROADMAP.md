@@ -89,15 +89,17 @@ Plans:
   3. A developer runs a single `npx` command, edits one config file, and makes a successful `search_knowledge` call from Claude Desktop or Cursor — all within 5 minutes
   4. HiveMind is listed in at least 4 MCP discovery directories and has framework wrappers (LangChain, CrewAI, OpenClaw) published to their respective registries
   5. A 30-second demo GIF in the README shows two agents sharing knowledge via MCP in a real client
-**Plans:** 6/6 plans complete
+**Plans:** 8 plans (6 complete, 2 gap closure)
 
 Plans:
-- [ ] 04-01-PLAN.md — FastAPI backend extensions: SSE stream, contributions approve/reject, stats endpoints
-- [ ] 04-02-PLAN.md — Dashboard foundation: Next.js 15 scaffold, live commons/private feeds with SSE, search page
-- [ ] 04-03-PLAN.md — Dashboard features: contributions review, item detail with provenance, analytics with reciprocity ledger
-- [ ] 04-04-PLAN.md — Distribution infrastructure: npx wrapper, Dockerfile, MCP client configs for 6 clients
-- [ ] 04-05-PLAN.md — Framework wrappers: LangChain HiveMindRetriever, CrewAI HiveMindTool, OpenClaw SKILL.md
-- [ ] 04-06-PLAN.md — Registry submissions: Smithery server-card, Glama.ai, demo GIF, 6 directory submissions
+- [x] 04-01-PLAN.md — FastAPI backend extensions: SSE stream, contributions approve/reject, stats endpoints
+- [x] 04-02-PLAN.md — Dashboard foundation: Next.js 15 scaffold, live commons/private feeds with SSE, search page
+- [x] 04-03-PLAN.md — Dashboard features: contributions review, item detail with provenance, analytics with reciprocity ledger
+- [x] 04-04-PLAN.md — Distribution infrastructure: npx wrapper, Dockerfile, MCP client configs for 6 clients
+- [x] 04-05-PLAN.md — Framework wrappers: LangChain HiveMindRetriever, CrewAI HiveMindTool, OpenClaw SKILL.md
+- [x] 04-06-PLAN.md — Registry submissions: Smithery server-card, Glama.ai, demo GIF, 6 directory submissions
+- [ ] 04-07-PLAN.md — Gap closure: Fix placeholder values, publish PyPI packages, submit to MCP directories
+- [ ] 04-08-PLAN.md — Gap closure: Record or generate demo GIF showing MCP client session
 
 ## Progress
 
