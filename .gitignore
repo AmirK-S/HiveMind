@@ -38,6 +38,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Planning (internal project management)
+.planning/
+
 # Misc
 ls
 -la
