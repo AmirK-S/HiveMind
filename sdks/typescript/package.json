@@ -1,0 +1,16 @@
+{
+  "name": "@hivemind/typescript-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Auto-generated TypeScript client for the HiveMind REST API",
+  "type": "module",
+  "scripts": {
+    "generate": "openapi-ts"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.64.0"
+  },
+  "dependencies": {
+    "@hey-api/client-fetch": "^0.9.0"
+  }
+}
