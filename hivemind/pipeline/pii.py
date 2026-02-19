@@ -9,7 +9,8 @@ Multi-layer approach:
 Design decisions (per user):
 - Silent stripping: no logging of what was detected, no before/after comparison
 - PII stripped BEFORE any storage — raw text is never persisted
-- Code snippets are stripped too — safety first
+- Markdown-aware: fenced and inline code blocks are preserved intact (TRUST-06)
+- Two-pass validation: re-analyze anonymized text + verbatim check (TRUST-05)
 - Auto-reject if placeholder tokens exceed 50% of post-strip token count
 - Typed placeholders for confident entity types; [REDACTED] as fallback
 
@@ -21,12 +22,13 @@ Import strategy:
   Lazy imports allow `from hivemind.pipeline.pii import strip_pii` to work
   without triggering the spacy import chain until PIIPipeline is first used.
 
-Exports: PIIPipeline, strip_pii
+Exports: PIIPipeline, strip_pii, _extract_code_blocks, _reinject_code_blocks
 """
 
 from __future__ import annotations
 
 import re
+import uuid
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -44,6 +46,66 @@ if TYPE_CHECKING:
 _PLACEHOLDER_RE = re.compile(
     r'\[(?:EMAIL|PHONE|NAME|LOCATION|API_KEY|CREDIT_CARD|IP_ADDRESS|USERNAME|REDACTED)\]'
 )
+
+# ---------------------------------------------------------------------------
+# Code block extraction regexes (TRUST-06)
+# Fenced code blocks: ```...``` or ~~~...~~~
+# Inline code spans: `...`
+# Order of application matters: fenced first, then inline — this ensures
+# triple-backtick fenced blocks are already replaced before the inline regex
+# runs, avoiding false matches on the opening/closing triple backticks.
+# (See Phase 2 research: Pitfall 5)
+# ---------------------------------------------------------------------------
+_FENCED_CODE_RE = re.compile(r'(```[\s\S]*?```|~~~[\s\S]*?~~~)', re.MULTILINE)
+_INLINE_CODE_RE = re.compile(r'(`[^`\n]+`)')
+
+
+def _extract_code_blocks(text: str) -> tuple[str, dict[str, str]]:
+    """Replace fenced and inline code blocks with UUID placeholders.
+
+    Fenced blocks (``` or ~~~) are replaced first with ``__CODE_BLOCK_{hex}__``
+    placeholders. Inline backtick spans are replaced second with
+    ``__INLINE_{hex}__`` placeholders. The original values are stored in the
+    returned mapping so they can be reinjected intact after PII stripping.
+
+    Args:
+        text: Raw markdown text potentially containing code blocks.
+
+    Returns:
+        (modified_text, placeholder_map) where placeholder_map maps each
+        placeholder key to the original code block string.
+    """
+    placeholder_map: dict[str, str] = {}
+
+    def replace_fenced(m: re.Match) -> str:  # type: ignore[type-arg]
+        key = f"__CODE_BLOCK_{uuid.uuid4().hex}__"
+        placeholder_map[key] = m.group(0)
+        return key
+
+    def replace_inline(m: re.Match) -> str:  # type: ignore[type-arg]
+        key = f"__INLINE_{uuid.uuid4().hex}__"
+        placeholder_map[key] = m.group(0)
+        return key
+
+    text = _FENCED_CODE_RE.sub(replace_fenced, text)
+    text = _INLINE_CODE_RE.sub(replace_inline, text)
+    return text, placeholder_map
+
+
+def _reinject_code_blocks(text: str, placeholder_map: dict[str, str]) -> str:
+    """Restore original code blocks by replacing placeholders in *text*.
+
+    Args:
+        text: Anonymized text that may contain ``__CODE_BLOCK_*__`` or
+              ``__INLINE_*__`` placeholders from a prior _extract_code_blocks call.
+        placeholder_map: Mapping from placeholder key to original code block.
+
+    Returns:
+        Text with all placeholders replaced by their original code block content.
+    """
+    for key, original in placeholder_map.items():
+        text = text.replace(key, original)
+    return text
 
 
 def _build_api_key_patterns() -> list:
@@ -186,30 +248,76 @@ class PIIPipeline:
     def strip(self, text: str) -> tuple[str, bool]:
         """Strip PII from *text* and return (cleaned_text, should_reject).
 
+        Implements TRUST-05 (two-pass validation) and TRUST-06 (markdown-aware
+        code block preservation).
+
         Args:
             text: Raw input content (may contain emails, keys, names, etc.)
 
         Returns:
             cleaned_text: Content with PII replaced by typed placeholders.
+                          Fenced and inline code blocks are preserved intact.
             should_reject: True if >50% of post-strip tokens are placeholders,
                            indicating the content is too redacted to be useful.
 
         This method is intentionally SILENT — it does not log what was detected
         or produce before/after comparisons. The caller only ever sees the cleaned
         version.
-        """
-        # Step 1: detect entities
-        results = self._analyzer.analyze(text=text, language="en")
 
-        # Step 2: replace entities with typed placeholders
+        Two-pass validation (TRUST-05):
+            Pass 1 — Standard Presidio analysis + anonymization on narrative text.
+            Pass 2a — Re-run analyzer on anonymized output; re-strip any residual.
+            Pass 2b — Verbatim check: if any original PII value (len >= 4) still
+                      appears literally in the output, replace with [REDACTED].
+
+        Markdown-aware (TRUST-06):
+            Fenced code blocks (``` or ~~~) and inline code spans (`) are
+            extracted before any analysis and reinjected intact afterward.
+            PII inside code blocks is never stripped.
+        """
+        # TRUST-06: Extract code blocks before any PII analysis.
+        # The narrative text (no code blocks) is what we analyze for PII.
+        narrative, code_map = _extract_code_blocks(text)
+
+        # Pass 1: detect and anonymize PII in narrative text
+        results = self._analyzer.analyze(text=narrative, language="en")
+
+        # Capture original PII values for the verbatim check (Pass 2b).
+        # We collect them here, before anonymization modifies the text.
+        original_pii_values = [narrative[r.start:r.end] for r in results]
+
         anonymized = self._anonymizer.anonymize(
-            text=text,
+            text=narrative,
             analyzer_results=results,
             operators=self._operators,
         )
-        cleaned = anonymized.text
+        cleaned_narrative = anonymized.text
 
-        # Step 3: 50% rejection check
+        # TRUST-05 Pass 2a: re-run analyzer on anonymized text.
+        # Presidio may miss PII that becomes visible only after surrounding
+        # context is removed (e.g., a name next to a redacted email). Re-strip
+        # any residual findings.
+        residual_results = self._analyzer.analyze(text=cleaned_narrative, language="en")
+        if residual_results:
+            cleaned_narrative = self._anonymizer.anonymize(
+                text=cleaned_narrative,
+                analyzer_results=residual_results,
+                operators=self._operators,
+            ).text
+
+        # TRUST-05 Pass 2b: verbatim check.
+        # For each original PII value of length >= 4, check if it literally
+        # survived into the output. Length threshold avoids false positives from
+        # single-character or very short fragments (see Phase 2 research: Pitfall 4).
+        for pii_value in original_pii_values:
+            if len(pii_value) >= 4 and pii_value in cleaned_narrative:
+                cleaned_narrative = cleaned_narrative.replace(pii_value, "[REDACTED]")
+
+        # TRUST-06: Reinject code blocks intact.
+        # The PII scanner never touched these blocks.
+        cleaned = _reinject_code_blocks(cleaned_narrative, code_map)
+
+        # 50% rejection check on POST-strip token count (existing decision).
         # Count placeholder tokens in the anonymized text and compare to total
         # token count. Using the POST-strip token count (not original) avoids
         # inflation from multi-word names collapsing into a single [NAME] token.
