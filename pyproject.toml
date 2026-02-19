@@ -45,6 +45,8 @@ dependencies = [
     "pycasbin",
     "casbin-async-sqlalchemy-adapter",
     "fastapi-limiter",
+    # Near-duplicate detection (KM-03)
+    "datasketch",
 ]
 
 [project.optional-dependencies]

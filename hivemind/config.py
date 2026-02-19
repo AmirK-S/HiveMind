@@ -68,6 +68,7 @@ class Settings(BaseSettings):
     # LLM for conflict resolution and stage-3 dedup (Phase 3)
     llm_provider: str = "anthropic"                    # LLM provider backend
     llm_model: str = "claude-3-haiku-20240307"         # model for conflict resolution
+    anthropic_api_key: str = ""                        # HIVEMIND_ANTHROPIC_API_KEY — empty = LLM stages skip gracefully
 
     model_config = SettingsConfigDict(
         env_prefix="HIVEMIND_",
