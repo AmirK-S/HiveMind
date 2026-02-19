@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from hivemind.config import settings
 from hivemind.db.models import KnowledgeCategory, KnowledgeItem, PendingContribution
 from hivemind.pipeline.embedder import get_embedder
+from hivemind.webhooks.tasks import dispatch_webhooks
 
 
 # ---------------------------------------------------------------------------
@@ -134,6 +135,29 @@ def approve_contribution(
         session.add(item)
         session.delete(contribution)
         session.commit()
+
+        # INFRA-03: Dispatch webhook notifications for approved knowledge
+        try:
+            dispatched = dispatch_webhooks(
+                org_id=contribution.org_id,
+                event="knowledge.approved",
+                knowledge_item_id=str(item.id),
+                category=final_category.value,
+            )
+            if dispatched > 0:
+                import logging  # noqa: PLC0415
+                logging.getLogger(__name__).info(
+                    "Dispatched %d webhook(s) for knowledge item %s",
+                    dispatched, item.id,
+                )
+        except Exception:
+            # Webhook delivery is best-effort — don't block approval on delivery failure
+            import logging  # noqa: PLC0415
+            logging.getLogger(__name__).warning(
+                "Failed to dispatch webhooks for item %s — approval still succeeded",
+                item.id,
+                exc_info=True,
+            )
 
         # Refresh to get server-generated fields (id, etc.)
         session.refresh(item)
