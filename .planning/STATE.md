@@ -5,32 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Agents stop learning alone — when one agent solves a problem, every connected agent benefits
-**Current focus:** Phase 1 complete — Phase 2 planning next
+**Current focus:** Phase 2 in progress — 02-02 complete, 02-03 up next
 
 ## Current Position
 
-Phase: 1 of 4 (Agent Connection Loop) — COMPLETE
-Plan: 5 of 5 in current phase (all plans done)
-Status: Phase complete
-Last activity: 2026-02-18 — Completed 01-05: TRUST-02 similar knowledge lookup + QI pre-screening badge
+Phase: 2 of 4 (Trust & Security Hardening) — IN PROGRESS
+Plan: 2 of 6 in current phase (2 done)
+Status: In progress
+Last activity: 2026-02-19 — Completed 02-02: ApiKey, AutoApproveRule, WebhookEndpoint models + 3 Alembic migrations
 
-Progress: [██████░░░░] 38% (5 of 5 plans in phase 1; 5 of ~16 total plans)
+Progress: [███████░░░] 44% (7 of 11 plans done; 7 of ~16 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: ~5 min
-- Total execution time: ~17 min
+- Total plans completed: 7
+- Average duration: ~4 min
+- Total execution time: ~21 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-agent-connection-loop | 5 | ~17 min | ~3 min |
+| 02-trust-security-hardening | 2 | ~4 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min)
+- Last 7 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min), 02-01 (~2 min), 02-02 (~2 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -57,6 +58,10 @@ Recent decisions affecting current work:
 - [Phase 01-05]: Cosine distance threshold 0.35 (65% similarity) chosen as near-duplicate signal boundary for review panel
 - [Phase 01-05]: try/except wraps find_similar_knowledge() in review.py only — keeps client pure, ensures CLI never crashes on embedding failure
 - [Phase 01-05]: QI badge is informational only, not a blocker — maintains positive, rewarding tone
+- [02-01]: InjectionScanner.is_injection() returns (bool, float) tuple — callers can log confidence score without re-running model
+- [02-01]: Fenced code block regex applied before inline regex (Pitfall 5) — prevents triple-backtick markers matching inline single-backtick pattern
+- [02-01]: Verbatim PII check threshold is len(pii_value) >= 4 (Pitfall 4) — avoids false positives from single-character PII fragments
+- [02-01]: Narrative-only PII analysis in strip() (TRUST-06) — PII inside code blocks is preserved intentionally; stripping it would corrupt code examples
 
 ### Pending Todos
 
@@ -70,6 +75,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-18
-Stopped at: Completed 01-05-PLAN.md — TRUST-02 similar knowledge + QI pre-screening badge in review panel
-Resume file: .planning/phases/02-*/02-01-PLAN.md (Phase 2 not yet planned)
+Last session: 2026-02-19
+Stopped at: Completed 02-01-PLAN.md — prompt injection scanner, content integrity helpers, two-pass markdown-aware PII stripping
+Resume file: .planning/phases/02-trust-security-hardening/02-02-PLAN.md
