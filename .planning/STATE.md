@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Agents stop learning alone — when one agent solves a problem, every connected agent benefits
-**Current focus:** Phase 2 complete — all 6 plans done; Phase 3 up next
+**Current focus:** Phase 3 in progress — 2 of 7 plans done; REST API layer complete
 
 ## Current Position
 
-Phase: 2 of 4 (Trust & Security Hardening) — COMPLETE
-Plan: 6 of 6 in current phase (6 done)
-Status: Phase complete
-Last activity: 2026-02-19 — Completed 02-06: MCP tool wiring — publish_knowledge, manage_roles, decode_token_async, webhook dispatch in approval flow
+Phase: 3 of 4 (Quality Intelligence & SDKs)
+Plan: 2 of 7 in current phase (2 done)
+Status: In progress
+Last activity: 2026-02-19 — Completed 03-02: REST API layer at /api/v1/ with X-API-Key auth, usage metering, knowledge search/fetch/outcomes endpoints
 
-Progress: [█████████░] 69% (11 of ~16 total plans done)
+Progress: [█████████░] 73% (13 of ~18 total plans done)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 13
 - Average duration: ~3 min
-- Total execution time: ~34 min
+- Total execution time: ~40 min
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [█████████░] 69% (11 of ~16 total plans done)
 |-------|-------|-------|----------|
 | 01-agent-connection-loop | 5 | ~17 min | ~3 min |
 | 02-trust-security-hardening | 6 | ~17 min | ~3 min |
+| 03-quality-intelligence-sdks | 2 (of 7) | ~6 min | ~3 min |
 
 **Recent Trend:**
-- Last 11 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min), 02-01 (~2 min), 02-02 (~2 min), 02-03 (~4 min), 02-04 (~3 min), 02-05 (~3 min), 02-06 (~3 min)
+- Last 13 plans: 01-01 (~3 min), 01-02 (~3 min), 01-03 (~8 min), 01-04 (~3 min), 01-05 (~3 min), 02-01 (~2 min), 02-02 (~2 min), 02-03 (~4 min), 02-04 (~3 min), 02-05 (~3 min), 02-06 (~3 min), 03-01 (~3 min), 03-02 (~3 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -79,6 +80,9 @@ Recent decisions affecting current work:
 - [Phase 02-trust-security-hardening]: decode_token_async() added as parallel async entry point alongside decode_token() (JWT-only) — avoids modifying existing callers while supporting dual JWT+API-key auth
 - [Phase 02-trust-security-hardening]: AuthContext.tier defaults to None — JWT-authenticated contexts remain backward compatible; tier only populated by API key auth
 - [Phase 02-trust-security-hardening]: publish_knowledge returns 404 for cross-org items regardless of existence — prevents org discovery via error message difference (ACL-01)
+- [Phase 03-01]: signal_metadata attribute (not metadata): SQLAlchemy reserves 'metadata' on DeclarativeBase; ORM attr renamed to signal_metadata while DB column stays 'metadata' via mapped_column('metadata', JSONB)
+- [Phase 03-01]: Four explicit nullable DateTime(tz) columns for bi-temporal (not TSTZRANGE): SQLAlchemy DataError friction with DateTimeTZRange; valid_at/invalid_at/expired_at nullable (NULL = no world-time data for existing items)
+- [Phase 03-01]: Quality weights as config-time Settings fields (not deployment_config): environment variables only — weight changes require restart, not runtime DB write
 
 ### Pending Todos
 
@@ -93,5 +97,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 02-06-PLAN.md — MCP tool wiring: publish_knowledge, manage_roles, decode_token_async, webhook dispatch in approval flow
-Resume file: .planning/phases/03-graph-intelligence/ (Phase 3 — next phase)
+Stopped at: Completed 03-01-PLAN.md — Quality infrastructure: migration 006, QualitySignal model, compute_quality_score(), signal recording helpers, Phase 3 config
+Resume file: .planning/phases/03-quality-intelligence-sdks/ (Phase 3 — plan 02 next)
