@@ -3,6 +3,7 @@
 Tables:
 - pending_contributions  — inbound knowledge queued for user approval (PII-stripped)
 - knowledge_items        — approved knowledge in the commons (with vector embeddings)
+- quality_signals        — per-item behavioral signals for quality scoring (QI-01, QI-02)
 - deployment_config      — key/value store for deployment metadata (e.g. pinned model revision)
 
 Design decisions:
@@ -15,6 +16,13 @@ Design decisions:
 - embedding column uses VECTOR(384) matching all-MiniLM-L6-v2 output dimensions
 - HNSW index created at table creation time (before any data) to avoid table-lock
   during a future online re-index
+- quality_score defaults to 0.5 (neutral prior for new items, QI-01)
+- Bi-temporal columns use four explicit nullable DateTime(tz) columns (KM-05):
+    contributed_at = system-time start (existing, immutable)
+    expired_at     = system-time end (NULL = current version)
+    valid_at       = world-time start (NULL = "valid since approval")
+    invalid_at     = world-time end (NULL = "still valid")
+  TSTZRANGE avoided — SQLAlchemy has known DataError friction with DateTimeTZRange
 """
 
 import datetime
@@ -27,6 +35,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     Float,
+    ForeignKey,
     Index,
     Integer,
     String,
@@ -173,6 +182,35 @@ class KnowledgeItem(Base):
         DateTime(timezone=True), nullable=True, default=None
     )
 
+    # Quality scoring (QI-01, QI-02) — updated via behavioral signal aggregation
+    quality_score: Mapped[float] = mapped_column(
+        Float, nullable=False, server_default="0.5"
+    )
+    retrieval_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )
+    helpful_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )
+    not_helpful_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )
+
+    # Bi-temporal columns (KM-05)
+    # system-time start = contributed_at (existing, immutable)
+    # system-time end   = expired_at (NULL = current version)
+    # world-time start  = valid_at   (NULL = "valid since approval")
+    # world-time end    = invalid_at (NULL = "still valid")
+    valid_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    invalid_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    expired_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     __table_args__ = (
         # Prevents intra-org duplicates; allows same content across orgs (pitfall 4)
         UniqueConstraint("content_hash", "org_id", name="uq_knowledge_items_hash_org"),
@@ -190,6 +228,57 @@ class KnowledgeItem(Base):
             "org_id",
             "is_public",
         ),
+    )
+
+
+class QualitySignal(Base):
+    """Behavioral signal recorded for a knowledge item (QI-01, QI-02).
+
+    Each row represents one observable event (retrieval, outcome report,
+    contradiction flag) associated with a knowledge item.  The scorer module
+    aggregates these signals to compute quality_score.
+
+    signal_type vocabulary:
+    - "retrieval"           : item was returned in a search result
+    - "outcome_solved"      : agent reported the item solved their problem
+    - "outcome_not_helpful" : agent reported the item was not helpful
+    - "contradiction"       : item conflicts with another approved item
+
+    run_id enables deduplication — the same agent run should not count twice
+    for the same outcome signal type on the same item.
+    """
+
+    __tablename__ = "quality_signals"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+
+    knowledge_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("knowledge_items.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    signal_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    agent_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    run_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Named signal_metadata to avoid collision with SQLAlchemy's reserved 'metadata' attr
+    signal_metadata: Mapped[dict | None] = mapped_column(
+        "metadata", JSONB, nullable=True
+    )
+
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.datetime.utcnow,
+    )
+
+    __table_args__ = (
+        # Index on knowledge_item_id for aggregation queries
+        Index("ix_quality_signals_knowledge_item_id", "knowledge_item_id"),
+        # Composite index on (knowledge_item_id, signal_type) for filtered aggregation
+        Index("ix_quality_signals_item_type", "knowledge_item_id", "signal_type"),
     )
 
 
