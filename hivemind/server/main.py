@@ -1,8 +1,9 @@
 """HiveMind MCP server entry point.
 
 Starts a FastMCP server with Streamable HTTP transport at /mcp.
-Lifespan initialises the PII pipeline (GLiNER model) and embedding provider
-at startup so the first agent request is not penalised with a cold-start delay.
+Lifespan initialises the PII pipeline (GLiNER model), embedding provider,
+injection scanner, rate limiter, RBAC enforcer, and Celery at startup so
+the first agent request is not penalised with a cold-start delay.
 
 Entry point:
     uvicorn hivemind.server.main:app --host 0.0.0.0 --port 8000
@@ -23,14 +24,21 @@ from fastapi.responses import JSONResponse
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
 
+from hivemind.config import settings
 from hivemind.db.models import DeploymentConfig
 from hivemind.db.session import engine, get_session
 from hivemind.pipeline.embedder import get_embedder
+from hivemind.pipeline.injection import InjectionScanner
 from hivemind.pipeline.pii import PIIPipeline
+from hivemind.security.rbac import init_enforcer
+from hivemind.security.rate_limit import init_rate_limiter
 from hivemind.server.tools.add_knowledge import add_knowledge
+from hivemind.server.tools.admin_tools import manage_roles
 from hivemind.server.tools.delete_knowledge import delete_knowledge
 from hivemind.server.tools.list_knowledge import list_knowledge
+from hivemind.server.tools.publish_knowledge import publish_knowledge
 from hivemind.server.tools.search_knowledge import search_knowledge
+from hivemind.webhooks.tasks import configure_celery
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +55,10 @@ async def lifespan(server: FastMCP) -> AsyncIterator[None]:
     Startup order:
     1. Initialize PIIPipeline singleton — triggers GLiNER model load (~400 MB)
     2. Initialize EmbeddingProvider singleton — loads sentence-transformers model
+    2.5. Initialize InjectionScanner — pre-loads DeBERTa model (SEC-01)
+    2.6. Initialize rate limiter — connects to Redis (SEC-03, INFRA-04)
+    2.7. Initialize RBAC enforcer — loads Casbin policies from PostgreSQL (ACL-03)
+    2.8. Configure Celery — sets Redis broker for webhook delivery (INFRA-03)
     3. Store or verify deployment config (embedding model name + revision, KM-08)
     4. Yield — server handles requests
 
@@ -68,6 +80,25 @@ async def lifespan(server: FastMCP) -> AsyncIterator[None]:
         embedder.model_id,
         embedder.dimensions,
     )
+
+    # 2.5: Injection scanner — pre-load DeBERTa model (SEC-01)
+    logger.info("Loading injection scanner (DeBERTa model)...")
+    InjectionScanner.get_instance()
+    logger.info("Injection scanner ready.")
+
+    # 2.6: Rate limiter — connect to Redis (SEC-03, INFRA-04)
+    logger.info("Initializing rate limiter...")
+    await init_rate_limiter(settings.redis_url)
+    logger.info("Rate limiter ready.")
+
+    # 2.7: RBAC enforcer — load Casbin policies from PostgreSQL (ACL-03)
+    logger.info("Loading RBAC enforcer...")
+    await init_enforcer()
+    logger.info("RBAC enforcer ready.")
+
+    # 2.8: Celery — configure broker for webhook delivery (INFRA-03)
+    configure_celery(settings.redis_url)
+    logger.info("Celery configured for webhook delivery.")
 
     # 3. Store deployment config — KM-08 model drift detection
     await _store_deployment_config(embedder)
@@ -163,6 +194,9 @@ mcp.add_tool(Tool.from_function(add_knowledge))
 mcp.add_tool(Tool.from_function(search_knowledge))
 mcp.add_tool(Tool.from_function(list_knowledge))
 mcp.add_tool(Tool.from_function(delete_knowledge))
+# Phase 2 tools — publication and RBAC management
+mcp.add_tool(Tool.from_function(publish_knowledge))
+mcp.add_tool(Tool.from_function(manage_roles))
 
 # ---------------------------------------------------------------------------
 # ASGI app: Streamable HTTP at /mcp
