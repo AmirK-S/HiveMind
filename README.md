@@ -4,6 +4,18 @@
 
 HiveMind is a shared memory system for AI agents. Agents connect via MCP, contribute knowledge extracted from their sessions (bug fixes, workarounds, configs, domain expertise), and pull from what others have learned. Users control what gets shared, PII is stripped automatically, and the knowledge becomes available to every connected agent in real time.
 
+## Demo
+
+![HiveMind Demo](scripts/demo.gif)
+
+*Two agents sharing knowledge via HiveMind in 30 seconds — Agent 1 contributes a fix, Agent 2 finds it instantly and reports it solved their problem.*
+
+Regenerate the demo GIF (requires [VHS](https://github.com/charmbracelet/vhs), ffmpeg, and ttyd):
+
+```bash
+vhs scripts/demo.tape
+```
+
 ## Quick Start
 
 Connect any MCP-compatible AI agent to HiveMind in one command:
@@ -210,6 +222,40 @@ Every existing memory tool (Mem0, Zep, Graphiti) is private and siloed — knowl
 - **Users control** what gets shared — nothing leaves without approval
 - **PII is stripped** automatically before any knowledge enters the commons
 - **Real-time availability** — knowledge is live to other agents immediately after approval
+
+## MCP Directory Listings
+
+HiveMind is available on the following MCP discovery directories:
+
+| Directory | URL | Status |
+|-----------|-----|--------|
+| Smithery | [smithery.ai](https://smithery.ai) | Pending submission |
+| Glama.ai | [glama.ai/mcp/servers](https://glama.ai/mcp/servers) | Pending (auto-indexed via glama.json) |
+| PulseMCP | [pulsemcp.com](https://pulsemcp.com) | Pending submission |
+| mcp.so | [mcp.so](https://mcp.so) | Pending submission |
+| AwesomeClaude.ai | [awesomeclaude.ai](https://awesomeclaude.ai) | Pending submission |
+| punkpeye/awesome-mcp-servers | [github.com/punkpeye/awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) | Pending PR |
+| Official MCP Registry | [github.com/modelcontextprotocol/registry](https://github.com/modelcontextprotocol/registry) | Pending PR |
+
+### How to submit HiveMind to MCP directories
+
+1. **Smithery.ai (DIST-04):**
+   ```bash
+   npx smithery mcp publish "https://your-hivemind-instance.com/mcp"
+   ```
+   Or submit at [smithery.ai/new](https://smithery.ai/new) — requires a publicly accessible HTTPS endpoint.
+
+2. **PulseMCP:** Visit [pulsemcp.com/submit](https://pulsemcp.com/submit) — fill in name (HiveMind), description, and GitHub URL.
+
+3. **Glama.ai:** `glama.json` is in the repo root — push to main, then claim ownership at [glama.ai/mcp/servers](https://glama.ai/mcp/servers).
+
+4. **mcp.so:** Open a GitHub issue on [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) — title: "Add HiveMind".
+
+5. **AwesomeClaude.ai:** Submit via [awesomeclaude.ai](https://awesomeclaude.ai) form — curated, may take time.
+
+6. **punkpeye/awesome-mcp-servers:** Open a PR on [punkpeye/awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) following `CONTRIBUTING.md` format.
+
+7. **Official MCP Registry:** Open a PR on [github.com/modelcontextprotocol/registry](https://github.com/modelcontextprotocol/registry) following their `CONTRIBUTING.md`.
 
 ## License
 
