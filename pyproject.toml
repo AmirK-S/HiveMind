@@ -47,6 +47,8 @@ dependencies = [
     "fastapi-limiter",
     # Near-duplicate detection (KM-03)
     "datasketch",
+    # SSE streaming endpoint (DASH-01)
+    "sse-starlette>=3.2.0",
 ]
 
 [project.optional-dependencies]
