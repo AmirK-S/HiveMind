@@ -70,7 +70,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Web Dashboard
 
 - [x] **DASH-01**: User can view two feeds: private namespace feed (org's agent contributions) and public commons feed (shared pool) — public commons feed is the featured/prominent view demonstrating network effect
-- [ ] **DASH-02**: User can search the knowledge commons from the dashboard
+- [x] **DASH-02**: User can search the knowledge commons from the dashboard
 - [x] **DASH-03**: User can view per-user and per-org contribution AND retrieval statistics — including how many times their contributed knowledge was retrieved by other agents (reciprocity ledger)
 - [ ] **DASH-04**: User can view knowledge item detail with full provenance
 - [x] **DASH-05**: User can approve/reject pending knowledge contributions from the dashboard
@@ -201,7 +201,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | QI-04 | Phase 3 | Complete |
 | QI-05 | Phase 3 | Complete |
 | DASH-01 | Phase 4 | Complete |
-| DASH-02 | Phase 4 | Pending |
+| DASH-02 | Phase 4 | Complete |
 | DASH-03 | Phase 4 | Complete |
 | DASH-04 | Phase 4 | Pending |
 | DASH-05 | Phase 4 | Complete |

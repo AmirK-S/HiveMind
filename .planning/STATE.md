@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Agents stop learning alone — when one agent solves a problem, every connected agent benefits
-**Current focus:** Phase 4 in progress — 04-01 complete; SSE streaming, contribution approval/rejection, and stats endpoints shipped
+**Current focus:** Phase 4 in progress — 04-01 and 04-02 complete; dashboard frontend with live feeds and search shipped
 
 ## Current Position
 
 Phase: 4 of 4 (Dashboard & Distribution)
-Plan: 1 of 6 in current phase (04-01 done)
-Status: Phase 4 active — REST API layer for dashboard complete, dashboard frontend and framework wrappers remaining
-Last activity: 2026-02-19 — Completed 04-01: SSE streaming endpoint, contribution approve/reject, commons/org/user stats endpoints
+Plan: 2 of 6 in current phase (04-01, 04-02 done)
+Status: Phase 4 active — Dashboard frontend shipped; analytics UI and distribution remaining
+Last activity: 2026-02-19 — Completed 04-02: Next.js dashboard with live feeds, SSE proxy, and knowledge search page
 
-Progress: [██████████] 96% (19 of ~25 total plans done)
+Progress: [██████████] 97% (20 of ~25 total plans done)
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Progress: [██████████] 96% (19 of ~25 total plans done)
 | Phase 04-dashboard-distribution P04 | 2 | 3 tasks | 7 files |
 | Phase 04-dashboard-distribution P01 | 5 | 3 tasks | 5 files |
 | Phase 04-dashboard-distribution P06 | 5 | 2 tasks | 5 files |
+| Phase 04-dashboard-distribution P02 | 8 | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,9 @@ Recent decisions affecting current work:
 - [Phase 04-01]: dispatch_webhooks called via run_in_executor from async approve/reject endpoints — dispatch_webhooks uses sync SessionFactory and would block async event loop if called directly
 - [Phase 04-01]: SSE private events silently skip events for other orgs — org_id check prevents cross-org data leakage without error
 - [Phase 04-06]: well_known_router registered on top-level FastAPI app before MCP mount — /.well-known/ is a root path outside /api/v1/ scope
+- [Phase 04-dashboard-distribution]: nodejs runtime required for SSE proxy route handler — Edge runtime cannot stream SSE (export const runtime = 'nodejs')
+- [Phase 04-dashboard-distribution]: Native EventSource API chosen over libraries — simpler, no dependency, browser-native auto-reconnection
+- [Phase 04-dashboard-distribution]: TanStack Query with enabled: query.length >= 2 prevents empty/single-char search requests
 
 ### Pending Todos
 
@@ -132,5 +136,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Checkpoint 04-06 Task 3 — Smithery/Glama/VHS artifacts complete; awaiting human submission to MCP directories
+Stopped at: Completed 04-02-PLAN.md — Next.js dashboard with live feeds, SSE proxy route handlers, and knowledge search page
+Resume file: .planning/phases/04-dashboard-distribution/04-03-PLAN.md
 Resume file: .planning/phases/04-dashboard-distribution/04-06-PLAN.md (Task 3 checkpoint)
