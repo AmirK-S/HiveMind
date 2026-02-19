@@ -44,6 +44,7 @@ Progress: [██████████] 98% (21 of ~25 total plans done)
 | Phase 04-dashboard-distribution P02 | 8 | 3 tasks | 16 files |
 | Phase 04-dashboard-distribution P03 | 5 | 3 tasks | 12 files |
 | Phase 04-dashboard-distribution P07 | 1 | 1 tasks | 5 files |
+| Phase 04-dashboard-distribution P08 | 5 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -128,6 +129,7 @@ Recent decisions affecting current work:
 - [Phase 04-03]: isPending detection via absence of quality_score — approved items always have quality_score set at approval, pending contributions do not
 - [Phase 04-03]: Synthetic 7-day growth chart built from growth_rate_7d and growth_rate_24h totals — no time-series API endpoint needed for trend visualization
 - [Phase 04-07]: AmirK-S/HiveMind is the canonical GitHub identity — all distribution manifests updated to reflect it
+- [Phase 04-dashboard-distribution]: demo.tape kept as VHS REST/MCP fallback; README updated with preferred real MCP client recording instructions using Claude Desktop or Cursor
 
 ### Pending Todos
 
