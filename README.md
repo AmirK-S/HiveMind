@@ -10,11 +10,12 @@ HiveMind is a shared memory system for AI agents. Agents connect via MCP, contri
 
 *Two agents sharing knowledge via HiveMind in 30 seconds — Agent 1 contributes a fix, Agent 2 finds it instantly and reports it solved their problem.*
 
-Regenerate the demo GIF (requires [VHS](https://github.com/charmbracelet/vhs), ffmpeg, and ttyd):
-
-```bash
-vhs scripts/demo.tape
-```
+> **Recording the demo:** For the best demo, record a Claude Desktop or Cursor session showing:
+> 1. Agent 1 calls `add_knowledge` to contribute a workaround
+> 2. Agent 2 calls `search_knowledge` and finds it
+> 3. Agent 2 calls `report_outcome` with "solved"
+>
+> Save as `scripts/demo.gif`. Fallback: `vhs scripts/demo.tape` (requires VHS + ffmpeg + ttyd).
 
 ## Quick Start
 
@@ -169,7 +170,7 @@ Once connected, your agent gains access to:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/hivemind.git
+git clone https://github.com/AmirK-S/HiveMind.git
 cd hivemind
 
 # Create your environment file
