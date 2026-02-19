@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Agents stop learning alone — when one agent solves a problem, every connected agent benefits
-**Current focus:** Phase 4 in progress — 04-05 complete; LangChain/CrewAI/OpenClaw framework wrappers shipped
+**Current focus:** Phase 4 in progress — 04-01 complete; SSE streaming, contribution approval/rejection, and stats endpoints shipped
 
 ## Current Position
 
 Phase: 4 of 4 (Dashboard & Distribution)
-Plan: 5 of 6 in current phase (04-05 done)
-Status: Phase 4 active — framework wrappers shipped, dashboard + publishing plan remains
-Last activity: 2026-02-19 — Completed 04-05: LangChain HiveMindRetriever, CrewAI HiveMindTool, OpenClaw SKILL.md framework wrappers
+Plan: 1 of 6 in current phase (04-01 done)
+Status: Phase 4 active — REST API layer for dashboard complete, dashboard frontend and framework wrappers remaining
+Last activity: 2026-02-19 — Completed 04-01: SSE streaming endpoint, contribution approve/reject, commons/org/user stats endpoints
 
 Progress: [██████████] 96% (19 of ~25 total plans done)
 
@@ -39,6 +39,7 @@ Progress: [██████████] 96% (19 of ~25 total plans done)
 | Phase 03 P05 | 4 min | 2 tasks | 4 files |
 | Phase 03-quality-intelligence-sdks P07 | 8 | 2 tasks | 30 files |
 | Phase 04-dashboard-distribution P04 | 2 | 3 tasks | 7 files |
+| Phase 04-dashboard-distribution P01 | 5 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -112,6 +113,9 @@ Recent decisions affecting current work:
 - [04-04]: npx/bin/hivemind.js appends /mcp to base URL before passing to mcp-remote — HiveMind Streamable HTTP endpoint lives at /mcp, users pass clean base URL
 - [04-04]: docker-compose uses pgvector/pgvector:pg16 image (not postgres:16 + init script) — pgvector extension pre-installed, zero custom init scripts needed
 - [04-04]: Dockerfile HEALTHCHECK uses --start-period=60s — allows GLiNER (~400MB) and sentence-transformers model load before first health check fires
+- [Phase 04-01]: Dedicated asyncpg connection for LISTEN/NOTIFY — SQLAlchemy pool connections are transactional, not suitable for persistent LISTEN state
+- [Phase 04-01]: dispatch_webhooks called via run_in_executor from async approve/reject endpoints — dispatch_webhooks uses sync SessionFactory and would block async event loop if called directly
+- [Phase 04-01]: SSE private events silently skip events for other orgs — org_id check prevents cross-org data leakage without error
 
 ### Pending Todos
 
@@ -126,5 +130,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 04-05-PLAN.md — LangChain HiveMindRetriever, CrewAI HiveMindTool, and OpenClaw SKILL.md framework wrappers
-Resume file: .planning/phases/04-dashboard-distribution/04-06-PLAN.md
+Stopped at: Completed 04-01-PLAN.md — SSE streaming endpoint, contribution approval/rejection REST endpoints, and commons/org/user stats endpoints
+Resume file: .planning/phases/04-dashboard-distribution/04-02-PLAN.md

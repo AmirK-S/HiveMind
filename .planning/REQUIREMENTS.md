@@ -69,12 +69,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Web Dashboard
 
-- [ ] **DASH-01**: User can view two feeds: private namespace feed (org's agent contributions) and public commons feed (shared pool) — public commons feed is the featured/prominent view demonstrating network effect
+- [x] **DASH-01**: User can view two feeds: private namespace feed (org's agent contributions) and public commons feed (shared pool) — public commons feed is the featured/prominent view demonstrating network effect
 - [ ] **DASH-02**: User can search the knowledge commons from the dashboard
-- [ ] **DASH-03**: User can view per-user and per-org contribution AND retrieval statistics — including how many times their contributed knowledge was retrieved by other agents (reciprocity ledger)
+- [x] **DASH-03**: User can view per-user and per-org contribution AND retrieval statistics — including how many times their contributed knowledge was retrieved by other agents (reciprocity ledger)
 - [ ] **DASH-04**: User can view knowledge item detail with full provenance
-- [ ] **DASH-05**: User can approve/reject pending knowledge contributions from the dashboard
-- [ ] **DASH-06**: Public commons health metrics visible: total items, growth rate, retrieval volume, domains covered — demonstrating network effect to attract contributors
+- [x] **DASH-05**: User can approve/reject pending knowledge contributions from the dashboard
+- [x] **DASH-06**: Public commons health metrics visible: total items, growth rate, retrieval volume, domains covered — demonstrating network effect to attract contributors
 
 ### Distribution & Onboarding
 
@@ -200,12 +200,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | QI-03 | Phase 3 | Complete |
 | QI-04 | Phase 3 | Complete |
 | QI-05 | Phase 3 | Complete |
-| DASH-01 | Phase 4 | Pending |
+| DASH-01 | Phase 4 | Complete |
 | DASH-02 | Phase 4 | Pending |
-| DASH-03 | Phase 4 | Pending |
+| DASH-03 | Phase 4 | Complete |
 | DASH-04 | Phase 4 | Pending |
-| DASH-05 | Phase 4 | Pending |
-| DASH-06 | Phase 4 | Pending |
+| DASH-05 | Phase 4 | Complete |
+| DASH-06 | Phase 4 | Complete |
 | DIST-01 | Phase 4 | Complete |
 | DIST-02 | Phase 4 | Complete |
 | DIST-03 | Phase 4 | Complete |
