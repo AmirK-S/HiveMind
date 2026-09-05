@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "hivemind"
+name = "hivemind-mcp"
 version = "0.1.0"
-description = "A shared memory system for AI agents — a collective brain"
+description = "Shared memory for AI agents, served over MCP"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -57,6 +57,16 @@ dev = [
     "pytest-asyncio",
     "pytest-cov",
     "openapi-python-client",
+    "asgi-lifespan>=2.1.0",
+    "pyyaml>=6.0.3",
+]
+
+# Not part of the published metadata (PEP 735), so the wheel stays publishable while
+# uv.lock still pins the spaCy model presidio loads at startup. The Dockerfile installs
+# it with `uv sync --group models`; the runtime image has neither pip nor uv.
+[dependency-groups]
+models = [
+    "en-core-web-lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl",
 ]
 
 [project.scripts]
