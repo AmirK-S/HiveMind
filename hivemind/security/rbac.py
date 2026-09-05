@@ -39,9 +39,10 @@ async def init_enforcer() -> casbin.AsyncEnforcer:
     all policies from the ``casbin_rule`` table (created automatically if
     absent), and stores the enforcer in the module-level singleton.
 
-    The adapter receives the raw database URL; ``+asyncpg`` is stripped if
-    present because casbin-async-sqlalchemy-adapter manages its own
-    SQLAlchemy engine and prefers the sync driver name form.
+    The adapter receives the async database URL unchanged:
+    casbin-async-sqlalchemy-adapter builds its own async SQLAlchemy engine
+    and needs the ``+asyncpg`` driver. The ``casbin_rule`` table it reads is
+    created by Alembic migration 007, not at runtime.
 
     Requirements: ACL-03, ACL-04.
     """
@@ -50,11 +51,7 @@ async def init_enforcer() -> casbin.AsyncEnforcer:
     # Lazy import to avoid circular dependency.
     from hivemind.config import settings
 
-    # casbin-async-sqlalchemy-adapter internally uses its own SQLAlchemy
-    # engine.  Provide the plain postgresql URL (strip +asyncpg if present).
-    db_url = settings.database_url.replace("+asyncpg", "")
-
-    adapter = casbin_async_sqlalchemy_adapter.Adapter(db_url)
+    adapter = casbin_async_sqlalchemy_adapter.Adapter(settings.database_url)
     enforcer = casbin.AsyncEnforcer(str(_MODEL_PATH), adapter)
     await enforcer.load_policy()
 

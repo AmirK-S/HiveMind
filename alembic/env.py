@@ -40,10 +40,9 @@ def do_run_migrations(connection: Connection) -> None:
     Registers the pgvector VECTOR type with the connection so Alembic
     autogenerate can recognise vector columns during diff operations.
     """
-    # Register pgvector types so Alembic autogenerate recognises VECTOR columns
-    from pgvector.sqlalchemy import register_vector
-
-    register_vector(connection)
+    # pgvector.sqlalchemy only exposes the Vector column type. There is no
+    # register_vector to call on a SQLAlchemy connection; the earlier import
+    # of that name made every migration fail before running.
 
     context.configure(
         connection=connection,

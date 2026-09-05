@@ -55,6 +55,7 @@ def upgrade() -> None:
         "version_workaround",
         "general",
         name="knowledgecategory",
+        create_type=False,  # created explicitly below; create_table must not emit CREATE TYPE again
     )
     knowledgecategory_enum.create(op.get_bind())
 

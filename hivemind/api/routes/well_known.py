@@ -14,6 +14,10 @@ from __future__ import annotations
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+# Path of the MCP Streamable HTTP endpoint. Shared with hivemind.server.main so
+# the card and the mounted transport can never disagree.
+MCP_PATH = "/mcp"
+
 well_known_router = APIRouter(tags=["well-known"])
 
 
@@ -32,15 +36,20 @@ async def server_card() -> JSONResponse:
             "serverInfo": {
                 "name": "hivemind",
                 "description": (
-                    "Shared memory system for AI agents — contribute and retrieve "
+                    "Shared memory system for AI agents: contribute and retrieve "
                     "knowledge from the collective commons"
                 ),
                 "version": "0.1.0",
             },
+            "transport": {
+                "type": "streamable-http",
+                "path": MCP_PATH,
+            },
             "authentication": {
-                "type": "apiKey",
+                "type": "http",
+                "scheme": "bearer",
                 "in": "header",
-                "name": "X-API-Key",
+                "name": "Authorization",
             },
             "tools": [
                 {

@@ -40,7 +40,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # Reference the existing knowledgecategory enum — do NOT create a new type
-    knowledgecategory_enum = sa.Enum(
+    # create_type is a postgresql.ENUM argument. sa.Enum ignores it and emits
+    # an empty CREATE TYPE ... AS ENUM (), which fails because the type exists.
+    knowledgecategory_enum = postgresql.ENUM(
         name="knowledgecategory",
         create_type=False,
     )

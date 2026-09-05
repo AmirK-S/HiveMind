@@ -1,5 +1,5 @@
 # ============================================================================
-# HiveMind — Docker Compose for local development and demo
+# HiveMind: Docker Compose for local development and demo
 # ============================================================================
 # Starts: HiveMind server + PostgreSQL (pgvector) + Redis
 #
@@ -15,7 +15,7 @@
 services:
 
   # --------------------------------------------------------------------------
-  # HiveMind — FastAPI + MCP server
+  # HiveMind: FastAPI + MCP server
   # --------------------------------------------------------------------------
   hivemind:
     build:
@@ -26,9 +26,10 @@ services:
     env_file:
       - .env
     environment:
-      # Override DATABASE_URL to use the compose postgres service
-      DATABASE_URL: "postgresql+asyncpg://hivemind:hivemind@postgres:5432/hivemind"
-      REDIS_URL: "redis://redis:6379/0"
+      # Point the server at the compose services. hivemind/config.py only reads
+      # variables carrying the HIVEMIND_ prefix; unprefixed names are ignored.
+      HIVEMIND_DATABASE_URL: "postgresql+asyncpg://hivemind:hivemind@postgres:5432/hivemind"
+      HIVEMIND_REDIS_URL: "redis://redis:6379/0"
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,11 +37,12 @@ services:
         condition: service_started
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      # python:3.12-slim ships no curl; probe with the interpreter instead.
+      test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 60s
+      start_period: 120s
 
   # --------------------------------------------------------------------------
   # PostgreSQL 16 with pgvector extension
@@ -63,7 +65,7 @@ services:
     restart: unless-stopped
 
   # --------------------------------------------------------------------------
-  # Redis 7 — Celery broker + rate limiter state
+  # Redis 7: Celery broker + rate limiter state
   # --------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
