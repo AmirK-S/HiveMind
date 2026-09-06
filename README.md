@@ -93,6 +93,18 @@ curl -s -X POST localhost:8000/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'
 ```
 
+## Demo
+
+`scripts/demo.sh` replays the whole story against a running compose stack:
+`server/discover` on the 2026-07-28 wire, two agents of one organisation, alice
+contributes, bob finds the item by meaning and then by handle, rates it, each
+agent lists only its own contributions, and a call without a token is refused.
+`scripts/demo-transcript.txt` is its output on a fresh clone on 2026-09-06.
+
+```bash
+cp .env.example .env && docker compose up -d --build && ./scripts/demo.sh
+```
+
 ## The seven tools
 
 | Tool | What it does | Refuses when |
