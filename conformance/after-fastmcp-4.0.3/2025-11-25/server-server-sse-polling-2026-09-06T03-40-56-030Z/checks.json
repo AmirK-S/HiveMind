@@ -1,0 +1,76 @@
+[
+  {
+    "id": "server-sse-polling-session",
+    "name": "ServerSSEPollingSession",
+    "description": "Server provides session ID for SSE polling tests",
+    "status": "WARNING",
+    "timestamp": "2026-09-06T03:40:56.037Z",
+    "specReferences": [
+      {
+        "id": "SEP-1699",
+        "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/issues/1699"
+      }
+    ],
+    "details": {
+      "message": "Server did not provide session ID - SSE polling tests may not work correctly"
+    }
+  },
+  {
+    "id": "outgoing-request",
+    "name": "OutgoingRequest",
+    "description": "Sending POST tools/call",
+    "status": "INFO",
+    "timestamp": "2026-09-06T03:40:56.037Z",
+    "details": {
+      "method": "POST",
+      "url": "http://localhost:8000/mcp",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream, application/json",
+        "mcp-protocol-version": "2025-11-25"
+      },
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+          "name": "test_reconnection",
+          "arguments": {}
+        }
+      }
+    }
+  },
+  {
+    "id": "incoming-response",
+    "name": "IncomingResponse",
+    "description": "Received 200 response for POST",
+    "status": "INFO",
+    "timestamp": "2026-09-06T03:40:56.044Z",
+    "details": {
+      "statusCode": 200,
+      "headers": {
+        "content-length": "121",
+        "content-type": "application/json",
+        "date": "Sun, 06 Sep 2026 03:40:55 GMT",
+        "server": "uvicorn"
+      }
+    }
+  },
+  {
+    "id": "server-sse-content-type",
+    "name": "ServerSSEContentType",
+    "description": "Server returns text/event-stream for POST request",
+    "status": "INFO",
+    "timestamp": "2026-09-06T03:40:56.044Z",
+    "specReferences": [
+      {
+        "id": "SEP-1699",
+        "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/issues/1699"
+      }
+    ],
+    "details": {
+      "contentType": "application/json",
+      "message": "Server returned JSON instead of SSE stream - priming event tests not applicable"
+    }
+  }
+]

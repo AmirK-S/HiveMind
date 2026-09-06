@@ -1,0 +1,44 @@
+# Expected conformance failures for HiveMind on MCP revision 2025-11-25.
+#
+# Tool: @modelcontextprotocol/conformance@0.2.0-alpha.11
+# Run:  npx conformance server --url http://localhost:8000/mcp \
+#         --requirements 2025-11-25 \
+#         --expected-failures conformance/expected-failures-2025-11-25.yaml
+#
+# A second file is needed because the format carries no revision key and the two
+# revisions do not run the same scenario set: tools-call-sampling,
+# tools-call-elicitation, tools-call-with-logging, elicitation-sep1034-defaults,
+# elicitation-sep1330-enums, resources-subscribe and resources-unsubscribe run
+# only on 2025-11-25, while server-stateless, caching and the
+# input-required-result-* family run only on 2026-07-28.
+#
+# HiveMind is a business server: seven domain tools, no prompts, no resources,
+# no completion. Every entry below is a reference fixture it does not expose.
+
+server:
+  - completion-complete # capability not exposed: completion
+  - tools-call-image # reference tool test_image not exposed by a business server
+  - tools-call-audio # reference tool test_audio not exposed by a business server
+  - tools-call-embedded-resource # reference tool test_embedded_resource not exposed by a business server
+  - tools-call-mixed-content # reference tool test_mixed_content not exposed by a business server
+  - tools-call-with-logging # reference tool test_tool_with_logging not exposed by a business server
+  - tools-call-with-progress # reference tool test_tool_with_progress not exposed by a business server
+  - tools-call-sampling # reference tool test_sampling not exposed by a business server
+  - tools-call-elicitation # reference tool test_elicitation not exposed by a business server
+  - elicitation-sep1034-defaults # reference tool test_elicitation not exposed by a business server
+  - elicitation-sep1330-enums # reference tool test_elicitation not exposed by a business server
+  - resources-read-text # capability not exposed: resources
+  - resources-read-binary # capability not exposed: resources
+  - resources-templates-read # capability not exposed: resources
+  - resources-subscribe # capability not exposed: resources (subscribe)
+  - resources-unsubscribe # capability not exposed: resources (subscribe)
+  - prompts-get-simple # capability not exposed: prompts
+  - prompts-get-with-args # capability not exposed: prompts
+  - prompts-get-embedded-resource # capability not exposed: prompts
+  - prompts-get-with-image # capability not exposed: prompts
+  # The scenario reports ✓ in the summary (no FAILURE check) but carries one
+  # WARNING, which the baseline comparison treats as a failure. Its functional
+  # check, server-accepts-multiple-post-streams, stays enforced and passes.
+  - server-sse-multiple-streams:server-sse-multiple-streams-session # deliberate design: the server is stateless and emits no Mcp-Session-Id, per the 2026-07-28 stateless model it also serves
+  # Scenario the tool marks "not scored for 2025-11-25"; kept for the record.
+  - json-schema-2020-12 # reference tool json_schema_2020_12_tool not exposed by a business server

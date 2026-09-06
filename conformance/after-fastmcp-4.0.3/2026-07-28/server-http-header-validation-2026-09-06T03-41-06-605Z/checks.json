@@ -1,0 +1,1232 @@
+[
+  {
+    "id": "sep-2243-server-reject-invalid-headers",
+    "name": "ServerRejectsMismatchedMethodHeader",
+    "description": "Server rejects requests where Mcp-Method header does not match body method",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.616Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Server-Validation",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#server-validation"
+      }
+    ],
+    "details": {
+      "requestBodyMethod": "tools/list",
+      "mcpMethodHeader": "prompts/list",
+      "responseStatus": 400,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 100,
+        "error": {
+          "code": -32020,
+          "message": "mcp-method header does not match the request body's method"
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-server-reject-error-code",
+    "name": "ServerRejectsMismatchedMethodHeaderErrorCode",
+    "description": "Server rejects requests where Mcp-Method header does not match body method — uses JSON-RPC error code -32020 (HeaderMismatch)",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.616Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Server-Validation",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#server-validation"
+      }
+    ],
+    "details": {
+      "requestBodyMethod": "tools/list",
+      "mcpMethodHeader": "prompts/list",
+      "responseStatus": 400,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 100,
+        "error": {
+          "code": -32020,
+          "message": "mcp-method header does not match the request body's method"
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-server-reject-invalid-headers",
+    "name": "ServerRejectsMissingMethodHeader",
+    "description": "Server rejects requests with missing Mcp-Method header",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.618Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Server-Validation",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#server-validation"
+      }
+    ],
+    "details": {
+      "requestBodyMethod": "tools/list",
+      "mcpMethodHeader": "(missing)",
+      "responseStatus": 400,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 101,
+        "error": {
+          "code": -32020,
+          "message": "mcp-method header does not match the request body's method"
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-server-reject-error-code",
+    "name": "ServerRejectsMissingMethodHeaderErrorCode",
+    "description": "Server rejects requests with missing Mcp-Method header — uses JSON-RPC error code -32020 (HeaderMismatch)",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.618Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Server-Validation",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#server-validation"
+      }
+    ],
+    "details": {
+      "requestBodyMethod": "tools/list",
+      "mcpMethodHeader": "(missing)",
+      "responseStatus": 400,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 101,
+        "error": {
+          "code": -32020,
+          "message": "mcp-method header does not match the request body's method"
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-server-reject-invalid-headers",
+    "name": "ServerRejectsMismatchedNameHeader",
+    "description": "Server rejects tools/call where Mcp-Name does not match body params.name",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.619Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Server-Validation",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#server-validation"
+      }
+    ],
+    "details": {
+      "requestBodyName": "add_knowledge",
+      "mcpNameHeader": "wrong_tool_name",
+      "responseStatus": 400,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 102,
+        "error": {
+          "code": -32020,
+          "message": "mcp-name header does not match the request body's 'name' parameter"
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-server-reject-error-code",
+    "name": "ServerRejectsMismatchedNameHeaderErrorCode",
+    "description": "Server rejects tools/call where Mcp-Name does not match body params.name — uses JSON-RPC error code -32020 (HeaderMismatch)",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.619Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Server-Validation",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#server-validation"
+      }
+    ],
+    "details": {
+      "requestBodyName": "add_knowledge",
+      "mcpNameHeader": "wrong_tool_name",
+      "responseStatus": 400,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 102,
+        "error": {
+          "code": -32020,
+          "message": "mcp-name header does not match the request body's 'name' parameter"
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-server-accepts-whitespace-header-value",
+    "name": "ServerAcceptsWhitespaceHeaderValue",
+    "description": "Server MUST accept leading/trailing whitespace in Mcp-Name value (RFC 9110 §5.5: field parsing MUST exclude OWS before evaluating)",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.632Z",
+    "specReferences": [
+      {
+        "id": "RFC-9110-5.5-Field-Values",
+        "url": "https://www.rfc-editor.org/rfc/rfc9110#section-5.5"
+      }
+    ],
+    "details": {
+      "headerValue": "  add_knowledge  ",
+      "bodyValue": "add_knowledge",
+      "reason": "HTTP spec requires trimming OWS around field values",
+      "responseStatus": 200,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 103,
+        "result": {
+          "content": [
+            {
+              "text": "2 validation errors for call[add_knowledge]\ncontent\n  Missing required argument [type=missing_argument, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing_argument\ncategory\n  Missing required argument [type=missing_argument, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing_argument",
+              "type": "text"
+            }
+          ],
+          "isError": true,
+          "resultType": "complete",
+          "_meta": {
+            "io.modelcontextprotocol/serverInfo": {
+              "name": "HiveMind",
+              "version": "4.0.3"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-server-reject-invalid-headers",
+    "name": "ServerRejectsMissingNameHeader",
+    "description": "Server MUST reject tools/call with missing Mcp-Name header when body has params.name",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.633Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Server-Validation",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#server-validation"
+      }
+    ],
+    "details": {
+      "requestBodyName": "add_knowledge",
+      "mcpNameHeader": "(missing)",
+      "reason": "Standard header omitted but value present in body → MUST reject",
+      "responseStatus": 400,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 104,
+        "error": {
+          "code": -32020,
+          "message": "mcp-name header does not match the request body's 'name' parameter"
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-server-reject-error-code",
+    "name": "ServerRejectsMissingNameHeaderErrorCode",
+    "description": "Server MUST reject tools/call with missing Mcp-Name header when body has params.name — uses JSON-RPC error code -32020 (HeaderMismatch)",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.633Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Server-Validation",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#server-validation"
+      }
+    ],
+    "details": {
+      "requestBodyName": "add_knowledge",
+      "mcpNameHeader": "(missing)",
+      "reason": "Standard header omitted but value present in body → MUST reject",
+      "responseStatus": 400,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 104,
+        "error": {
+          "code": -32020,
+          "message": "mcp-name header does not match the request body's 'name' parameter"
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-header-name-case-insensitive",
+    "name": "ServerAcceptsLowercaseHeaderName",
+    "description": "Server MUST accept lowercase header name (mcp-method)",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.635Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Case-Sensitivity",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#case-sensitivity"
+      }
+    ],
+    "details": {
+      "headerNameUsed": "mcp-method",
+      "responseStatus": 200,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 105,
+        "result": {
+          "cacheScope": "private",
+          "resultType": "complete",
+          "tools": [
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Contribute a knowledge item to HiveMind.\n\nThe content is scanned for prompt injection, then PII-stripped before any\nstorage. If more than 50% of the post-strip content is placeholder tokens,\nthe contribution is auto-rejected. If an auto-approve rule matches the\norg+category, the item is inserted directly into the knowledge commons;\notherwise it enters the pending_contributions queue for operator review.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description": "The knowledge text to contribute (min 10 characters)."
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "Knowledge category (must be a valid KnowledgeCategory value)."
+                  },
+                  "confidence": {
+                    "default": 0.8,
+                    "type": "number",
+                    "description": "Confidence score 0.0–1.0 (default 0.8)."
+                  },
+                  "framework": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional framework name (e.g. \"fastapi\", \"langchain\")."
+                  },
+                  "language": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional programming language (e.g. \"python\", \"typescript\")."
+                  },
+                  "version": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional version string."
+                  },
+                  "tags": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional list of tags for additional classification."
+                  },
+                  "run_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional agent run/session identifier for provenance."
+                  }
+                },
+                "required": [
+                  "content",
+                  "category"
+                ]
+              },
+              "name": "add_knowledge",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Add Knowledge"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Search or fetch knowledge items from HiveMind.\n\nSearch mode (query provided):\n    Embeds the query text and performs a hybrid BM25+vector search using\n    Reciprocal Rank Fusion (RRF) with quality score boosting. Returns\n    deduplicated summary-tier results (~30-50 tokens each).\n    Private items are prioritized over public duplicates (ACL-05).\n    Rankings: final_score = rrf_score * (0.7 + 0.3 * quality_score)\n\nFetch mode (id provided):\n    Returns full content for a specific knowledge item by UUID, with content\n    hash integrity verification (SEC-02). Includes integrity_verified or\n    integrity_warning field in response.\n\nTemporal query mode (at_time provided, KM-06):\n    When at_time is given, search results are restricted to items that were\n    valid at that point in time. Items with NULL valid_at are treated as\n    always-valid (backward compatible with pre-temporal-migration data).\n    When combined with version, further restricts results to a specific\n    knowledge version.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "query": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Text to search for (required for search mode)."
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "UUID of a specific knowledge item to fetch (fetch mode)."
+                  },
+                  "category": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional category filter (must be a valid KnowledgeCategory)."
+                  },
+                  "limit": {
+                    "default": 10,
+                    "type": "integer",
+                    "description": "Maximum results to return (capped at settings.max_search_limit)."
+                  },
+                  "cursor": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Pagination cursor from a previous response's next_cursor field."
+                  },
+                  "at_time": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional ISO 8601 datetime string for point-in-time queries (KM-06).\n      When provided, only items valid at this time are returned.\n      Example: \"2026-01-01T00:00:00Z\""
+                  },
+                  "version": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional version string filter (exact match). Only meaningful\n      when used with at_time for version-scoped temporal queries."
+                  }
+                }
+              },
+              "name": "search_knowledge",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Search Knowledge"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "List your own knowledge contributions (pending and/or approved).\n\nReturns a paginated view of the contributions this agent has made within\nits organisation's namespace.  Agents can only see their own contributions\n— the filter is enforced via the JWT bearer token, never from tool arguments.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": {
+                    "default": "all",
+                    "type": "string",
+                    "description": "Filter by contribution status.  One of \"pending\", \"approved\",\n      or \"all\" (default)."
+                  },
+                  "category": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional KnowledgeCategory value to narrow results."
+                  },
+                  "limit": {
+                    "default": 20,
+                    "type": "integer",
+                    "description": "Maximum items to return per page (default 20, max 100)."
+                  },
+                  "cursor": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Opaque pagination cursor returned in a previous response."
+                  }
+                }
+              },
+              "name": "list_knowledge",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "List Knowledge"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Soft-delete a knowledge item you contributed.\n\nSets the deleted_at timestamp on the item so it no longer appears in\nsearch results.  Only items you own (same agent_id and org_id from your\nJWT) can be deleted.  The physical row is retained for audit purposes.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "UUID of the approved knowledge item to delete."
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              "name": "delete_knowledge",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Delete Knowledge"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Toggle the public visibility of a knowledge item in HiveMind.\n\nPublishes a private knowledge item to the public commons, or unpublishes\nit back to private. Publication is fully reversible (ACL-02).\n\nSecurity: The calling agent must own the item (org_id from bearer token\nmust match item.org_id). Items belonging to other orgs are never revealed\n— a 404 is returned regardless of whether the item exists in another org.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "UUID string of the KnowledgeItem to publish or unpublish."
+                  },
+                  "is_public": {
+                    "type": "boolean",
+                    "description": "True to publish to the public commons; False to unpublish\n       back to private."
+                  }
+                },
+                "required": [
+                  "id",
+                  "is_public"
+                ]
+              },
+              "name": "publish_knowledge",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Publish Knowledge"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Manage agent roles and access policies within an org namespace.\n\nOrganization admins can assign roles, query role assignments, and manage\nfine-grained access policies at the namespace, category, or item level.\n\nAdmin gate: The calling agent must have the 'admin' role in their org.\nNon-admin callers receive an error regardless of the requested action (ACL-04).",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "description": "Operation to perform. One of:\n        - \"assign_role\":       Assign *role* to *agent_id*.\n        - \"get_roles\":         List all roles for *agent_id*.\n        - \"add_permission\":    Add policy (agent_id/role, obj, permission).\n        - \"remove_permission\": Remove policy (agent_id/role, obj, permission)."
+                  },
+                  "agent_id": {
+                    "type": "string",
+                    "description": "Target agent (or role name for permission actions)."
+                  },
+                  "role": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Role name for \"assign_role\" action (e.g. \"admin\", \"contributor\")."
+                  },
+                  "obj": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Resource object for permission actions. Format:\n        - \"namespace:<org_id>\"  — org-wide\n        - \"category:<cat>\"      — category-level\n        - \"item:<uuid>\"         — item-level"
+                  },
+                  "permission": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Permission for policy actions (e.g. \"read\", \"write\", \"*\")."
+                  }
+                },
+                "required": [
+                  "action",
+                  "agent_id"
+                ]
+              },
+              "name": "manage_roles",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Manage Roles"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Report whether a knowledge item helped solve a problem (MCP-06).\n\nRecords an explicit outcome signal for the given knowledge item. This signal\nis used by the quality scorer (QI-01, QI-02) to evolve quality_score over\ntime. \"solved\" outcomes increase the item's quality score; \"did_not_help\"\noutcomes decrease it.\n\nDeduplication: if run_id is provided and an outcome signal with the same\n(item_id, run_id) pair already exists, the call returns successfully with\nstatus \"already_recorded\" without inserting a duplicate row.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "item_id": {
+                    "type": "string",
+                    "description": "UUID of the knowledge item being rated."
+                  },
+                  "outcome": {
+                    "type": "string",
+                    "description": "Must be \"solved\" or \"did_not_help\"."
+                  },
+                  "run_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional agent run ID for deduplication and tracing. Strongly\n      recommended — prevents double-counting when retries occur."
+                  }
+                },
+                "required": [
+                  "item_id",
+                  "outcome"
+                ]
+              },
+              "name": "report_outcome",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Report Outcome"
+            }
+          ],
+          "ttlMs": 0,
+          "_meta": {
+            "io.modelcontextprotocol/serverInfo": {
+              "name": "HiveMind",
+              "version": "4.0.3"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-header-name-case-insensitive",
+    "name": "ServerAcceptsUppercaseHeaderName",
+    "description": "Server MUST accept uppercase header name (MCP-METHOD)",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.637Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Case-Sensitivity",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#case-sensitivity"
+      }
+    ],
+    "details": {
+      "headerNameUsed": "MCP-METHOD",
+      "responseStatus": 200,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 106,
+        "result": {
+          "cacheScope": "private",
+          "resultType": "complete",
+          "tools": [
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Contribute a knowledge item to HiveMind.\n\nThe content is scanned for prompt injection, then PII-stripped before any\nstorage. If more than 50% of the post-strip content is placeholder tokens,\nthe contribution is auto-rejected. If an auto-approve rule matches the\norg+category, the item is inserted directly into the knowledge commons;\notherwise it enters the pending_contributions queue for operator review.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description": "The knowledge text to contribute (min 10 characters)."
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "Knowledge category (must be a valid KnowledgeCategory value)."
+                  },
+                  "confidence": {
+                    "default": 0.8,
+                    "type": "number",
+                    "description": "Confidence score 0.0–1.0 (default 0.8)."
+                  },
+                  "framework": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional framework name (e.g. \"fastapi\", \"langchain\")."
+                  },
+                  "language": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional programming language (e.g. \"python\", \"typescript\")."
+                  },
+                  "version": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional version string."
+                  },
+                  "tags": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional list of tags for additional classification."
+                  },
+                  "run_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional agent run/session identifier for provenance."
+                  }
+                },
+                "required": [
+                  "content",
+                  "category"
+                ]
+              },
+              "name": "add_knowledge",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Add Knowledge"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Search or fetch knowledge items from HiveMind.\n\nSearch mode (query provided):\n    Embeds the query text and performs a hybrid BM25+vector search using\n    Reciprocal Rank Fusion (RRF) with quality score boosting. Returns\n    deduplicated summary-tier results (~30-50 tokens each).\n    Private items are prioritized over public duplicates (ACL-05).\n    Rankings: final_score = rrf_score * (0.7 + 0.3 * quality_score)\n\nFetch mode (id provided):\n    Returns full content for a specific knowledge item by UUID, with content\n    hash integrity verification (SEC-02). Includes integrity_verified or\n    integrity_warning field in response.\n\nTemporal query mode (at_time provided, KM-06):\n    When at_time is given, search results are restricted to items that were\n    valid at that point in time. Items with NULL valid_at are treated as\n    always-valid (backward compatible with pre-temporal-migration data).\n    When combined with version, further restricts results to a specific\n    knowledge version.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "query": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Text to search for (required for search mode)."
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "UUID of a specific knowledge item to fetch (fetch mode)."
+                  },
+                  "category": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional category filter (must be a valid KnowledgeCategory)."
+                  },
+                  "limit": {
+                    "default": 10,
+                    "type": "integer",
+                    "description": "Maximum results to return (capped at settings.max_search_limit)."
+                  },
+                  "cursor": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Pagination cursor from a previous response's next_cursor field."
+                  },
+                  "at_time": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional ISO 8601 datetime string for point-in-time queries (KM-06).\n      When provided, only items valid at this time are returned.\n      Example: \"2026-01-01T00:00:00Z\""
+                  },
+                  "version": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional version string filter (exact match). Only meaningful\n      when used with at_time for version-scoped temporal queries."
+                  }
+                }
+              },
+              "name": "search_knowledge",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Search Knowledge"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "List your own knowledge contributions (pending and/or approved).\n\nReturns a paginated view of the contributions this agent has made within\nits organisation's namespace.  Agents can only see their own contributions\n— the filter is enforced via the JWT bearer token, never from tool arguments.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": {
+                    "default": "all",
+                    "type": "string",
+                    "description": "Filter by contribution status.  One of \"pending\", \"approved\",\n      or \"all\" (default)."
+                  },
+                  "category": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional KnowledgeCategory value to narrow results."
+                  },
+                  "limit": {
+                    "default": 20,
+                    "type": "integer",
+                    "description": "Maximum items to return per page (default 20, max 100)."
+                  },
+                  "cursor": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Opaque pagination cursor returned in a previous response."
+                  }
+                }
+              },
+              "name": "list_knowledge",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "List Knowledge"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Soft-delete a knowledge item you contributed.\n\nSets the deleted_at timestamp on the item so it no longer appears in\nsearch results.  Only items you own (same agent_id and org_id from your\nJWT) can be deleted.  The physical row is retained for audit purposes.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "UUID of the approved knowledge item to delete."
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              "name": "delete_knowledge",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Delete Knowledge"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Toggle the public visibility of a knowledge item in HiveMind.\n\nPublishes a private knowledge item to the public commons, or unpublishes\nit back to private. Publication is fully reversible (ACL-02).\n\nSecurity: The calling agent must own the item (org_id from bearer token\nmust match item.org_id). Items belonging to other orgs are never revealed\n— a 404 is returned regardless of whether the item exists in another org.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "UUID string of the KnowledgeItem to publish or unpublish."
+                  },
+                  "is_public": {
+                    "type": "boolean",
+                    "description": "True to publish to the public commons; False to unpublish\n       back to private."
+                  }
+                },
+                "required": [
+                  "id",
+                  "is_public"
+                ]
+              },
+              "name": "publish_knowledge",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Publish Knowledge"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Manage agent roles and access policies within an org namespace.\n\nOrganization admins can assign roles, query role assignments, and manage\nfine-grained access policies at the namespace, category, or item level.\n\nAdmin gate: The calling agent must have the 'admin' role in their org.\nNon-admin callers receive an error regardless of the requested action (ACL-04).",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "description": "Operation to perform. One of:\n        - \"assign_role\":       Assign *role* to *agent_id*.\n        - \"get_roles\":         List all roles for *agent_id*.\n        - \"add_permission\":    Add policy (agent_id/role, obj, permission).\n        - \"remove_permission\": Remove policy (agent_id/role, obj, permission)."
+                  },
+                  "agent_id": {
+                    "type": "string",
+                    "description": "Target agent (or role name for permission actions)."
+                  },
+                  "role": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Role name for \"assign_role\" action (e.g. \"admin\", \"contributor\")."
+                  },
+                  "obj": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Resource object for permission actions. Format:\n        - \"namespace:<org_id>\"  — org-wide\n        - \"category:<cat>\"      — category-level\n        - \"item:<uuid>\"         — item-level"
+                  },
+                  "permission": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Permission for policy actions (e.g. \"read\", \"write\", \"*\")."
+                  }
+                },
+                "required": [
+                  "action",
+                  "agent_id"
+                ]
+              },
+              "name": "manage_roles",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Manage Roles"
+            },
+            {
+              "_meta": {
+                "fastmcp": {
+                  "tags": []
+                }
+              },
+              "description": "Report whether a knowledge item helped solve a problem (MCP-06).\n\nRecords an explicit outcome signal for the given knowledge item. This signal\nis used by the quality scorer (QI-01, QI-02) to evolve quality_score over\ntime. \"solved\" outcomes increase the item's quality score; \"did_not_help\"\noutcomes decrease it.\n\nDeduplication: if run_id is provided and an outcome signal with the same\n(item_id, run_id) pair already exists, the call returns successfully with\nstatus \"already_recorded\" without inserting a duplicate row.",
+              "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "item_id": {
+                    "type": "string",
+                    "description": "UUID of the knowledge item being rated."
+                  },
+                  "outcome": {
+                    "type": "string",
+                    "description": "Must be \"solved\" or \"did_not_help\"."
+                  },
+                  "run_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Optional agent run ID for deduplication and tracing. Strongly\n      recommended — prevents double-counting when retries occur."
+                  }
+                },
+                "required": [
+                  "item_id",
+                  "outcome"
+                ]
+              },
+              "name": "report_outcome",
+              "outputSchema": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Report Outcome"
+            }
+          ],
+          "ttlMs": 0,
+          "_meta": {
+            "io.modelcontextprotocol/serverInfo": {
+              "name": "HiveMind",
+              "version": "4.0.3"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-server-reject-invalid-headers",
+    "name": "ServerRejectsCaseMismatchValue",
+    "description": "Server MUST reject uppercase method value (TOOLS/LIST) since values are case-sensitive",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.639Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Case-Sensitivity",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#case-sensitivity"
+      }
+    ],
+    "details": {
+      "headerValue": "TOOLS/LIST",
+      "bodyValue": "tools/list",
+      "responseStatus": 400,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 107,
+        "error": {
+          "code": -32020,
+          "message": "mcp-method header does not match the request body's method"
+        }
+      }
+    }
+  },
+  {
+    "id": "sep-2243-server-reject-error-code",
+    "name": "ServerRejectsCaseMismatchValueErrorCode",
+    "description": "Server MUST reject uppercase method value (TOOLS/LIST) since values are case-sensitive — uses JSON-RPC error code -32020 (HeaderMismatch)",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.639Z",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Case-Sensitivity",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#case-sensitivity"
+      }
+    ],
+    "details": {
+      "headerValue": "TOOLS/LIST",
+      "bodyValue": "tools/list",
+      "responseStatus": 400,
+      "responseBody": {
+        "jsonrpc": "2.0",
+        "id": 107,
+        "error": {
+          "code": -32020,
+          "message": "mcp-method header does not match the request body's method"
+        }
+      }
+    }
+  },
+  {
+    "id": "wire-schema-valid",
+    "name": "WireSchemaValid",
+    "description": "Every JSON-RPC message the implementation sent is valid per the spec JSON schema for the negotiated spec version",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.639Z",
+    "specReferences": [
+      {
+        "id": "MCP-Schema",
+        "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/draft/schema.json"
+      }
+    ],
+    "details": {
+      "messagesValidated": 2,
+      "violations": []
+    }
+  }
+]

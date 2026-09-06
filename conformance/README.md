@@ -40,3 +40,41 @@ The dominant failure on `2026-07-28` is a single message:
 2025-03-26, 2025-06-18, 2025-11-25`. The number measures the gap to the new
 revision, not the quality of the server. During both runs the server logged
 zero HTTP 500 and zero traceback.
+
+## after-fastmcp-4.0.3 (2026-09-06)
+
+Server at commit `9a137dd`, fastmcp 4.0.3, mcp 2.1.1. Same tool version, same
+commands. Full run report in the session notes; raw output in this directory.
+
+| Requirements | Scored | Passed | Failed | Checks passed / failed | Wire schema |
+| --- | ---: | ---: | ---: | --- | --- |
+| `2025-11-25` | 30 | 10 | 20 | 40 / 21 | 0 violation |
+| `2026-07-28` | 37 | 13 | 24 | 111 / 56 | 0 violation |
+
+Eleven scenarios changed status between the baseline and this run, all of them
+from failure to success, none the other way. Protocol scenarios:
+
+| Scenario | Baseline | After | Note |
+| --- | --- | --- | --- |
+| `tools-list` | fail (`2026-07-28`) | pass | seven tools, `ttlMs` and `cacheScope` emitted |
+| `server-sse-multiple-streams` | fail | pass | |
+| `dns-rebinding-protection` | fail on both | pass on both | `Host: evil.example.com` now gets 421 |
+| `caching` | fail | pass | 7 checks pass, 1 skipped (no resource to read) |
+| `server-stateless` | fail | 23 of 30 checks pass | the two remaining checks drive the reference tool `test_missing_capability` |
+| `wire-schema-valid` | 0 violation | 0 violation | |
+
+## expected-failures files
+
+`expected-failures-2026-07-28.yaml` (38 entries) and
+`expected-failures-2025-11-25.yaml` (22 entries) list every remaining failure
+with a one-line reason: a reference tool with an imposed name that a business
+server does not expose, or a capability this server does not have (resources,
+prompts, completion, tasks extension). Where only one check of a scenario is
+concerned, the entry waives that check and keeps the others enforced. With
+these files the tool exits 0: `Baseline check passed: all failures are expected`.
+
+```
+npx @modelcontextprotocol/conformance@0.2.0-alpha.11 server \
+  --url http://localhost:8000/mcp --requirements 2026-07-28 \
+  --expected-failures conformance/expected-failures-2026-07-28.yaml
+```
