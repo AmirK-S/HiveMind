@@ -12,6 +12,8 @@ Requirements: DIST-04 (Smithery discovery), DIST-06 (Glama.ai)
 from __future__ import annotations
 
 from fastapi import APIRouter
+
+from hivemind import __version__
 from fastapi.responses import JSONResponse
 
 # Path of the MCP Streamable HTTP endpoint. Shared with hivemind.server.main so
@@ -39,7 +41,7 @@ async def server_card() -> JSONResponse:
                     "Shared memory system for AI agents: contribute and retrieve "
                     "knowledge from the collective commons"
                 ),
-                "version": "0.1.0",
+                "version": __version__,
             },
             "transport": {
                 "type": "streamable-http",

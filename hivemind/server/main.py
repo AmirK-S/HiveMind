@@ -25,6 +25,7 @@ from fastapi.routing import APIRoute
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
 
+from hivemind import __version__
 from hivemind.api.router import api_router
 from hivemind.api.routes.well_known import MCP_PATH, well_known_router
 from hivemind.config import settings
@@ -214,7 +215,7 @@ def create_mcp_server() -> FastMCP:
     Tools are registered through Tool.from_function(); mcp.add_tool() expects
     a Tool instance, not a raw function.
     """
-    mcp = FastMCP("HiveMind", lifespan=lifespan)
+    mcp = FastMCP("HiveMind", version=__version__, lifespan=lifespan)
     for function in _TOOL_FUNCTIONS:
         mcp.add_tool(Tool.from_function(function))
     return mcp
@@ -255,7 +256,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="HiveMind",
         description="Shared memory system for AI agents: MCP server plus REST API",
-        version="0.1.0",
+        version=__version__,
         lifespan=mcp_app.lifespan,
         generate_unique_id_function=custom_generate_unique_id,
     )

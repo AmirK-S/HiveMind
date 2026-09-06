@@ -120,3 +120,14 @@ async def test_bearer_token_reaches_the_tools_on_the_modern_era(tool_client, tok
     assert accepted.status_code == 200, accepted.text[:300]
     payload = tool_ok(accepted.json()["result"])
     assert payload["total_count"] == 0
+
+
+async def test_server_discover_reports_the_hivemind_version_not_the_framework(http_client):
+    import hivemind
+
+    response = await http_client.post(
+        "/mcp", json=_modern_body("server/discover"), headers=_modern_headers("server/discover")
+    )
+    server_info = response.json()["result"]["_meta"]["io.modelcontextprotocol/serverInfo"]
+    assert server_info["name"] == "HiveMind"
+    assert server_info["version"] == hivemind.__version__
