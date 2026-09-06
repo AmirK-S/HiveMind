@@ -79,7 +79,10 @@ to your client's configuration file:
 ```
 
 Clients that only speak stdio can go through `mcp-remote` with a `--header`
-argument. There is no `npx` launcher in this repository.
+argument. There is no `npx` launcher in this repository, and the server is not
+published on PyPI: it needs PostgreSQL with pgvector and Redis, so it is
+distributed as this repository and its Docker image. The distribution name in
+`pyproject.toml` is `hivemind-mcp`; `hivemind` on PyPI is an unrelated project.
 
 Talk to the server by hand, on the 2026-07-28 wire:
 
