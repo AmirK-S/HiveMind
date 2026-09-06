@@ -83,3 +83,4 @@ packages = ["hivemind"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = ["models: exige le telechargement d'un modele (lancement separe)"]

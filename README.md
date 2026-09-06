@@ -157,6 +157,15 @@ nominal path and at least three refusals. Without `HIVEMIND_TEST_ADMIN_URL`
 the tests that need PostgreSQL skip. CI runs the same suite on every push
 (`.github/workflows/ci.yml`).
 
+Les tests marques `models` sont exclus de la suite par defaut et de CI, car ils
+chargent le vrai pipeline PII, donc GLiNER (environ 400 Mo dans
+`~/.cache/huggingface`) et le modele spacy du groupe `models` ; ils se lancent a
+part :
+
+```bash
+uv run pytest -m models
+```
+
 What is not tested: the REST API, the dashboard, the CLI, the pipelines beyond
 the doubles, Celery tasks. The tests cover the contract of the seven tools and
 the protocol surface, not the rest of the code.
