@@ -43,7 +43,7 @@ if "error" in r:
     print("JSON-RPC error:", r["error"]); sys.exit(1)
 res = r["result"]
 if res.get("isError"):
-    print("refused:", res["content"][0]["text"]); sys.exit(0)
+    print("refused:", res["content"][0]["text"]); sys.exit(3)
 payload = res.get("structuredContent") or json.loads(res["content"][0]["text"])
 if isinstance(payload, dict) and list(payload) == ["result"]:
     payload = payload["result"]
@@ -80,10 +80,12 @@ docker compose exec -T postgres psql -q -U hivemind -d hivemind -c \
    WHERE NOT EXISTS (SELECT 1 FROM auto_approve_rules WHERE org_id = '$ORG' AND category = 'general');" >/dev/null
 
 say "3. alice contributes"
-CONTENT="With asyncpg behind SQLAlchemy 2, a pool_size above the PostgreSQL max_connections divided by the number of workers gives 'too many clients already' under load; size the pool per worker, not per service."
+RUN_STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+# The stamp keeps the script replayable: the commons refuses the same text twice for one organisation.
+CONTENT="With asyncpg behind SQLAlchemy 2, a pool_size above the PostgreSQL max_connections divided by the number of workers gives 'too many clients already' under load; size the pool per worker, not per service. Observed on $RUN_STAMP."
 ADDED="$(call add_knowledge "{\"content\":\"$CONTENT\",\"category\":\"general\",\"confidence\":0.9,\"tags\":[\"asyncpg\",\"sqlalchemy\"]}" "$ALICE")"
 printf '%s\n' "$ADDED" | sed 's/^/   /'
-HANDLE="$(printf '%s' "$ADDED" | field '["contribution_id"]')"
+HANDLE="$(printf '%s' "$ADDED" | field '["contribution_id"]')" || { echo "no handle returned, stopping"; exit 1; }
 
 say "4. bob searches by meaning, with other words than alice used"
 call search_knowledge '{"query":"postgres connection pool too many clients with several uvicorn workers","limit":3}' "$BOB" | sed 's/^/   /'
@@ -99,6 +101,6 @@ note "alice:"; call list_knowledge '{}' "$ALICE" | python3 -c 'import json,sys; 
 note "bob:";   call list_knowledge '{}' "$BOB"   | python3 -c 'import json,sys; d=json.load(sys.stdin); print("     total_count:", d["total_count"])'
 
 say "8. Without a token, the same call is refused as an MCP error"
-call list_knowledge '{}' "" | sed 's/^/   /'
+call list_knowledge '{}' "" | sed 's/^/   /' || true
 
 say "Done. The item alice contributed is now shared memory: bob found it, used it, rated it."
