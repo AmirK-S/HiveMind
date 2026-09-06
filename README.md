@@ -5,7 +5,7 @@ contributes what it learned, another one finds it. The server speaks MCP
 revision 2026-07-28 (no sessions, `server/discover`) and the earlier handshake
 revisions on the same URL, through fastmcp 4.0.3.
 
-This is a dated demonstration, not a product. It has no hosted instance, no
+This is a demonstration pinned to a date, not a product. It has no hosted instance, no
 users and no daily maintenance. The [end of life](#end-of-life) section says
 what will break next. Everything stated here can be checked from the repository
 alone.
@@ -16,7 +16,7 @@ alone.
   delete, publish, report an outcome, manage roles.
 - Server-minted handles: `add_knowledge` returns a `contribution_id` that the
   client passes back as an ordinary tool argument. No protocol session is
-  needed, which is what the 2026-07-28 revision made mandatory.
+  needed; the 2026-07-28 revision removed sessions and expects exactly this.
 - Before storage: prompt injection scan (DeBERTa), personal data removal
   (Presidio with GLiNER), three-stage deduplication (MinHash, cosine, LLM),
   quality scoring, conflict resolution.
@@ -54,10 +54,10 @@ docker compose up -d --build
 curl -s localhost:8000/health
 ```
 
-The first start takes one to three minutes: migrations run, then three models
-load. `docker compose logs -f hivemind` shows the progress. Measured on a fresh
-clone on 2026-09-06: build 5 min 33 s, first `/health` 200 after 182 s, zero
-container restart (`conformance/` holds the session reports).
+The first start takes a few minutes: migrations run, then three models load,
+one of them downloaded from Hugging Face on first run. `docker compose logs -f
+hivemind` shows the progress; the health check allows four minutes before it
+reports the container unhealthy.
 
 Mint a bearer token for an organisation and an agent. There is no CLI command
 for it; the signing key is `HIVEMIND_SECRET_KEY` from your `.env`:
@@ -85,7 +85,7 @@ to your client's configuration file:
 Clients that only speak stdio can go through `mcp-remote` with a `--header`
 argument. There is no `npx` launcher in this repository, and the server is not
 published on PyPI: it needs PostgreSQL with pgvector and Redis, so it is
-distributed as this repository and its Docker image. The distribution name in
+distributed as this repository, to build locally. The distribution name in
 `pyproject.toml` is `hivemind-mcp`; `hivemind` on PyPI is an unrelated project.
 
 Talk to the server by hand, on the 2026-07-28 wire:
@@ -113,9 +113,9 @@ cp .env.example .env && docker compose up -d --build && ./scripts/demo.sh
 
 | Tool | What it does | Refuses when |
 | --- | --- | --- |
-| `add_knowledge` | Contributes a text with a category; returns `contribution_id` and `status` (`queued`, or `auto_approved` if a rule exists for the organisation) | content shorter than 10 characters, unknown category, injection detected, too much redacted |
-| `search_knowledge` | Fetches by `id`, or searches by `query` (BM25 plus vectors) | neither `id` nor `query`, unknown or foreign private item |
-| `list_knowledge` | Lists the caller's own contributions, pending and approved | unknown status filter |
+| `add_knowledge` | Contributes a text with a category; returns `contribution_id` and `status` (`queued`, or `auto_approved` if a rule exists for the organisation) | content shorter than 10 characters, confidence outside 0.0 to 1.0, unknown category, injection detected, too much redacted, burst rate exceeded |
+| `search_knowledge` | Fetches by `id`, or searches by `query` (PostgreSQL full text plus vectors, fused in SQL) | neither `id` nor `query`, unknown or foreign private item |
+| `list_knowledge` | Lists the caller's own contributions, pending and approved | unknown status or category filter |
 | `delete_knowledge` | Soft-deletes an item of the caller's organisation and agent | item of another agent or organisation, unknown id |
 | `publish_knowledge` | Makes an item visible to other organisations, or hides it again | item of another organisation, unknown id |
 | `report_outcome` | Records `solved` or `did_not_help` for an item, once per `run_id` | unknown item, unknown outcome |
@@ -163,23 +163,23 @@ server arms it with `HIVEMIND_ALLOWED_HOSTS`.
 uv sync --extra dev
 docker run -d --name hivemind-test-pg -e POSTGRES_USER=hm -e POSTGRES_PASSWORD=hm \
   -e POSTGRES_DB=postgres -p 55432:5432 pgvector/pgvector:pg16
-HIVEMIND_TEST_ADMIN_URL=postgresql://hm:hm@localhost:55432/postgres uv run pytest -q
+HIVEMIND_TEST_ADMIN_URL=postgresql://hm:hm@localhost:55432/postgres uv run pytest -q -m "not models"
 ```
 
-59 tests. The three models are replaced by doubles, so no test downloads
-anything or calls an LLM. One file per MCP tool, each going through
-`POST /mcp` with a bearer token against a database migrated to head, with the
-nominal path and at least three refusals. Without `HIVEMIND_TEST_ADMIN_URL`
-the tests that need PostgreSQL skip. CI runs the same suite on every push
-(`.github/workflows/ci.yml`).
+69 tests in that run. The three models are replaced by doubles, so none of
+them downloads anything or calls an LLM. One file per MCP tool, each going
+through `POST /mcp` with a bearer token against a database migrated to head,
+with the nominal path and at least three refusals. Without
+`HIVEMIND_TEST_ADMIN_URL` the tests that need PostgreSQL skip. CI runs the same
+command on every push (`.github/workflows/ci.yml`).
 
-Les tests marques `models` sont exclus de la suite par defaut et de CI, car ils
-chargent le vrai pipeline PII, donc GLiNER (environ 400 Mo dans
-`~/.cache/huggingface`) et le modele spacy du groupe `models` ; ils se lancent a
-part :
+29 more tests carry the `models` marker: they load the real PII pipeline, so
+GLiNER (about 400 MB, downloaded to `~/.cache/huggingface`) and the spaCy model
+of the `models` dependency group. They run separately:
 
 ```bash
-uv run pytest -m models
+uv sync --extra dev --group models
+uv run pytest -q -m models
 ```
 
 What is not tested: the REST API, the CLI, the pipelines beyond the doubles
@@ -209,8 +209,9 @@ All variables carry the `HIVEMIND_` prefix and have a default in
 - `tests/`: the suite described above.
 - `conformance/`: MCP conformance reports before and after the upgrade.
 - `wrappers/`: `hivemind-langchain` and `hivemind-crewai`, thin clients of the
-  REST API, published on PyPI in February 2026.
-- `scripts/`: the demo, its transcript, and an OpenAPI export of the REST API.
+  REST API, also on PyPI under those names.
+- `scripts/`: the demo, its transcript, and a script that exports the OpenAPI
+  document of the REST API.
 
 Removed in September 2026, still in the git history: a Next.js dashboard, two
 generated SDKs that had drifted from the API, a FalkorDB driver nothing
@@ -231,10 +232,11 @@ era for a while; the server serves both.
 
 ## Issues
 
-Issues are read and answered within seven days. No feature is promised: this
-is a dated demonstration. A reproducible defect in what the README claims gets
-fixed; a request for a new capability gets a written answer and stays open or
-is closed as out of scope.
+Issues are welcome and are read. No feature is promised and no response time
+is: this is a demonstration pinned to a date, kept by one person. A
+reproducible defect in what this README claims is the kind of issue that gets
+fixed; a request for a new capability gets a written answer and is closed as
+out of scope.
 
 ## License
 

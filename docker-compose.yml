@@ -42,7 +42,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 120s
+      start_period: 240s
 
   # --------------------------------------------------------------------------
   # PostgreSQL 16 with pgvector extension
@@ -65,7 +65,7 @@ services:
     restart: unless-stopped
 
   # --------------------------------------------------------------------------
-  # Redis 7: Celery broker + rate limiter state
+  # Redis 7: rate limiter state (no Celery worker runs in this stack)
   # --------------------------------------------------------------------------
   redis:
     image: redis:7-alpine

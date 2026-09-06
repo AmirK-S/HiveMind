@@ -3,13 +3,20 @@
 All notable changes to this repository are recorded here. The format follows
 Keep a Changelog. Dates are ISO 8601.
 
-## Unreleased
+## 0.1.0 - 2026-09-06
+
+First tagged state of the repository. Everything below compares to the
+untagged state of February 2026.
 
 ### Added
 - First test suite: startup contract (configuration prefix, migrations on an
   empty database, /health, MCP endpoint path), one contract file per MCP tool
   through the HTTP transport with a bearer token, and the 2026-07-28 protocol
-  revision contract. CI on GitHub Actions with a pgvector service.
+  revision contract. CI on GitHub Actions with a pgvector service. A second
+  stage, marked `models`, loads the real PII pipeline and fixes its contract:
+  technical text intact, secrets, names and addresses removed.
+- `scripts/demo.sh` and `scripts/demo-transcript.txt`: two agents sharing one
+  memory over the 2026-07-28 wire, replayable on a fresh clone.
 - `docker/entrypoint.sh`: Alembic migrations run before uvicorn.
 - Migration 007: `casbin_rule`, the RBAC policy table the server reads at startup.
 - `.env.example`, `LICENSE` (MIT), this changelog.
@@ -33,6 +40,7 @@ Keep a Changelog. Dates are ISO 8601.
 - Distribution name is `hivemind-mcp`; `hivemind` on PyPI belongs to another project.
 
 ### Fixed
+- `server/discover` advertised the fastmcp version instead of HiveMind's.
 - PII pipeline redacted library names: the name of the API key pattern
   recognizer leaked into GLiNER as a zero-shot label with a 0.30 threshold,
   and the entity order came from a set, so results differed per process. The

@@ -23,7 +23,7 @@ COPY pyproject.toml .
 COPY uv.lock .
 
 # --frozen: respect uv.lock exactly (reproducible builds)
-# --no-dev: skip pytest and the SDK generator
+# --no-dev: skip the test tooling
 # --no-install-project: the application is copied as source below, not installed
 # --group models: the spaCy model presidio loads at startup, pinned in uv.lock,
 # so it lands in .venv here and the runtime image never downloads it.
@@ -52,8 +52,8 @@ ENV PATH="/app/.venv/bin:$PATH" \
 EXPOSE 8000
 
 # python:3.12-slim ships no curl; probe /health with the interpreter.
-# start-period covers the model warm-up measured at about one minute cold.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
+# start-period covers migrations, the first-run model download and the warm-up.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=240s --retries=3 \
     CMD ["python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"]
 
 LABEL org.opencontainers.image.source="https://github.com/AmirK-S/HiveMind"

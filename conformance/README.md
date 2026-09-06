@@ -21,7 +21,7 @@ Server as of commit `844e5eb`, fastmcp 2.14.5, mcp 1.26.0. Tool version
 | Requirements | Scored | Passed | Failed | Not scored | Skipped | Wire schema |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | `2025-11-25` | 30 | 8 | 22 | 3 | 0 | 143 messages, 0 violation |
-| `2026-07-28` | 36 | 5 | 31 | 13 | 1 | 45 checks, 0 violation |
+| `2026-07-28` | 37 | 5 | 32 | 13 | 0 | 45 checks, 0 violation |
 
 Protocol scenarios on this baseline:
 
@@ -38,13 +38,13 @@ Protocol scenarios on this baseline:
 The dominant failure on `2026-07-28` is a single message:
 `Unsupported protocol version: 2026-07-28. Supported versions: 2024-11-05,
 2025-03-26, 2025-06-18, 2025-11-25`. The number measures the gap to the new
-revision, not the quality of the server. During both runs the server logged
-zero HTTP 500 and zero traceback.
+revision, not the quality of the server. The tool's console output, kept in the
+`.log` files, shows no transport error on either run.
 
 ## after-fastmcp-4.0.3 (2026-09-06)
 
 Server at commit `9a137dd`, fastmcp 4.0.3, mcp 2.1.1. Same tool version, same
-commands. Full run report in the session notes; raw output in this directory.
+commands; the `.log` files and the `checks.json` per scenario are the record.
 
 | Requirements | Scored | Passed | Failed | Checks passed / failed | Wire schema |
 | --- | ---: | ---: | ---: | --- | --- |
