@@ -30,6 +30,15 @@ MCP_HEADERS = {
     "Accept": "application/json, text/event-stream",
 }
 AUTH_ERROR = "Missing or invalid Authorization header. Expected 'Bearer <token>'."
+EXPECTED_TOOLS = {
+    "add_knowledge",
+    "search_knowledge",
+    "list_knowledge",
+    "delete_knowledge",
+    "publish_knowledge",
+    "manage_roles",
+    "report_outcome",
+}
 
 # Doit preceder tout import de hivemind.config : le singleton settings lit
 # l'environnement a l'import.
@@ -164,7 +173,7 @@ async def _client_for(app):
 
     async with LifespanManager(app, startup_timeout=60, shutdown_timeout=60) as manager:
         transport = httpx.ASGITransport(app=manager.app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as client:
             yield client
 
 

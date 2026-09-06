@@ -6,22 +6,8 @@ POST /mcp renvoyait 307 vers /mcp/ puis 404 (mesure du 05/09/2026).
 
 from __future__ import annotations
 
-import pytest
 
-EXPECTED_TOOLS = {
-    "add_knowledge",
-    "search_knowledge",
-    "list_knowledge",
-    "delete_knowledge",
-    "publish_knowledge",
-    "manage_roles",
-    "report_outcome",
-}
-
-MCP_HEADERS = {
-    "Content-Type": "application/json",
-    "Accept": "application/json, text/event-stream",
-}
+from tests.conftest import EXPECTED_TOOLS, MCP_HEADERS
 
 
 def _tools_list_request(request_id: int = 1) -> dict:
