@@ -4,9 +4,9 @@ Provides a lazy AsyncEnforcer singleton backed by PostgreSQL via
 casbin-async-sqlalchemy-adapter.  Three enforcement levels are encoded
 via ``obj`` prefixes:
 
-- Namespace level:  ``obj = "namespace:<org_id>"``   — org-wide access
-- Category level:   ``obj = "category:<category>"``  — knowledge-category access
-- Item level:       ``obj = "item:<uuid>"``           — individual item access
+- Namespace level:  ``obj = "namespace:<org_id>"``  , org-wide access
+- Category level:   ``obj = "category:<category>"`` , knowledge-category access
+- Item level:       ``obj = "item:<uuid>"``          , individual item access
 
 Requirements: ACL-03 (three-level RBAC), ACL-04 (org admin role management).
 
@@ -25,7 +25,7 @@ import pathlib
 import casbin
 import casbin_async_sqlalchemy_adapter
 
-# Module-level lazy singleton — initialised on first call to get_enforcer().
+# Module-level lazy singleton, initialised on first call to get_enforcer().
 _enforcer: casbin.AsyncEnforcer | None = None
 
 # Absolute path to the Casbin model config located alongside this module.
@@ -76,7 +76,7 @@ async def enforce(subject: str, domain: str, obj: str, action: str) -> bool:
     Args:
         subject: The entity requesting access (e.g. agent_id or a role name).
         domain:  The tenant/namespace (org_id) that scopes the policy.
-        obj:     The resource, prefixed by level — ``"namespace:<org_id>"``,
+        obj:     The resource, prefixed by level, ``"namespace:<org_id>"``,
                  ``"category:<cat>"``, or ``"item:<uuid>"``.
         action:  The requested operation (e.g. ``"read"``, ``"write"``,
                  ``"*"``).
@@ -145,7 +145,7 @@ async def seed_default_policies(org_id: str) -> None:
     enabled.
 
     Called once per org during initialisation; safe to call multiple times
-    (Casbin ``add_policy`` is idempotent — returns False if rule exists).
+    (Casbin ``add_policy`` is idempotent, returns False if rule exists).
 
     Args:
         org_id: The organisation identifier used as both the domain and the

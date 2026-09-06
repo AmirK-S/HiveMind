@@ -9,14 +9,14 @@ Creates:
 
 Columns:
 - id              : UUID primary key
-- org_id          : String(255) — which org owns this rule
-- category        : knowledgecategory enum — which knowledge category this rule applies to
-- is_auto_approve : Boolean, default false — when true, skip human review for this category
-- created_at      : DateTime — rule creation timestamp
-- updated_at      : DateTime — rule last-modified timestamp
+- org_id          : String(255), which org owns this rule
+- category        : knowledgecategory enum, which knowledge category this rule applies to
+- is_auto_approve : Boolean, default false, when true, skip human review for this category
+- created_at      : DateTime, rule creation timestamp
+- updated_at      : DateTime, rule last-modified timestamp
 
 Constraints:
-- uq_auto_approve_rules_org_category : unique(org_id, category) — one rule per org/category pair
+- uq_auto_approve_rules_org_category : unique(org_id, category), one rule per org/category pair
 
 Design notes:
 - References the existing 'knowledgecategory' enum type created by migration 001
@@ -39,7 +39,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Reference the existing knowledgecategory enum — do NOT create a new type
+    # Reference the existing knowledgecategory enum, do NOT create a new type
     # create_type is a postgresql.ENUM argument. sa.Enum ignores it and emits
     # an empty CREATE TYPE ... AS ENUM (), which fails because the type exists.
     knowledgecategory_enum = postgresql.ENUM(

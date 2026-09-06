@@ -5,7 +5,7 @@ Orchestrates the three dedup stages in sequence:
   Stage 2 (MinHash): Narrow candidates to those also matching by Jaccard similarity.
   Stage 3 (LLM): Confirm semantic duplicates above confidence threshold.
 
-Each stage acts as a filter — returning early with ADD if the evidence for
+Each stage acts as a filter: returning early with ADD if the evidence for
 duplication is insufficient. Only items confirmed by all three stages result
 in a DUPLICATE action.
 
@@ -26,14 +26,14 @@ from hivemind.dedup.minhash_stage import find_minhash_candidates
 
 logger = logging.getLogger(__name__)
 
-# Maximum number of candidates passed to the LLM stage — keeps API costs bounded
+# Maximum number of candidates passed to the LLM stage, keeps API costs bounded
 _MAX_LLM_CANDIDATES = 3
 
 
 async def run_dedup_pipeline(content: str, org_id: str) -> dict:
     """Run the three-stage dedup pipeline for a candidate knowledge item.
 
-    Stages are run in order. Each stage filters the candidate set — if the
+    Stages are run in order. Each stage filters the candidate set, if the
     filtered set becomes empty, the pipeline returns ADD immediately without
     running remaining stages.
 
@@ -58,8 +58,8 @@ async def run_dedup_pipeline(content: str, org_id: str) -> dict:
     cosine_candidates = await find_cosine_candidates(content, org_id, top_k=10)
 
     if not cosine_candidates:
-        # No candidates within similarity threshold — clearly not a duplicate
-        logger.debug("Dedup pipeline: no cosine candidates found — ADD")
+        # No candidates within similarity threshold, clearly not a duplicate
+        logger.debug("Dedup pipeline: no cosine candidates found, ADD")
         return {
             "action": "ADD",
             "duplicate_of": None,
@@ -69,7 +69,7 @@ async def run_dedup_pipeline(content: str, org_id: str) -> dict:
         }
 
     # ------------------------------------------------------------------
-    # Stage 2: MinHash LSH — lexical near-duplicate filter
+    # Stage 2: MinHash LSH, lexical near-duplicate filter
     # Keeps only candidates that appear in BOTH cosine and MinHash results.
     # ------------------------------------------------------------------
     stages_run.append("minhash")
@@ -79,10 +79,10 @@ async def run_dedup_pipeline(content: str, org_id: str) -> dict:
     intersection_ids = cosine_ids & minhash_ids
 
     if not intersection_ids:
-        # Items are similar by embedding but NOT by Jaccard — different content.
+        # Items are similar by embedding but NOT by Jaccard, different content.
         # Return ADD with cosine candidates so caller has context.
         logger.debug(
-            "Dedup pipeline: %d cosine candidates but no MinHash overlap — ADD",
+            "Dedup pipeline: %d cosine candidates but no MinHash overlap, ADD",
             len(cosine_candidates),
         )
         return {
@@ -97,7 +97,7 @@ async def run_dedup_pipeline(content: str, org_id: str) -> dict:
     intersection_candidates = [c for c in cosine_candidates if c["id"] in intersection_ids]
 
     # ------------------------------------------------------------------
-    # Stage 3: LLM semantic confirmation (optional — graceful skip)
+    # Stage 3: LLM semantic confirmation (optional, graceful skip)
     # ------------------------------------------------------------------
     stages_run.append("llm")
 
@@ -135,9 +135,9 @@ async def run_dedup_pipeline(content: str, org_id: str) -> dict:
             "stages_run": stages_run,
         }
 
-    # LLM did not confirm any duplicate — items are similar but semantically distinct
+    # LLM did not confirm any duplicate, items are similar but semantically distinct
     logger.debug(
-        "Dedup pipeline: %d intersection candidates, LLM did not confirm duplicate — ADD",
+        "Dedup pipeline: %d intersection candidates, LLM did not confirm duplicate, ADD",
         len(intersection_candidates),
     )
     return {

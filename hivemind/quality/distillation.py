@@ -2,26 +2,26 @@
 
 Runs periodically via Celery Beat to maintain self-healing properties in the
 commons:
-  1. Threshold check    — short-circuit if pending volume and conflict count are
+  1. Threshold check   , short-circuit if pending volume and conflict count are
                           both below configured thresholds (avoids unnecessary work)
-  2. Duplicate merging  — expire non-canonical duplicates; keep highest-quality item
-  3. Contradiction flag — group contradicting items into clusters for human review
-  4. Summary generation — LLM-generated summary for clusters of 3+ related items
+  2. Duplicate merging , expire non-canonical duplicates; keep highest-quality item
+  3. Contradiction flag, group contradicting items into clusters for human review
+  4. Summary generation, LLM-generated summary for clusters of 3+ related items
                           + PII re-scan on every generated summary
-  5. Quality pre-screen — flag low-quality pending contributions before review queue
+  5. Quality pre-screen, flag low-quality pending contributions before review queue
 
-This module must ONLY be called from a Celery task — never from the request path.
+This module must ONLY be called from a Celery task, never from the request path.
 
 Design decisions:
-- Uses sync SessionFactory (hivemind.cli.client) — same pattern as webhook tasks.
+- Uses sync SessionFactory (hivemind.cli.client), same pattern as webhook tasks.
 - PIIPipeline is imported lazily inside the function body to avoid heavy model
   loading at module import time.
-- Merged duplicates are expired (expired_at = now()), never deleted — immutable
+- Merged duplicates are expired (expired_at = now()), never deleted, immutable
   audit trail per KM-05.
 - Provenance links (source_item_ids in tags) enable erasure propagation:
   if any source item is deleted, derived summaries can be identified and
   re-evaluated.
-- LLM summary generation is non-blocking — if no API key or API call fails,
+- LLM summary generation is non-blocking, if no API key or API call fails,
   summary stage is skipped gracefully.
 """
 
@@ -75,7 +75,7 @@ def _call_summary_llm(items_content: list[str], api_key: str, model: str) -> str
 
     Returns the generated summary text, or None on any failure.
 
-    Uses httpx synchronous client — Celery task, not async context.
+    Uses httpx synchronous client: Celery task, not async context.
     """
     import httpx  # noqa: PLC0415
 
@@ -103,7 +103,7 @@ def _call_summary_llm(items_content: list[str], api_key: str, model: str) -> str
             data = response.json()
             return data["content"][0]["text"].strip()
     except Exception as exc:
-        logger.warning("Distillation: LLM summary call failed — %s (skipping)", exc)
+        logger.warning("Distillation: LLM summary call failed, %s (skipping)", exc)
         return None
 
 
@@ -120,11 +120,11 @@ def run_distillation() -> dict[str, Any]:
 
     Steps
     -----
-    a. Threshold check       — short-circuit if below both thresholds
-    b. Duplicate merging     — expire non-canonical duplicates
-    c. Contradiction flagging — cluster contradicting items
-    d. Summary generation    — LLM + mandatory PII re-scan
-    e. Quality pre-screening — flag low-quality pending contributions
+    a. Threshold check      , short-circuit if below both thresholds
+    b. Duplicate merging    , expire non-canonical duplicates
+    c. Contradiction flagging, cluster contradicting items
+    d. Summary generation   , LLM + mandatory PII re-scan
+    e. Quality pre-screening, flag low-quality pending contributions
     f. Update last-run timestamp in deployment_config
 
     Returns
@@ -181,7 +181,7 @@ def run_distillation() -> dict[str, Any]:
 
     if pending_count < volume_threshold and conflict_count < conflict_threshold:
         logger.info(
-            "Distillation: skipped — pending=%d (threshold=%d), conflicts=%d (threshold=%d)",
+            "Distillation: skipped, pending=%d (threshold=%d), conflicts=%d (threshold=%d)",
             pending_count,
             volume_threshold,
             conflict_count,
@@ -195,7 +195,7 @@ def run_distillation() -> dict[str, Any]:
         }
 
     logger.info(
-        "Distillation: starting — pending=%d, conflicts=%d",
+        "Distillation: starting, pending=%d, conflicts=%d",
         pending_count,
         conflict_count,
     )
@@ -207,7 +207,7 @@ def run_distillation() -> dict[str, Any]:
 
     with _get_session() as session:
         # Find groups of active knowledge_items sharing the same content_hash
-        # (same org only — ACL-01)
+        # (same org only, ACL-01)
         # Use a raw SQL subquery to find duplicate groups
         duplicate_groups_sql = text("""
             SELECT content_hash, org_id, array_agg(id ORDER BY quality_score DESC) AS ids
@@ -220,7 +220,7 @@ def run_distillation() -> dict[str, Any]:
         duplicate_groups = session.execute(duplicate_groups_sql).fetchall()
 
         for row in duplicate_groups:
-            ids = row.ids  # sorted descending by quality_score — first is canonical
+            ids = row.ids  # sorted descending by quality_score, first is canonical
             if not ids or len(ids) < 2:
                 continue
 
@@ -248,7 +248,7 @@ def run_distillation() -> dict[str, Any]:
                 .values(tags=updated_tags)
             )
 
-            # Expire non-canonical duplicates (system-time invalidation — no deletion)
+            # Expire non-canonical duplicates (system-time invalidation, no deletion)
             session.execute(
                 update(KnowledgeItem)
                 .where(KnowledgeItem.id.in_(non_canonical_ids))
@@ -259,7 +259,7 @@ def run_distillation() -> dict[str, Any]:
 
         session.commit()
 
-    logger.info("Distillation: duplicate merging complete — %d merged", duplicates_merged)
+    logger.info("Distillation: duplicate merging complete, %d merged", duplicates_merged)
 
     # ------------------------------------------------------------------
     # c. Contradiction flagging
@@ -307,7 +307,7 @@ def run_distillation() -> dict[str, Any]:
         session.commit()
 
     logger.info(
-        "Distillation: contradiction flagging complete — %d clusters", contradictions_flagged
+        "Distillation: contradiction flagging complete, %d clusters", contradictions_flagged
     )
 
     # ------------------------------------------------------------------
@@ -343,8 +343,8 @@ def run_distillation() -> dict[str, Any]:
                 clusterable_items_sql, {"threshold": _CLUSTER_DISTANCE_THRESHOLD}
             ).fetchall()
         except Exception as exc:
-            # pgvector may not be available — skip summary generation gracefully
-            logger.warning("Distillation: embedding cluster query failed — %s (skipping)", exc)
+            # pgvector may not be available, skip summary generation gracefully
+            logger.warning("Distillation: embedding cluster query failed, %s (skipping)", exc)
             pairs = []
 
         # Build adjacency list to find connected components (clusters)
@@ -398,10 +398,10 @@ def run_distillation() -> dict[str, Any]:
             if len(items_content) < _MIN_CLUSTER_SIZE:
                 continue
 
-            # LLM summary generation — skip if no API key
+            # LLM summary generation: skip if no API key
             if not cfg.anthropic_api_key:
                 logger.debug(
-                    "Distillation: no API key — skipping summary generation for cluster "
+                    "Distillation: no API key, skipping summary generation for cluster "
                     "(size=%d, category=%s)",
                     len(cluster_ids),
                     category,
@@ -410,7 +410,7 @@ def run_distillation() -> dict[str, Any]:
 
             summary_text = _call_summary_llm(items_content, cfg.anthropic_api_key, cfg.llm_model)
             if not summary_text:
-                continue  # LLM failed — non-blocking
+                continue  # LLM failed, non-blocking
 
             # Mandatory PII re-scan on generated summary (QI-04 requirement)
             # Lazy import to avoid loading heavy ML models at module import time
@@ -428,7 +428,7 @@ def run_distillation() -> dict[str, Any]:
                 if should_reject:
                     logger.warning(
                         "Distillation: generated summary rejected (>50%% PII) for cluster "
-                        "(category=%s, org=%s) — skipping",
+                        "(category=%s, org=%s), skipping",
                         category,
                         org_id,
                     )
@@ -436,7 +436,7 @@ def run_distillation() -> dict[str, Any]:
                 summary_text = cleaned_summary
             except Exception as exc:
                 logger.warning(
-                    "Distillation: PII pipeline unavailable — %s — storing summary as-is "
+                    "Distillation: PII pipeline unavailable, %s, storing summary as-is "
                     "(category=%s)",
                     exc,
                     category,
@@ -452,7 +452,7 @@ def run_distillation() -> dict[str, Any]:
                 content_hash=_compute_content_hash(summary_text),
                 category=category,
                 confidence=0.8,
-                quality_score=0.6,  # slightly above neutral — summaries are curated
+                quality_score=0.6,  # slightly above neutral, summaries are curated
                 tags={
                     "distilled": True,
                     "source_item_ids": cluster_ids,
@@ -466,7 +466,7 @@ def run_distillation() -> dict[str, Any]:
         session.commit()
 
     logger.info(
-        "Distillation: summary generation complete — %d summaries", summaries_generated
+        "Distillation: summary generation complete, %d summaries", summaries_generated
     )
 
     # ------------------------------------------------------------------
@@ -505,7 +505,7 @@ def run_distillation() -> dict[str, Any]:
             )
 
             if preliminary_score < _LOW_QUALITY_THRESHOLD:
-                # Flag item but do not remove from queue — visual flag only
+                # Flag item but do not remove from queue, visual flag only
                 existing_tags: dict = item.tags or {}
                 updated_tags = {
                     **existing_tags,
@@ -525,7 +525,7 @@ def run_distillation() -> dict[str, Any]:
         session.commit()
 
     logger.info(
-        "Distillation: pre-screening complete — %d prescreened, %d low-quality flagged",
+        "Distillation: pre-screening complete, %d prescreened, %d low-quality flagged",
         items_prescreened,
         low_quality_filtered,
     )
@@ -561,5 +561,5 @@ def run_distillation() -> dict[str, Any]:
         "low_quality_filtered": low_quality_filtered,
         "run_at": now.isoformat(),
     }
-    logger.info("Distillation: completed — %s", json.dumps(result))
+    logger.info("Distillation: completed, %s", json.dumps(result))
     return result

@@ -1,6 +1,6 @@
 # hivemind-langchain
 
-LangChain retriever for [HiveMind](https://github.com/AmirK-S/HiveMind) — the shared knowledge commons for AI agents.
+LangChain retriever for [HiveMind](https://github.com/AmirK-S/HiveMind), the shared knowledge commons for AI agents.
 
 ## Installation
 

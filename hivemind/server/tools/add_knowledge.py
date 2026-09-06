@@ -4,9 +4,9 @@ Security design (ACL-01, TRUST-01, SEC-01, SEC-03, TRUST-04):
 - org_id is ALWAYS taken from the bearer token, never from tool arguments
 - Raw content is scanned for prompt injection BEFORE PII stripping (SEC-01)
 - Anti-sybil burst detection enforced after injection scan (SEC-03)
-- Raw content is PII-stripped BEFORE any DB insert — raw text is never stored
+- Raw content is PII-stripped BEFORE any DB insert, raw text is never stored
 - Content with >50% placeholders is auto-rejected (too redacted to be useful)
-- Auto-approve rules checked post-hash — matching org+category skips pending queue (TRUST-04)
+- Auto-approve rules checked post-hash, matching org+category skips pending queue (TRUST-04)
 - Contributions enter pending_contributions (quarantine) or knowledge_items (auto-approved)
 
 Flow:
@@ -18,8 +18,8 @@ Flow:
   4. Auto-reject if should_reject is True
   5. Compute content hash of cleaned text
   5a. Check auto-approve rules (TRUST-04)
-  5b. Run dedup pipeline (KM-03) — three-stage near-duplicate detection
-  5c. If DUPLICATE: run conflict resolution (KM-07) — UPDATE/ADD/NOOP/VERSION_FORK
+  5b. Run dedup pipeline (KM-03), three-stage near-duplicate detection
+  5c. If DUPLICATE: run conflict resolution (KM-07), UPDATE/ADD/NOOP/VERSION_FORK
   5d. Insert directly with embedding (auto-approve path) OR into pending queue (normal path)
   6. Return contribution_id + status
 """
@@ -94,7 +94,7 @@ async def add_knowledge(
     Args:
         content:    The knowledge text to contribute (min 10 characters).
         category:   Knowledge category (must be a valid KnowledgeCategory value).
-        confidence: Confidence score 0.0–1.0 (default 0.8).
+        confidence: Confidence score 0.0-1.0 (default 0.8).
         framework:  Optional framework name (e.g. "fastapi", "langchain").
         language:   Optional programming language (e.g. "python", "typescript").
         version:    Optional version string.
@@ -133,7 +133,7 @@ async def add_knowledge(
         return _auth_error(str(exc))
 
     # Step 1.5: Scan for prompt injection BEFORE PII stripping (SEC-01)
-    # Injection patterns may be hidden in text that gets partially redacted —
+    # Injection patterns may be hidden in text that gets partially redacted , 
     # scan raw content before any modification.
     is_injection, injection_score = InjectionScanner.get_instance().is_injection(content)
     if is_injection:
@@ -158,7 +158,7 @@ async def add_knowledge(
             )
 
     # Step 2: PII-strip the content BEFORE any storage (TRUST-01)
-    # Raw content is never persisted — only the cleaned version.
+    # Raw content is never persisted: only the cleaned version.
     cleaned_content, should_reject = strip_pii(content)
 
     # Step 3: Auto-reject if too much was redacted
@@ -172,7 +172,7 @@ async def add_knowledge(
     import hashlib
     content_hash = hashlib.sha256(cleaned_content.encode()).hexdigest()
 
-    # Step 5: Dedup pipeline — three-stage near-duplicate detection (KM-03)
+    # Step 5: Dedup pipeline, three-stage near-duplicate detection (KM-03)
     # Runs BEFORE the DB insert to avoid writing duplicates into the commons.
     # Lazy imports to avoid circular dependencies.
     from hivemind.dedup.pipeline import run_dedup_pipeline
@@ -184,12 +184,12 @@ async def add_knowledge(
     _fork_valid_at = None
 
     if dedup_result.get("action") == "DUPLICATE":
-        # Step 5a: Conflict resolution — classify relationship with the best match
+        # Step 5a: Conflict resolution, classify relationship with the best match
         top_duplicate = dedup_result["duplicates"][0] if dedup_result.get("duplicates") else {}
         resolution = await resolve_conflict(cleaned_content, top_duplicate, auth.org_id)
 
         if resolution["action"] == "NOOP":
-            # Exact or near-exact duplicate — block insertion, return informational
+            # Exact or near-exact duplicate, block insertion, return informational
             return {
                 "contribution_id": resolution.get("existing_item_id", ""),
                 "status": "duplicate_detected",
@@ -202,7 +202,7 @@ async def add_knowledge(
             }
 
         if resolution["action"] in ("UPDATE", "VERSION_FORK"):
-            # Apply resolution — expire/invalidate the existing item
+            # Apply resolution: expire/invalidate the existing item
             applied = await apply_conflict_resolution(
                 resolution=resolution,
                 new_content=cleaned_content,
@@ -215,7 +215,7 @@ async def add_knowledge(
             # Fall through to insert the new item below
 
         elif resolution["action"] == "FLAGGED_FOR_REVIEW":
-            # Multi-hop conflict — insert as pending with a conflict flag note
+            # Multi-hop conflict, insert as pending with a conflict flag note
             # Store the flag in the tags field to avoid schema change
             if tags is None:
                 tags = []
@@ -226,7 +226,7 @@ async def add_knowledge(
 
         # resolution["action"] == "ADD": fall through to normal insert (no DB changes)
 
-    # Step 5b: Insert — either directly (auto-approve) or into pending queue
+    # Step 5b: Insert, either directly (auto-approve) or into pending queue
     async with get_session() as session:
         # Step 5b-i: Check auto-approve rules (TRUST-04)
         auto_approve_result = await session.execute(

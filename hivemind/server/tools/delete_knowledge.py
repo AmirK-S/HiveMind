@@ -4,7 +4,7 @@ Soft-deletes an approved knowledge item owned by the calling agent.
 
 Security (ACL-01, pitfall 6):
 - org_id and agent_id are extracted from the bearer token, never from tool args
-- Query filters by id AND org_id AND source_agent_id — agents can only delete
+- Query filters by id AND org_id AND source_agent_id, agents can only delete
   their own items within their own org namespace
 - Returns 404 (not 403) for items not found or owned by another agent/org so
   existence of items in other namespaces is not revealed (per research pitfall 6)
@@ -50,7 +50,7 @@ def _auth_error(message: str) -> NoReturn:
 
 
 def _not_found(id: str) -> NoReturn:
-    """Raise a 404-style error — does NOT reveal whether item exists in another org."""
+    """Raise a 404-style error, does NOT reveal whether item exists in another org."""
     raise ToolError(f"Knowledge item '{id}' not found.")
 
 
@@ -77,7 +77,7 @@ async def delete_knowledge(id: str) -> dict:
         renders it with isError=true.  Items in other orgs get the same
         404-style error (does not reveal existence per research pitfall 6).
     """
-    # Extract auth — org_id and agent_id both needed for ownership check
+    # Extract auth: org_id and agent_id both needed for ownership check
     try:
         headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
@@ -105,7 +105,7 @@ async def delete_knowledge(id: str) -> dict:
         item = result.scalar_one_or_none()
 
         if item is None:
-            # Per research pitfall 6: return 404 (not 403) — never reveal that
+            # Per research pitfall 6: return 404 (not 403), never reveal that
             # an item exists in another org or belongs to another agent
             return _not_found(id)
 

@@ -6,7 +6,7 @@ swapped without modifying callers. The SentenceTransformerProvider is the defaul
 Phase 1 implementation using all-MiniLM-L6-v2 (384 dimensions, ~22 MB).
 
 Design decisions:
-- model_id and model_revision are queryable properties — stored in deployment_config
+- model_id and model_revision are queryable properties, stored in deployment_config
   at startup to enable detection of model drift between deployments (KM-08)
 - normalize_embeddings=True ensures correct cosine similarity with pgvector's
   cosine_distance operator
@@ -85,7 +85,7 @@ class SentenceTransformerProvider(EmbeddingProvider):
             "sentence-transformers/all-MiniLM-L6-v2" (384 dims, 22 MB).
 
     The model is loaded once at construction. Normalization is applied so that
-    vectors are unit-length — this makes cosine similarity equivalent to dot
+    vectors are unit-length, this makes cosine similarity equivalent to dot
     product, which is what pgvector's cosine_distance operator computes.
     """
 
@@ -100,7 +100,7 @@ class SentenceTransformerProvider(EmbeddingProvider):
         self._dimensions: int = self._model.get_sentence_embedding_dimension()
 
         # Attempt to retrieve the HuggingFace commit hash for revision pinning.
-        # This is a best-effort operation — if the model was loaded from a local
+        # This is a best-effort operation, if the model was loaded from a local
         # cache without metadata, we fall back to None.
         self._revision: str | None = self._detect_revision()
 
@@ -171,7 +171,7 @@ class SentenceTransformerProvider(EmbeddingProvider):
 
 
 class _EmbedderSingleton:
-    """Internal singleton holder — prevents repeated model loading."""
+    """Internal singleton holder: prevents repeated model loading."""
 
     _instance: EmbeddingProvider | None = None
 
@@ -183,7 +183,7 @@ def get_embedder(model_name: str | None = None) -> EmbeddingProvider:
     (or the value of settings.embedding_model if None). Subsequent calls return
     the cached instance regardless of *model_name*.
 
-    The lazy import of settings avoids circular imports — config.py has no
+    The lazy import of settings avoids circular imports, config.py has no
     dependency on the pipeline package.
 
     Args:

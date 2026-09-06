@@ -4,7 +4,7 @@ MCP-06: Explicit active confirmation signal for quality scoring.
 
 When an agent calls this tool, it records whether retrieved knowledge actually
 helped solve a problem. These outcome signals are the primary driver of quality
-score evolution (QI-01, QI-02) — they distinguish knowledge that is retrieved
+score evolution (QI-01, QI-02), they distinguish knowledge that is retrieved
 from knowledge that is genuinely useful.
 
 Signal types recorded:
@@ -12,7 +12,7 @@ Signal types recorded:
 - "outcome_not_helpful"  : item was retrieved but did not help
 
 Deduplication: if a run_id is provided and a signal with that (item_id, run_id)
-combination already exists, the call is idempotent — the existing signal is
+combination already exists, the call is idempotent, the existing signal is
 returned with status "already_recorded".
 
 Security (ACL-01):
@@ -101,7 +101,7 @@ async def report_outcome(
         item_id:  UUID of the knowledge item being rated.
         outcome:  Must be "solved" or "did_not_help".
         run_id:   Optional agent run ID for deduplication and tracing. Strongly
-                  recommended — prevents double-counting when retries occur.
+                  recommended, prevents double-counting when retries occur.
 
     Returns:
         dict: { status, item_id, outcome, signal_id }
@@ -111,7 +111,7 @@ async def report_outcome(
         isError=true.
     """
     # -----------------------------------------------------------------------
-    # Auth: extract JWT from headers (ACL-01 — org_id never from arguments)
+    # Auth: extract JWT from headers (ACL-01, org_id never from arguments)
     # -----------------------------------------------------------------------
     try:
         headers = get_http_headers(include={"authorization"})
@@ -174,7 +174,7 @@ async def report_outcome(
 
         if existing_signal is not None:
             logger.info(
-                "Duplicate outcome report detected: item_id=%s run_id=%s — returning existing signal",
+                "Duplicate outcome report detected: item_id=%s run_id=%s, returning existing signal",
                 item_id,
                 run_id,
             )

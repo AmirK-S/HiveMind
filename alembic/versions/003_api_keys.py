@@ -9,24 +9,24 @@ Creates:
 
 Columns:
 - id                        : UUID primary key
-- key_prefix                : String(8) — first 8 chars of the raw key (safe to display)
-- key_hash                  : String(64), unique — SHA-256 of the full API key
-- org_id                    : String(255) — namespace isolation
-- agent_id                  : String(255) — which agent this key belongs to
-- tier                      : String(20), default 'free' — "free" | "pro" | "enterprise"
-- request_count             : Integer, default 0 — cumulative count within billing period
-- billing_period_start      : DateTime — start of current billing window
-- billing_period_reset_days : Integer, default 30 — window length
-- is_active                 : Boolean, default true — soft-disable without deleting
-- created_at                : DateTime — creation timestamp
-- last_used_at              : DateTime, nullable — set on each successful auth
+- key_prefix                : String(8), first 8 chars of the raw key (safe to display)
+- key_hash                  : String(64), unique, SHA-256 of the full API key
+- org_id                    : String(255), namespace isolation
+- agent_id                  : String(255), which agent this key belongs to
+- tier                      : String(20), default 'free', "free" | "pro" | "enterprise"
+- request_count             : Integer, default 0, cumulative count within billing period
+- billing_period_start      : DateTime, start of current billing window
+- billing_period_reset_days : Integer, default 30, window length
+- is_active                 : Boolean, default true, soft-disable without deleting
+- created_at                : DateTime, creation timestamp
+- last_used_at              : DateTime, nullable, set on each successful auth
 
 Indexes:
 - ix_api_keys_key_hash : unique hash for O(1) key verification
 - ix_api_keys_org_id   : org-scoped key listing
 
 Design notes:
-- Raw key is never stored — only SHA-256 hash (similar to GitHub API key design)
+- Raw key is never stored, only SHA-256 hash (similar to GitHub API key design)
 - key_prefix allows safe display of "hm_12345..." in UI without exposing full key
 - Unique constraint on key_hash is the primary lookup path for authentication
 """
@@ -81,7 +81,7 @@ def upgrade() -> None:
         sa.Column("last_used_at", sa.DateTime(timezone=True), nullable=True),
     )
 
-    # Unique constraint on key_hash — primary auth lookup path
+    # Unique constraint on key_hash, primary auth lookup path
     op.create_unique_constraint(
         "uq_api_keys_key_hash",
         "api_keys",

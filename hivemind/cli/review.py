@@ -4,7 +4,7 @@ Provides the `hivemind review` command that lets operators walk through
 pending contributions, approve or reject them, and see gamification stats.
 
 Design decisions (locked in research):
-- Feel is POSITIVE and REWARDING — no scary PII warnings; users see clean content
+- Feel is POSITIVE and REWARDING, no scary PII warnings; users see clean content
 - Users only see the already-PII-stripped version (no before/after comparison)
 - Light gamification: contribution count + "helped X agents" after each approval
 - Category override available during approval
@@ -64,13 +64,13 @@ def _build_similar_section(similar_items: list[dict]) -> str:
         title = item["title"]
         category = item["category"]
         if pct >= 80:
-            # Likely duplicate — highlight in yellow
+            # Likely duplicate: highlight in yellow
             lines.append(
-                f"  [yellow]{pct}% similar[/yellow] — {title} [{category}]"
+                f"  [yellow]{pct}% similar[/yellow], {title} [{category}]"
             )
         else:
             lines.append(
-                f"  [dim]{pct}% similar[/dim] — {title} [{category}]"
+                f"  [dim]{pct}% similar[/dim], {title} [{category}]"
             )
     return "\n".join(lines)
 
@@ -112,12 +112,12 @@ def review(
     queue.  For each item you can:
 
     \b
-    - Approve (private)        — publish to your org's private namespace only
-    - Approve (public commons) — share with all connected orgs
-    - Change category & approve — override the agent-suggested category
-    - Flag as sensitive         — mark for re-examination (if PII was missed)
-    - Reject                    — remove from the queue
-    - Skip                      — leave for later
+    - Approve (private)       , publish to your org's private namespace only
+    - Approve (public commons), share with all connected orgs
+    - Change category & approve, override the agent-suggested category
+    - Flag as sensitive        , mark for re-examination (if PII was missed)
+    - Reject                   , remove from the queue
+    - Skip                     , leave for later
 
     After each approval, gamification stats are shown to encourage engagement.
     """
@@ -125,7 +125,7 @@ def review(
     pending = fetch_pending(org_id=org_id, limit=limit)
 
     # -----------------------------------------------------------------------
-    # Empty queue — nothing to do
+    # Empty queue: nothing to do
     # -----------------------------------------------------------------------
     if not pending:
         console.print(Panel(
@@ -226,7 +226,7 @@ def review(
             ).ask()
 
             if new_cat is None:
-                console.print("[yellow]Category selection cancelled — skipping.[/yellow]")
+                console.print("[yellow]Category selection cancelled, skipping.[/yellow]")
                 skipped_count += 1
                 continue
 
@@ -236,7 +236,7 @@ def review(
             ).ask()
 
             if visibility is None:
-                console.print("[yellow]Visibility selection cancelled — skipping.[/yellow]")
+                console.print("[yellow]Visibility selection cancelled, skipping.[/yellow]")
                 skipped_count += 1
                 continue
 

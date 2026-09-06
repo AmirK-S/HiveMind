@@ -87,7 +87,7 @@ class HiveMindRetriever(BaseRetriever):
     ) -> List[Document]:
         """Asynchronously search the HiveMind knowledge commons.
 
-        Uses ``httpx.AsyncClient`` to avoid blocking the event loop —
+        Uses ``httpx.AsyncClient`` to avoid blocking the event loop , 
         do NOT use ``httpx.get()`` in async context (blocking anti-pattern).
         """
         params: dict[str, Any] = {"query": query, "limit": self.limit}

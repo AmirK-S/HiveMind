@@ -54,9 +54,9 @@ class Settings(BaseSettings):
     # Injection scanner (SEC-01)
     injection_threshold: float = 0.5
 
-    # Quality Intelligence — scoring weights (QI-01)
+    # Quality Intelligence: scoring weights (QI-01)
     # Weights must sum to ~1.0 for a balanced score; tunable via env vars.
-    # Do NOT read from deployment_config at compute time — these are config-time settings.
+    # Do NOT read from deployment_config at compute time, these are config-time settings.
     quality_staleness_half_life_days: float = 90.0  # freshness decay half-life
     quality_weights_usefulness: float = 0.40  # helpful / (helpful + not_helpful)
     quality_weights_popularity: float = 0.25  # tanh(retrieval_count / 50)
@@ -74,7 +74,7 @@ class Settings(BaseSettings):
     # LLM for conflict resolution and stage-3 dedup (Phase 3)
     llm_provider: str = "anthropic"                    # LLM provider backend
     llm_model: str = "claude-3-haiku-20240307"         # model for conflict resolution
-    anthropic_api_key: str = ""                        # HIVEMIND_ANTHROPIC_API_KEY — empty = LLM stages skip gracefully
+    anthropic_api_key: str = ""                        # HIVEMIND_ANTHROPIC_API_KEY, empty = LLM stages skip gracefully
 
     @property
     def allowed_hosts_list(self) -> list[str]:
@@ -89,5 +89,5 @@ class Settings(BaseSettings):
     )
 
 
-# Module-level singleton — import this throughout the codebase
+# Module-level singleton, import this throughout the codebase
 settings = Settings()

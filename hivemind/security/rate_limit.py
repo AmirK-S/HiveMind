@@ -2,7 +2,7 @@
 
 Uses Redis (via redis.asyncio) for anti-sybil burst detection and stores a
 module-level connection for reuse by other modules.  fastapi-limiter 0.2.0
-uses pyrate-limiter ``Limiter`` objects for endpoint-level rate limiting —
+uses pyrate-limiter ``Limiter`` objects for endpoint-level rate limiting , 
 see Plan 06 for per-endpoint wiring.
 
 Tier limits (per minute):
@@ -100,7 +100,7 @@ async def check_burst(org_id: str, contribution_id: str, redis_conn: aioredis.Re
     approved contribution is added to a sorted set keyed by org_id.  Entries
     older than ``settings.burst_window_seconds`` are pruned.  If the remaining
     count exceeds ``settings.burst_threshold``, the call returns ``True``
-    signalling a burst (flag for manual review — do NOT outright block).
+    signalling a burst (flag for manual review, do NOT outright block).
 
     Redis key format: ``"burst:{org_id}:contributions"``
 

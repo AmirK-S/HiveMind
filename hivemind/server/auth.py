@@ -17,7 +17,7 @@ A bare call would return a dictionary without the bearer, raise nothing, warn
 nothing, and every caller would be refused. include={"authorization"} brings
 back exactly that header and nothing else.
 
-Usage in tool functions (preferred — handles both JWT and API keys):
+Usage in tool functions (preferred, handles both JWT and API keys):
     from fastmcp.exceptions import ToolError
     from fastmcp.server.dependencies import get_http_headers
     from hivemind.server.auth import decode_token_async, AuthContext
@@ -37,7 +37,7 @@ Usage for JWT-only callers (backward compatible):
 
     def some_tool(...) -> ...:
         token = ...
-        ctx = decode_token(token)  # JWT only — does not handle hm_ keys
+        ctx = decode_token(token)  # JWT only, does not handle hm_ keys
 """
 
 from __future__ import annotations
@@ -54,8 +54,8 @@ class AuthContext:
     """Authentication context extracted from a verified JWT or API key.
 
     Attributes:
-        org_id:   Organisation identifier — used for namespace isolation (ACL-01).
-        agent_id: Agent identifier — stored as source_agent_id in DB records.
+        org_id:   Organisation identifier, used for namespace isolation (ACL-01).
+        agent_id: Agent identifier, stored as source_agent_id in DB records.
         tier:     Billing tier from API key authentication (e.g. "free", "pro",
                   "enterprise"). None when authenticated via JWT (INFRA-04).
     """
@@ -68,7 +68,7 @@ class AuthContext:
 def decode_token(token: str) -> AuthContext:
     """Decode a HS256 JWT and return an AuthContext.
 
-    JWT-only entry point — does NOT handle hm_-prefixed API keys. Use
+    JWT-only entry point, does NOT handle hm_-prefixed API keys. Use
     decode_token_async() in async contexts (e.g. MCP tool handlers) to
     support both JWT and API key authentication.
 
@@ -130,7 +130,7 @@ async def decode_token_async(token: str) -> AuthContext:
         if result is None:
             raise ValueError("Invalid or inactive API key")
 
-        # Increment request count (best-effort — don't block auth on counter failure)
+        # Increment request count (best-effort, don't block auth on counter failure)
         try:
             await increment_request_count(result["api_key_id"])
         except Exception:
@@ -142,7 +142,7 @@ async def decode_token_async(token: str) -> AuthContext:
             tier=result["tier"],
         )
 
-    # Fall through to existing JWT decode logic (synchronous — no DB query needed)
+    # Fall through to existing JWT decode logic (synchronous, no DB query needed)
     return decode_token(token)
 
 

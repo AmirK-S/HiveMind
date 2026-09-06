@@ -6,7 +6,7 @@ the OpenAPI spec, writing it to openapi.json at the project root.
 Usage:
     python scripts/export_openapi.py
 
-The generated openapi.json is a build artifact — do NOT commit it to version control.
+The generated openapi.json is a build artifact, do NOT commit it to version control.
 It is consumed by `make generate-sdks` and then discarded.
 """
 

@@ -5,11 +5,11 @@ the relationship between the new content and the existing item, then
 apply_conflict_resolution() executes the appropriate database action.
 
 Outcome vocabulary:
-  UPDATE         — new supersedes existing (expire old, insert new)
-  ADD            — items coexist (insert new, leave old unchanged)
-  NOOP           — new adds nothing (block insert, return informational response)
-  VERSION_FORK   — both valid but for different version scopes (world-time split)
-  FLAGGED_FOR_REVIEW — multi-hop conflict; human review required
+  UPDATE        : new supersedes existing (expire old, insert new)
+  ADD           : items coexist (insert new, leave old unchanged)
+  NOOP          : new adds nothing (block insert, return informational response)
+  VERSION_FORK  , both valid but for different version scopes (world-time split)
+  FLAGGED_FOR_REVIEW, multi-hop conflict; human review required
 
 Fallback behavior:
   - If no LLM API key configured → defaults to ADD (let the item through)
@@ -33,7 +33,7 @@ _LLM_TIMEOUT_SECONDS = 10.0
 # Prompt template for conflict resolution
 _CONFLICT_PROMPT = """\
 You are a knowledge conflict resolver. Compare NEW knowledge with EXISTING knowledge \
-and determine the appropriate action. Respond with JSON only — no explanation outside the JSON:
+and determine the appropriate action. Respond with JSON only, no explanation outside the JSON:
 
 {{"action": "UPDATE" | "ADD" | "NOOP" | "VERSION_FORK", "reason": string, "is_direct_conflict": bool}}
 
@@ -107,7 +107,7 @@ def _parse_conflict_response(raw: str) -> dict:
         # Validate action is one of the four expected values
         if action not in _VALID_ACTIONS:
             logger.warning(
-                "Conflict resolver: unexpected action '%s' — defaulting to ADD", action
+                "Conflict resolver: unexpected action '%s', defaulting to ADD", action
             )
             action = "ADD"
         return {
@@ -117,11 +117,11 @@ def _parse_conflict_response(raw: str) -> dict:
         }
     except (json.JSONDecodeError, KeyError, TypeError) as exc:
         logger.warning(
-            "Conflict resolver: failed to parse LLM response — %s. Raw: %.200s", exc, raw
+            "Conflict resolver: failed to parse LLM response, %s. Raw: %.200s", exc, raw
         )
         return {
             "action": "ADD",
-            "reason": f"Parse error — defaulting to ADD: {exc}",
+            "reason": f"Parse error, defaulting to ADD: {exc}",
             "is_direct_conflict": True,
         }
 
@@ -137,7 +137,7 @@ async def resolve_conflict(
     Multi-hop conflicts are flagged for human review.
 
     If no API key is configured or the LLM call fails, defaults to ADD (let
-    the item through) — non-blocking by design.
+    the item through), non-blocking by design.
 
     Args:
         new_content:   The new knowledge content being contributed.
@@ -153,19 +153,19 @@ async def resolve_conflict(
           is_direct_conflict (bool): Whether this is a single-hop conflict.
           existing_item_id (str):    ID of the existing item being compared.
     """
-    from hivemind.config import settings  # lazy import — avoid circular deps
+    from hivemind.config import settings  # lazy import, avoid circular deps
 
     existing_item_id = existing_item.get("id", "")
     existing_content = existing_item.get("content", "")
 
-    # Fallback: no API key — default to ADD (non-blocking)
+    # Fallback: no API key, default to ADD (non-blocking)
     if not settings.anthropic_api_key:
         logger.debug(
-            "Conflict resolver: no API key configured — defaulting to ADD (org=%s)", org_id
+            "Conflict resolver: no API key configured, defaulting to ADD (org=%s)", org_id
         )
         return {
             "action": "ADD",
-            "reason": "No LLM API key configured — defaulting to ADD",
+            "reason": "No LLM API key configured, defaulting to ADD",
             "is_direct_conflict": True,
             "existing_item_id": existing_item_id,
         }
@@ -186,7 +186,7 @@ async def resolve_conflict(
         # Multi-hop conflict: flag for human review (KM-07 explicit constraint)
         if not parsed["is_direct_conflict"]:
             logger.info(
-                "Conflict resolver: multi-hop conflict detected — flagging for review "
+                "Conflict resolver: multi-hop conflict detected, flagging for review "
                 "(existing_item=%s)",
                 existing_item_id,
             )
@@ -206,28 +206,28 @@ async def resolve_conflict(
 
     except httpx.TimeoutException:
         logger.warning(
-            "Conflict resolver: LLM API call timed out after %ss — defaulting to ADD",
+            "Conflict resolver: LLM API call timed out after %ss, defaulting to ADD",
             _LLM_TIMEOUT_SECONDS,
         )
         return {
             "action": "ADD",
-            "reason": f"LLM API timed out after {_LLM_TIMEOUT_SECONDS}s — defaulting to ADD",
+            "reason": f"LLM API timed out after {_LLM_TIMEOUT_SECONDS}s, defaulting to ADD",
             "is_direct_conflict": True,
             "existing_item_id": existing_item_id,
         }
     except httpx.HTTPError as exc:
-        logger.warning("Conflict resolver: HTTP error — %s — defaulting to ADD", exc)
+        logger.warning("Conflict resolver: HTTP error, %s, defaulting to ADD", exc)
         return {
             "action": "ADD",
-            "reason": f"LLM API error: {exc} — defaulting to ADD",
+            "reason": f"LLM API error: {exc}, defaulting to ADD",
             "is_direct_conflict": True,
             "existing_item_id": existing_item_id,
         }
     except Exception as exc:
-        logger.warning("Conflict resolver: unexpected error — %s — defaulting to ADD", exc)
+        logger.warning("Conflict resolver: unexpected error, %s, defaulting to ADD", exc)
         return {
             "action": "ADD",
-            "reason": f"Unexpected error: {exc} — defaulting to ADD",
+            "reason": f"Unexpected error: {exc}, defaulting to ADD",
             "is_direct_conflict": True,
             "existing_item_id": existing_item_id,
         }
@@ -280,7 +280,7 @@ async def apply_conflict_resolution(
             await session.commit()
 
         logger.info(
-            "Conflict resolver: UPDATE applied — expired item %s (org=%s)",
+            "Conflict resolver: UPDATE applied, expired item %s (org=%s)",
             existing_item_id,
             org_id,
         )
@@ -290,9 +290,9 @@ async def apply_conflict_resolution(
         }
 
     elif action == "NOOP":
-        # Block the new item — it adds nothing beyond the existing knowledge
+        # Block the new item: it adds nothing beyond the existing knowledge
         logger.info(
-            "Conflict resolver: NOOP — blocking duplicate contribution (existing=%s, org=%s)",
+            "Conflict resolver: NOOP, blocking duplicate contribution (existing=%s, org=%s)",
             existing_item_id,
             org_id,
         )
@@ -314,7 +314,7 @@ async def apply_conflict_resolution(
             await session.commit()
 
         logger.info(
-            "Conflict resolver: VERSION_FORK applied — invalidated item %s (org=%s); "
+            "Conflict resolver: VERSION_FORK applied, invalidated item %s (org=%s); "
             "new item carries valid_at=%s",
             existing_item_id,
             org_id,
@@ -327,9 +327,9 @@ async def apply_conflict_resolution(
         }
 
     else:
-        # ADD (or FLAGGED_FOR_REVIEW): no DB changes — new item proceeds
+        # ADD (or FLAGGED_FOR_REVIEW): no DB changes, new item proceeds
         logger.debug(
-            "Conflict resolver: %s — no DB changes, new item proceeds (org=%s)",
+            "Conflict resolver: %s, no DB changes, new item proceeds (org=%s)",
             action,
             org_id,
         )

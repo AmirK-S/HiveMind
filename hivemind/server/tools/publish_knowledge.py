@@ -70,7 +70,7 @@ async def publish_knowledge(id: str, is_public: bool) -> dict:
 
     Security: The calling agent must own the item (org_id from bearer token
     must match item.org_id). Items belonging to other orgs are never revealed
-    — a 404 is returned regardless of whether the item exists in another org.
+   , a 404 is returned regardless of whether the item exists in another org.
 
     Args:
         id:        UUID string of the KnowledgeItem to publish or unpublish.
@@ -109,13 +109,13 @@ async def publish_knowledge(id: str, is_public: bool) -> dict:
         )
         item = result.scalar_one_or_none()
 
-        # Step 4: Return 404 if not found — never reveal cross-org existence
+        # Step 4: Return 404 if not found, never reveal cross-org existence
         if item is None:
             return _error(
                 f"Knowledge item '{id}' not found or you do not have access to it."
             )
 
-        # Step 5: Toggle is_public (reversible — ACL-02)
+        # Step 5: Toggle is_public (reversible, ACL-02)
         item.is_public = is_public
         await session.commit()
 

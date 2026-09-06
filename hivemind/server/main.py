@@ -57,14 +57,14 @@ async def lifespan(server: FastMCP) -> AsyncIterator[None]:
     """Lifespan context manager: startup init and shutdown cleanup.
 
     Startup order:
-    1. Initialize PIIPipeline singleton — triggers GLiNER model load (~400 MB)
-    2. Initialize EmbeddingProvider singleton — loads sentence-transformers model
-    2.5. Initialize InjectionScanner — pre-loads DeBERTa model (SEC-01)
-    2.6. Initialize rate limiter — connects to Redis (SEC-03, INFRA-04)
-    2.7. Initialize RBAC enforcer — loads Casbin policies from PostgreSQL (ACL-03)
-    2.8. Configure Celery — sets Redis broker for webhook delivery (INFRA-03)
+    1. Initialize PIIPipeline singleton, triggers GLiNER model load (~400 MB)
+    2. Initialize EmbeddingProvider singleton, loads sentence-transformers model
+    2.5. Initialize InjectionScanner, pre-loads DeBERTa model (SEC-01)
+    2.6. Initialize rate limiter, connects to Redis (SEC-03, INFRA-04)
+    2.7. Initialize RBAC enforcer, loads Casbin policies from PostgreSQL (ACL-03)
+    2.8. Configure Celery, sets Redis broker for webhook delivery (INFRA-03)
     3. Store or verify deployment config (embedding model name + revision, KM-08)
-    4. Yield — server handles requests
+    4. Yield, server handles requests
 
     Shutdown:
     5. Dispose the async engine and close all pooled connections
@@ -85,27 +85,27 @@ async def lifespan(server: FastMCP) -> AsyncIterator[None]:
         embedder.dimensions,
     )
 
-    # 2.5: Injection scanner — pre-load DeBERTa model (SEC-01)
+    # 2.5: Injection scanner, pre-load DeBERTa model (SEC-01)
     logger.info("Loading injection scanner (DeBERTa model)...")
     InjectionScanner.get_instance()
     logger.info("Injection scanner ready.")
 
-    # 2.6: Rate limiter — connect to Redis (SEC-03, INFRA-04)
+    # 2.6: Rate limiter, connect to Redis (SEC-03, INFRA-04)
     logger.info("Initializing rate limiter...")
     await init_rate_limiter(settings.redis_url)
     logger.info("Rate limiter ready.")
 
-    # 2.7: RBAC enforcer — load Casbin policies from PostgreSQL (ACL-03)
+    # 2.7: RBAC enforcer, load Casbin policies from PostgreSQL (ACL-03)
     logger.info("Loading RBAC enforcer...")
     await init_enforcer()
     logger.info("RBAC enforcer ready.")
 
-    # 2.8: Celery — configure broker for webhook delivery (INFRA-03)
+    # 2.8: Celery, configure broker for webhook delivery (INFRA-03)
     configure_celery(settings.redis_url)
     logger.info("Celery configured for webhook delivery.")
     logger.info("Celery Beat schedule configured with quality signal aggregation.")
 
-    # 3. Store deployment config — KM-08 model drift detection
+    # 3. Store deployment config, KM-08 model drift detection
     await _store_deployment_config(embedder)
 
     yield
@@ -120,7 +120,7 @@ async def _store_deployment_config(embedder) -> None:
     """Store or verify embedding model deployment config in the database.
 
     On first startup: INSERT model_name and model_revision.
-    On subsequent startups: SELECT and compare — log a warning if the model
+    On subsequent startups: SELECT and compare, log a warning if the model
     changed (but don't block startup; an operator should handle the drift).
     """
     model_name_key = "embedding_model_name"
@@ -141,7 +141,7 @@ async def _store_deployment_config(embedder) -> None:
         rows = {row.key: row.value for row in result.scalars().all()}
 
         if not rows:
-            # First startup — insert both keys
+            # First startup: insert both keys
             now = datetime.datetime.now(datetime.timezone.utc)
             session.add(DeploymentConfig(
                 key=model_name_key,
@@ -160,7 +160,7 @@ async def _store_deployment_config(embedder) -> None:
                 "Deployment config stored: %s @ %s", current_name, current_revision
             )
         else:
-            # Subsequent startup — compare and warn on drift
+            # Subsequent startup: compare and warn on drift
             stored_name = rows.get(model_name_key, "")
             stored_revision = rows.get(model_revision_key, "")
 

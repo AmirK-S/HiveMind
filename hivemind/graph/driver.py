@@ -1,6 +1,6 @@
 """Knowledge store driver abstraction for HiveMind (INFRA-02).
 
-Follows Graphiti's GraphDriver interface pattern — a backend-agnostic ABC that
+Follows Graphiti's GraphDriver interface pattern, a backend-agnostic ABC that
 allows knowledge storage implementations to be swapped without changing callers.
 
 **Design intent:**
@@ -13,7 +13,7 @@ The ABC defines 7 core operations modeled after Graphiti's GraphDriver:
   store, fetch, search, delete, verify_integrity, find_similar, health_check
 
 These map directly onto the operations already present in search_knowledge.py
-and cli/client.py — the driver layer unifies them behind a single interface.
+and cli/client.py, the driver layer unifies them behind a single interface.
 
 References:
   - INFRA-02: Backend-agnostic knowledge store interface
@@ -74,7 +74,7 @@ class KnowledgeStoreDriver(ABC):
     All methods are async so implementations can use asyncio DB clients,
     HTTP connections to graph databases, or any other async I/O.
 
-    Callers depend only on this ABC — swapping backends requires only changing
+    Callers depend only on this ABC: swapping backends requires only changing
     the driver returned by get_driver().
     """
 
@@ -101,7 +101,7 @@ class KnowledgeStoreDriver(ABC):
 
         Args:
             node_id: UUID string of the node to delete.
-            org_id:  Organisation namespace — enforces ACL-01 isolation.
+            org_id:  Organisation namespace, enforces ACL-01 isolation.
 
         Returns:
             True if the node existed and was deleted; False if not found.
@@ -117,7 +117,7 @@ class KnowledgeStoreDriver(ABC):
 
         Args:
             node_id: UUID string of the node to fetch.
-            org_id:  Organisation namespace — enforces ACL-01 isolation.
+            org_id:  Organisation namespace, enforces ACL-01 isolation.
 
         Returns:
             The KnowledgeNode if found and accessible; None otherwise.
@@ -138,7 +138,7 @@ class KnowledgeStoreDriver(ABC):
 
         Args:
             query_embedding: Pre-computed embedding vector for the search query.
-            org_id:          Organisation namespace — enforces ACL-01 isolation.
+            org_id:          Organisation namespace, enforces ACL-01 isolation.
             limit:           Maximum number of results to return.
             category:        Optional category filter string.
 
@@ -154,7 +154,7 @@ class KnowledgeStoreDriver(ABC):
         threshold: float = 0.35,
         limit: int = 3,
     ) -> list[SearchResult]:
-        """Near-duplicate detection — find existing nodes close to the given embedding.
+        """Near-duplicate detection, find existing nodes close to the given embedding.
 
         Uses the same cosine distance threshold as find_similar_knowledge() in
         cli/client.py.  The threshold is a *distance* value (lower = more similar):
@@ -203,7 +203,7 @@ class KnowledgeStoreDriver(ABC):
 
 
 class PgVectorDriver(KnowledgeStoreDriver):
-    """pgvector backend driver — wraps existing SQLAlchemy async queries.
+    """pgvector backend driver, wraps existing SQLAlchemy async queries.
 
     Uses get_session() from hivemind.db.session for all DB operations.
     Org isolation follows the ACL-01 pattern established in search_knowledge.py:
@@ -304,7 +304,7 @@ class PgVectorDriver(KnowledgeStoreDriver):
         limit: int = 10,
         category: str | None = None,
     ) -> list[SearchResult]:
-        """Cosine distance search — same pattern as _search() in search_knowledge.py."""
+        """Cosine distance search: same pattern as _search() in search_knowledge.py."""
         from sqlalchemy import select
 
         from hivemind.db.models import KnowledgeCategory, KnowledgeItem
@@ -352,7 +352,7 @@ class PgVectorDriver(KnowledgeStoreDriver):
         ]
 
     async def delete(self, node_id: str, org_id: str) -> bool:
-        """Soft-delete a knowledge item — sets deleted_at timestamp."""
+        """Soft-delete a knowledge item, sets deleted_at timestamp."""
         import datetime
         import uuid
 
@@ -414,7 +414,7 @@ class PgVectorDriver(KnowledgeStoreDriver):
         threshold: float = 0.35,
         limit: int = 3,
     ) -> list[SearchResult]:
-        """Near-duplicate detection — same pattern as find_similar_knowledge() in cli/client.py."""
+        """Near-duplicate detection, same pattern as find_similar_knowledge() in cli/client.py."""
         from sqlalchemy import select
 
         from hivemind.db.models import KnowledgeItem
@@ -470,17 +470,17 @@ class PgVectorDriver(KnowledgeStoreDriver):
 
 
 # ---------------------------------------------------------------------------
-# FalkorDB implementation (scaffold — Phase 3)
+# FalkorDB implementation (scaffold, Phase 3)
 # ---------------------------------------------------------------------------
 
 
 class FalkorDBDriver(KnowledgeStoreDriver):
-    """FalkorDB graph database driver — scaffold for Phase 3 implementation.
+    """FalkorDB graph database driver: scaffold for Phase 3 implementation.
 
     Wraps graphiti-core's FalkorDriver to provide graph-native query capabilities.
     Full implementation is deferred to Phase 3; only health_check is functional.
 
-    All other methods raise NotImplementedError — callers should use PgVectorDriver
+    All other methods raise NotImplementedError, callers should use PgVectorDriver
     for production knowledge storage until Phase 3 completes this driver.
 
     Args:
@@ -493,19 +493,19 @@ class FalkorDBDriver(KnowledgeStoreDriver):
         self._host = host
         self._port = port
         self._database = database
-        # Lazy import — graphiti-core[falkordb] is optional and may not be installed
+        # Lazy import: graphiti-core[falkordb] is optional and may not be installed
         from graphiti_core.driver.falkordb_driver import FalkorDriver  # noqa: PLC0415
 
         self._driver = FalkorDriver(host=host, port=port, database=database)
 
     async def store(self, node: KnowledgeNode) -> str:
         raise NotImplementedError(
-            "FalkorDB driver not yet fully implemented — use PgVectorDriver"
+            "FalkorDB driver not yet fully implemented, use PgVectorDriver"
         )
 
     async def fetch(self, node_id: str, org_id: str) -> KnowledgeNode | None:
         raise NotImplementedError(
-            "FalkorDB driver not yet fully implemented — use PgVectorDriver"
+            "FalkorDB driver not yet fully implemented, use PgVectorDriver"
         )
 
     async def search(
@@ -516,17 +516,17 @@ class FalkorDBDriver(KnowledgeStoreDriver):
         category: str | None = None,
     ) -> list[SearchResult]:
         raise NotImplementedError(
-            "FalkorDB driver not yet fully implemented — use PgVectorDriver"
+            "FalkorDB driver not yet fully implemented, use PgVectorDriver"
         )
 
     async def delete(self, node_id: str, org_id: str) -> bool:
         raise NotImplementedError(
-            "FalkorDB driver not yet fully implemented — use PgVectorDriver"
+            "FalkorDB driver not yet fully implemented, use PgVectorDriver"
         )
 
     async def verify_integrity(self, node_id: str) -> bool:
         raise NotImplementedError(
-            "FalkorDB driver not yet fully implemented — use PgVectorDriver"
+            "FalkorDB driver not yet fully implemented, use PgVectorDriver"
         )
 
     async def find_similar(
@@ -537,7 +537,7 @@ class FalkorDBDriver(KnowledgeStoreDriver):
         limit: int = 3,
     ) -> list[SearchResult]:
         raise NotImplementedError(
-            "FalkorDB driver not yet fully implemented — use PgVectorDriver"
+            "FalkorDB driver not yet fully implemented, use PgVectorDriver"
         )
 
     async def health_check(self) -> bool:
@@ -558,7 +558,7 @@ def get_driver(backend: str = "pgvector") -> KnowledgeStoreDriver:
     """Return a KnowledgeStoreDriver for the requested backend.
 
     Args:
-        backend: Backend name — "pgvector" (default) or "falkordb".
+        backend: Backend name, "pgvector" (default) or "falkordb".
 
     Returns:
         Configured KnowledgeStoreDriver instance.

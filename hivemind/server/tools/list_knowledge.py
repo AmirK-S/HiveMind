@@ -1,6 +1,6 @@
 """list_knowledge MCP tool for HiveMind.
 
-Returns the calling agent's own contributions — both pending and approved.
+Returns the calling agent's own contributions, both pending and approved.
 Only items belonging to the agent's own source_agent_id (from JWT) are returned;
 agents cannot see other agents' contributions.
 
@@ -9,7 +9,7 @@ search_knowledge).
 
 Security (ACL-01):
 - org_id and agent_id are extracted from the bearer token, never from tool args
-- Query filters by BOTH org_id AND source_agent_id — per-agent isolation
+- Query filters by BOTH org_id AND source_agent_id, per-agent isolation
 """
 
 from __future__ import annotations
@@ -77,7 +77,7 @@ async def list_knowledge(
 
     Returns a paginated view of the contributions this agent has made within
     its organisation's namespace.  Agents can only see their own contributions
-    — the filter is enforced via the JWT bearer token, never from tool arguments.
+   , the filter is enforced via the JWT bearer token, never from tool arguments.
 
     Args:
         status:   Filter by contribution status.  One of "pending", "approved",
@@ -93,7 +93,7 @@ async def list_knowledge(
         ToolError: on auth or validation failure; FastMCP renders it with
         isError=true.
     """
-    # Extract auth — both org_id and agent_id needed for per-agent isolation
+    # Extract auth: both org_id and agent_id needed for per-agent isolation
     try:
         headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)

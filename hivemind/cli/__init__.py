@@ -1,10 +1,10 @@
-"""HiveMind CLI — manage your knowledge commons.
+"""HiveMind CLI: manage your knowledge commons.
 
 Entry point registered in pyproject.toml:
     hivemind = "hivemind.cli:app"
 
 Commands:
-    hivemind review   — review and approve/reject pending contributions
+    hivemind review  , review and approve/reject pending contributions
 
 Usage:
     hivemind --help
@@ -18,7 +18,7 @@ from hivemind.cli.review import review
 
 app = typer.Typer(
     name="hivemind",
-    help="HiveMind CLI — manage your knowledge commons",
+    help="HiveMind CLI, manage your knowledge commons",
     no_args_is_help=True,
 )
 

@@ -1,14 +1,14 @@
 """SSE streaming endpoint for real-time knowledge feed (DASH-01).
 
 Endpoint:
-- GET /stream/feed — Server-Sent Events feed for knowledge published events
+- GET /stream/feed, Server-Sent Events feed for knowledge published events
 
 Uses PostgreSQL LISTEN/NOTIFY on the 'knowledge_published' channel to push
 real-time events to connected clients.
 
 Two event types are emitted:
-- "public"  — item is_public=True; delivered to all connected clients
-- "private" — item is_public=False; delivered only to the matching org
+- "public" , item is_public=True; delivered to all connected clients
+- "private", item is_public=False; delivered only to the matching org
 
 A "ping" event is sent every 25 seconds to keep the SSE connection alive
 through proxies that close idle connections at 60 seconds.
@@ -70,10 +70,10 @@ async def notify_knowledge_published(session, item_data: dict) -> None:
 
     The payload is a JSON object with the following keys:
     - id:        UUID string of the new KnowledgeItem
-    - is_public: bool — routes to "public" or "private" SSE event type
-    - org_id:    string — used for namespace isolation on private events
-    - category:  string — knowledge category value
-    - title:     string — first 80 chars of content (display label)
+    - is_public: bool, routes to "public" or "private" SSE event type
+    - org_id:    string, used for namespace isolation on private events
+    - category:  string, knowledge category value
+    - title:     string, first 80 chars of content (display label)
 
     Args:
         session:   Active SQLAlchemy AsyncSession in the current request context.
@@ -113,7 +113,7 @@ async def stream_knowledge_feed(
     Opens a dedicated asyncpg connection for PostgreSQL LISTEN/NOTIFY and
     yields SSE events as items are published to the knowledge_published channel.
 
-    org_id is extracted from the authenticated API key — never from query params.
+    org_id is extracted from the authenticated API key, never from query params.
     """
     org_id = str(api_key_record.org_id)
 
@@ -123,7 +123,7 @@ async def stream_knowledge_feed(
         queue: asyncio.Queue = asyncio.Queue()
 
         def _listener(connection, pid, channel, payload_str):
-            """Asyncpg LISTEN callback — runs in the asyncpg event loop thread."""
+            """Asyncpg LISTEN callback: runs in the asyncpg event loop thread."""
             try:
                 data = json.loads(payload_str)
                 queue.put_nowait(data)
@@ -138,10 +138,10 @@ async def stream_knowledge_feed(
 
             while True:
                 try:
-                    # Wait for next event with 30s timeout — yield ping on timeout
+                    # Wait for next event with 30s timeout, yield ping on timeout
                     item = await asyncio.wait_for(queue.get(), timeout=30.0)
                 except asyncio.TimeoutError:
-                    # Keepalive ping — prevents proxy/load-balancer from closing idle connection
+                    # Keepalive ping: prevents proxy/load-balancer from closing idle connection
                     yield {"event": "ping", "data": ""}
                     continue
 
@@ -150,15 +150,15 @@ async def stream_knowledge_feed(
                 item_org_id = str(item.get("org_id", ""))
 
                 if is_public:
-                    # Public event — deliver to all connected clients
+                    # Public event: deliver to all connected clients
                     yield {"event": "public", "data": json.dumps(item)}
                 elif item_org_id == org_id:
-                    # Private event — deliver only to the matching org
+                    # Private event: deliver only to the matching org
                     yield {"event": "private", "data": json.dumps(item)}
-                # else: private event for a different org — skip silently
+                # else: private event for a different org, skip silently
 
         except asyncio.CancelledError:
-            # Client disconnected — clean up silently
+            # Client disconnected: clean up silently
             logger.info("SSE: client disconnected for org_id=%s", org_id)
             raise
         except Exception as exc:

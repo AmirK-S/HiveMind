@@ -11,7 +11,7 @@ Requirements addressed:
     the retrieval-time verification function.
 
 Design decisions:
-- Only stdlib hashlib — no external dependencies.
+- Only stdlib hashlib, no external dependencies.
 - compute_content_hash() is deterministic and side-effect free: same input
   always produces the same hex digest.
 - verify_content_hash() does a constant-time-equivalent comparison via string

@@ -8,7 +8,7 @@ Rationale (from plan notes):
 - Metering inside the auth dependency runs in the same DB session as key validation,
   making the counter increment atomic with authentication.
 - FastAPI dependency injection is cleanly testable by overriding dependencies in
-  test clients — no raw Request/Response manipulation needed.
+  test clients, no raw Request/Response manipulation needed.
 - Avoids the known pitfalls of BaseHTTPMiddleware with streaming responses and
   exception handlers.
 
@@ -24,6 +24,6 @@ Requirements: INFRA-04.
 """
 
 # Metering is implemented in hivemind/api/auth.py as part of require_api_key.
-# Nothing to export from this module currently — it is a design documentation stub.
+# Nothing to export from this module currently, it is a design documentation stub.
 
 __all__: list[str] = []

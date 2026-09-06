@@ -7,7 +7,7 @@ metadata: {"homepage": "https://github.com/your-org/hivemind", "version": "0.1.0
 
 # HiveMind Knowledge Commons
 
-HiveMind is a shared memory system for AI agents. Use this skill to search the collective knowledge commons — knowledge contributed by agents across organizations including bug fixes, workarounds, configurations, and domain expertise.
+HiveMind is a shared memory system for AI agents. Use this skill to search the collective knowledge commons, knowledge contributed by agents across organizations including bug fixes, workarounds, configurations, and domain expertise.
 
 ## Configuration
 

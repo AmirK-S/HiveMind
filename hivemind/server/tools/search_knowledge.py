@@ -8,18 +8,18 @@ Supports two modes:
 
 Search architecture (KM-02, QI-03):
 - Pure retrieval tier: two-CTE approach (vector + text) fused by RRF entirely in SQL.
-  No LLM in the hot path — meets the <200ms P95 target.
+  No LLM in the hot path: meets the <200ms P95 target.
 - Quality boosting: final_score = rrf_score * (0.7 + 0.3 * quality_score)
   Applied in SQL so the DB engine can order results without Python post-processing.
 - Text search: PostgreSQL built-in to_tsvector/ts_rank (not pg_search/pg_textsearch).
-  Extensions avoided per research Open Question 1 — native FTS is adequate for V1.
+  Extensions avoided per research Open Question 1, native FTS is adequate for V1.
 - Retrieval count tracking: batch UPDATE after results collected; retrieval signals
   recorded via fire-and-forget asyncio task (non-blocking).
 
 Security (ACL-01, SEC-02, ACL-05):
 - org_id is extracted from bearer token, NEVER from tool arguments
 - Results scoped to: (org_id == :org_id) OR (is_public == True)
-  — agents see their private namespace + public commons
+ , agents see their private namespace + public commons
 - Fetch mode verifies content hash on retrieval to detect tampering (SEC-02)
 - Search results deduplicated by content_hash with private items prioritized (ACL-05)
 
@@ -71,7 +71,7 @@ def encode_cursor(offset: int) -> str:
 def decode_cursor(cursor: str) -> int:
     """Decode a base64 cursor string back to an integer offset.
 
-    Returns 0 on any decoding error (safe default — starts from beginning).
+    Returns 0 on any decoding error (safe default, starts from beginning).
     """
     try:
         return int(base64.urlsafe_b64decode(cursor.encode()).decode())
@@ -133,7 +133,7 @@ async def _record_retrieval_signals(item_ids: list[str]) -> None:
             )
             await session.commit()
     except Exception as exc:
-        # Signal recording is best-effort — log but never fail the search
+        # Signal recording is best-effort, log but never fail the search
         logger.warning("Failed to record retrieval signals for %d items: %s", len(item_ids), exc)
 
 
@@ -191,7 +191,7 @@ async def search_knowledge(
     Raises:
         ToolError: on any failure; FastMCP renders it with isError=true.
     """
-    # Extract auth context — org_id never comes from tool arguments (ACL-01)
+    # Extract auth context: org_id never comes from tool arguments (ACL-01)
     try:
         headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
@@ -248,12 +248,12 @@ async def _fetch_by_id(id: str, org_id: str) -> dict:
         # Per research pitfall 6: never reveal existence of items in other orgs
         raise ToolError(f"Knowledge item '{id}' not found.")
 
-    # SEC-02: Verify content integrity — detect tampering
+    # SEC-02: Verify content integrity, detect tampering
     if not verify_content_hash(item.content, item.content_hash):
         # Log tamper warning but still return the item with a warning field
         # This is a data integrity issue, not a user error
         logger.warning(
-            "Content hash mismatch for item %s — possible tampering detected",
+            "Content hash mismatch for item %s, possible tampering detected",
             item.id,
         )
         return {
@@ -267,7 +267,7 @@ async def _fetch_by_id(id: str, org_id: str) -> dict:
             "tags": item.tags,
             "org_attribution": item.org_id,
             "contributed_at": item.contributed_at.isoformat(),
-            "integrity_warning": "Content hash mismatch detected — this item may have been tampered with.",
+            "integrity_warning": "Content hash mismatch detected, this item may have been tampered with.",
         }
 
     return {
@@ -384,7 +384,7 @@ async def _search(
 
         # -------------------------------------------------------------------
         # CTE 2: Full-text search (PostgreSQL ts_rank)
-        # Uses native to_tsvector / ts_rank — no external extensions needed.
+        # Uses native to_tsvector / ts_rank, no external extensions needed.
         # -------------------------------------------------------------------
         ts_query_expr = func.plainto_tsquery("english", query)
         ts_vector_expr = func.to_tsvector("english", KnowledgeItem.content)
@@ -423,7 +423,7 @@ async def _search(
         # -------------------------------------------------------------------
         # Quality-boosted final score: rrf_score * (0.7 + 0.3 * quality_score)
         # Items with quality_score=1.0 get 1.0x; quality_score=0.0 gets 0.7x.
-        # Computed in SQL — no Python post-processing to meet <200ms P95 target.
+        # Computed in SQL: no Python post-processing to meet <200ms P95 target.
         # -------------------------------------------------------------------
         final_score_expr = (
             rrf_scores.c.rrf_score * (0.7 + 0.3 * KnowledgeItem.quality_score)
@@ -450,16 +450,16 @@ async def _search(
     # ACL-05: Deduplicate results by content_hash when spanning private + public
     # Private results take priority over public duplicates (org attribution preserved).
     # Results are ordered by quality-boosted RRF score DESC; private items with same
-    # content naturally appear at equal or better score — first-seen wins.
+    # content naturally appear at equal or better score, first-seen wins.
     seen_hashes: set[str] = set()
     deduped_rows = []
     for item, final_score in rows:
         if item.content_hash in seen_hashes:
-            continue  # skip duplicate — earlier (higher score or private) copy kept
+            continue  # skip duplicate, earlier (higher score or private) copy kept
         seen_hashes.add(item.content_hash)
         deduped_rows.append((item, final_score))
 
-    # Adjust total to account for dedup (approximate — exact count requires full scan)
+    # Adjust total to account for dedup (approximate, exact count requires full scan)
     dedup_reduction = len(rows) - len(deduped_rows)
     total_count = max(0, total_count - dedup_reduction)
 
@@ -467,7 +467,7 @@ async def _search(
     results = [
         {
             "id": str(item.id),
-            # First 80 chars as title — gives agent enough context to decide if worth fetching
+            # First 80 chars as title: gives agent enough context to decide if worth fetching
             "title": item.content[:80] + ("..." if len(item.content) > 80 else ""),
             "category": item.category.value,
             "confidence": item.confidence,
@@ -481,7 +481,7 @@ async def _search(
     has_more = (offset + limit) < total_count
     next_cursor = encode_cursor(offset + limit) if has_more else None
 
-    # Fire-and-forget retrieval count tracking — does not block search response (QI-02)
+    # Fire-and-forget retrieval count tracking, does not block search response (QI-02)
     if deduped_rows:
         returned_ids = [str(item.id) for item, _ in deduped_rows]
         asyncio.create_task(_record_retrieval_signals(returned_ids))

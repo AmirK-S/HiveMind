@@ -1,17 +1,17 @@
 """Statistics endpoints for the HiveMind dashboard (DASH-03, DASH-06).
 
 Endpoints:
-- GET /stats/commons — global commons health metrics (DASH-06)
-- GET /stats/org     — per-organisation contribution and reciprocity stats (DASH-03)
-- GET /stats/user    — per-agent contribution and retrieval metrics (DASH-03)
+- GET /stats/commons, global commons health metrics (DASH-06)
+- GET /stats/org    , per-organisation contribution and reciprocity stats (DASH-03)
+- GET /stats/user   , per-agent contribution and retrieval metrics (DASH-03)
 
-All queries use existing ORM models and columns — no new tables required.
+All queries use existing ORM models and columns, no new tables required.
 Data is already tracked in knowledge_items and quality_signals from Phases 1-3.
 
 Security:
 - All endpoints require X-API-Key header via require_api_key dependency
 - org_id is always extracted from the authenticated ApiKey record (ACL-01)
-- Commons endpoint returns public aggregate stats only — no private namespace data
+- Commons endpoint returns public aggregate stats only, no private namespace data
 
 Requirements: DASH-03, DASH-06.
 """
@@ -103,7 +103,7 @@ class UserStatsResponse(BaseModel):
     description=(
         "Returns aggregate statistics across the entire knowledge commons: "
         "total items, growth rates, retrieval volume, and domain coverage. "
-        "This is a public-facing view — no private namespace data is included."
+        "This is a public-facing view, no private namespace data is included."
     ),
 )
 async def get_commons_stats(
@@ -207,7 +207,7 @@ async def get_org_stats(
 ) -> OrgStatsResponse:
     """Return per-organisation stats including the reciprocity metric.
 
-    org_id is always extracted from the authenticated API key — never from query params.
+    org_id is always extracted from the authenticated API key, never from query params.
     """
     org_id = api_key_record.org_id
     now = datetime.datetime.now(_UTC)
@@ -309,13 +309,13 @@ async def get_org_stats(
     ),
 )
 async def get_user_stats(
-    agent_id: Annotated[str | None, Query(description="Agent ID filter (optional — all agents if omitted)")] = None,
+    agent_id: Annotated[str | None, Query(description="Agent ID filter (optional, all agents if omitted)")] = None,
     api_key_record: ApiKey = Depends(require_api_key),
 ) -> UserStatsResponse:
     """Return per-agent contribution and retrieval stats.
 
     org_id is always extracted from the authenticated API key (ACL-01).
-    agent_id is an optional filter — omit to aggregate across all org agents.
+    agent_id is an optional filter, omit to aggregate across all org agents.
     """
     org_id = api_key_record.org_id
 
@@ -353,7 +353,7 @@ async def get_user_stats(
         total_helpful = feedback_row[0]
         total_not_helpful = feedback_row[1]
 
-    # Compute helpful ratio — None if no feedback yet
+    # Compute helpful ratio: None if no feedback yet
     total_feedback = total_helpful + total_not_helpful
     agent_helpful_ratio: float | None = None
     if total_feedback > 0:

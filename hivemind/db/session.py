@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from hivemind.config import settings
 
-# Module-level async engine — shared across the process lifetime
+# Module-level async engine, shared across the process lifetime
 engine = create_async_engine(
     settings.database_url,
     echo=False,
@@ -26,7 +26,7 @@ engine = create_async_engine(
     max_overflow=20,
 )
 
-# Session factory — call AsyncSessionFactory() to get a new session
+# Session factory: call AsyncSessionFactory() to get a new session
 # expire_on_commit=False keeps ORM objects accessible after commit
 AsyncSessionFactory = async_sessionmaker(engine, expire_on_commit=False)
 

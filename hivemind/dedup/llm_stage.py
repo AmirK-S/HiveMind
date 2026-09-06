@@ -6,7 +6,7 @@ a DUPLICATE action is returned.
 
 The LLM stage is optional:
 - If no API key is configured, it returns is_duplicate=False with a
-  descriptive reason — the cosine + MinHash stages still provide value.
+  descriptive reason, the cosine + MinHash stages still provide value.
 - If the LLM API call fails or times out (10s), it logs a warning and
   returns is_duplicate=False (non-blocking degradation).
 
@@ -24,14 +24,14 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-# Timeout for LLM API calls — avoids blocking the dedup pipeline indefinitely
+# Timeout for LLM API calls: avoids blocking the dedup pipeline indefinitely
 _LLM_TIMEOUT_SECONDS = 10.0
 
 # Prompt template for semantic duplicate detection
 _DEDUP_PROMPT = (
     "You are a deduplication assistant. Compare these two knowledge items and "
     "determine if they are semantically duplicate (same information, possibly "
-    "different wording). Respond with JSON only — no explanation outside the JSON:\n\n"
+    "different wording). Respond with JSON only, no explanation outside the JSON:\n\n"
     '{{"is_duplicate": bool, "confidence": float, "reason": string}}\n\n'
     "ITEM A:\n{content_a}\n\nITEM B:\n{content_b}"
 )
@@ -91,11 +91,11 @@ def _parse_llm_response(raw: str) -> dict:
             "reason": str(parsed.get("reason", "")),
         }
     except (json.JSONDecodeError, KeyError, TypeError) as exc:
-        logger.warning("LLM stage: failed to parse response JSON — %s. Raw: %.200s", exc, raw)
+        logger.warning("LLM stage: failed to parse response JSON, %s. Raw: %.200s", exc, raw)
         return {
             "is_duplicate": False,
             "confidence": 0.0,
-            "reason": f"LLM stage: response parse failed — {exc}",
+            "reason": f"LLM stage: response parse failed, {exc}",
         }
 
 
@@ -106,7 +106,7 @@ async def confirm_duplicate_llm(content_a: str, content_b: str) -> dict:
     - If no API key is configured (settings.anthropic_api_key is empty),
       it returns is_duplicate=False with a "stage skipped" reason.
     - If the LLM API call fails or times out, it logs a warning and returns
-      is_duplicate=False — the pipeline continues without blocking.
+      is_duplicate=False, the pipeline continues without blocking.
 
     Args:
         content_a: The new content being evaluated.
@@ -115,17 +115,17 @@ async def confirm_duplicate_llm(content_a: str, content_b: str) -> dict:
     Returns:
         Dict with:
           is_duplicate (bool): True if LLM confirms semantic duplication.
-          confidence (float): 0.0–1.0 confidence score.
+          confidence (float): 0.0-1.0 confidence score.
           reason (str): Human-readable explanation from the LLM.
     """
-    from hivemind.config import settings  # lazy import — avoid circular deps
+    from hivemind.config import settings  # lazy import, avoid circular deps
 
-    # Skip LLM stage if no API key configured — graceful degradation
+    # Skip LLM stage if no API key configured, graceful degradation
     if not settings.anthropic_api_key:
         return {
             "is_duplicate": False,
             "confidence": 0.0,
-            "reason": "LLM stage skipped — no API key configured",
+            "reason": "LLM stage skipped, no API key configured",
         }
 
     prompt = _DEDUP_PROMPT.format(content_a=content_a, content_b=content_b)
@@ -138,23 +138,23 @@ async def confirm_duplicate_llm(content_a: str, content_b: str) -> dict:
         )
         return _parse_llm_response(raw_response)
     except httpx.TimeoutException:
-        logger.warning("LLM stage: API call timed out after %ss — skipping stage", _LLM_TIMEOUT_SECONDS)
+        logger.warning("LLM stage: API call timed out after %ss, skipping stage", _LLM_TIMEOUT_SECONDS)
         return {
             "is_duplicate": False,
             "confidence": 0.0,
-            "reason": f"LLM stage skipped — API call timed out after {_LLM_TIMEOUT_SECONDS}s",
+            "reason": f"LLM stage skipped, API call timed out after {_LLM_TIMEOUT_SECONDS}s",
         }
     except httpx.HTTPError as exc:
-        logger.warning("LLM stage: HTTP error calling LLM API — %s", exc)
+        logger.warning("LLM stage: HTTP error calling LLM API, %s", exc)
         return {
             "is_duplicate": False,
             "confidence": 0.0,
-            "reason": f"LLM stage skipped — API error: {exc}",
+            "reason": f"LLM stage skipped, API error: {exc}",
         }
     except Exception as exc:
-        logger.warning("LLM stage: unexpected error — %s", exc)
+        logger.warning("LLM stage: unexpected error, %s", exc)
         return {
             "is_duplicate": False,
             "confidence": 0.0,
-            "reason": f"LLM stage skipped — unexpected error: {exc}",
+            "reason": f"LLM stage skipped, unexpected error: {exc}",
         }

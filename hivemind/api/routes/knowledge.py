@@ -1,8 +1,8 @@
 """Knowledge search and fetch REST endpoints for the HiveMind API (SDK-01).
 
 Endpoints:
-- GET /knowledge/search — semantic search with pagination
-- GET /knowledge/{item_id} — fetch full content by UUID
+- GET /knowledge/search, semantic search with pagination
+- GET /knowledge/{item_id}, fetch full content by UUID
 
 Both endpoints require the ``X-API-Key`` header and delegate search/fetch logic
 to the internal ``_search`` and ``_fetch_by_id`` helpers in
@@ -12,8 +12,8 @@ The REST layer is a thin HTTP adapter over the same embedding + cosine search
 used by the MCP tool.
 
 Security:
-- org_id is extracted from the authenticated ApiKey record — never from query params.
-- Org isolation: (org_id == :org_id) OR (is_public == True) — same as MCP tool.
+- org_id is extracted from the authenticated ApiKey record, never from query params.
+- Org isolation: (org_id == :org_id) OR (is_public == True), same as MCP tool.
 - Content hash integrity check in fetch mode (SEC-02).
 
 Operation IDs are set explicitly so that the OpenAPI spec generates clean method
@@ -69,7 +69,7 @@ class KnowledgeSearchResponse(BaseModel):
 
 
 class KnowledgeItemResponse(BaseModel):
-    """Response body for GET /knowledge/{item_id} — full content."""
+    """Response body for GET /knowledge/{item_id}, full content."""
 
     id: str
     content: str
@@ -113,7 +113,7 @@ async def search_knowledge_endpoint(
 ) -> KnowledgeSearchResponse:
     """Search knowledge items by semantic similarity.
 
-    org_id is always extracted from the authenticated API key — never from the query string.
+    org_id is always extracted from the authenticated API key, never from the query string.
     """
     org_id = api_key_record.org_id
 
@@ -154,7 +154,7 @@ async def get_knowledge_item_endpoint(
 ) -> KnowledgeItemResponse:
     """Fetch a single knowledge item by UUID with integrity verification.
 
-    org_id is always extracted from the authenticated API key — never from the URL.
+    org_id is always extracted from the authenticated API key, never from the URL.
     """
     org_id = api_key_record.org_id
 

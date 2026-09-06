@@ -1,13 +1,13 @@
 """Outcome reporting REST endpoint for HiveMind (SDK-01, MCP-06).
 
 Endpoint:
-- POST /outcomes — report a usage outcome for a knowledge item
+- POST /outcomes, report a usage outcome for a knowledge item
 
 Records whether retrieved knowledge helped an agent solve a problem.
 These signals drive quality score evolution (QI-01, QI-02).
 
 Deduplication: if run_id is provided and a signal for (item_id, run_id) already
-exists, the call is idempotent — returns success with status "already_recorded".
+exists, the call is idempotent, returns success with status "already_recorded".
 
 Operation ID is set explicitly for clean SDK generation (Pattern 6).
 
@@ -62,7 +62,7 @@ class OutcomeRequest(BaseModel):
         default=None,
         description=(
             "Optional agent run ID for deduplication and tracing. "
-            "Strongly recommended — prevents double-counting on retries."
+            "Strongly recommended, prevents double-counting on retries."
         ),
     )
 
@@ -155,7 +155,7 @@ async def report_outcome_endpoint(
 
         if existing_signal is not None:
             logger.info(
-                "Duplicate outcome report: item_id=%s run_id=%s — returning existing signal",
+                "Duplicate outcome report: item_id=%s run_id=%s, returning existing signal",
                 body.item_id,
                 body.run_id,
             )

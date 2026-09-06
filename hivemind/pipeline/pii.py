@@ -2,13 +2,13 @@
 PII stripping pipeline for HiveMind.
 
 Multi-layer approach:
-  1. Presidio AnalyzerEngine — built-in recognizers (email, phone, credit card, SSN, etc.)
-  2. GLiNERRecognizer — zero-shot NER via knowledgator/gliner-pii-base-v1.0
-  3. Custom PatternRecognizer — API keys, tokens, secrets, connection strings, private URLs
+  1. Presidio AnalyzerEngine, built-in recognizers (email, phone, credit card, SSN, etc.)
+  2. GLiNERRecognizer, zero-shot NER via knowledgator/gliner-pii-base-v1.0
+  3. Custom PatternRecognizer, API keys, tokens, secrets, connection strings, private URLs
 
 Design decisions (per user):
 - Silent stripping: no logging of what was detected, no before/after comparison
-- PII stripped BEFORE any storage — raw text is never persisted
+- PII stripped BEFORE any storage, raw text is never persisted
 - Markdown-aware: fenced and inline code blocks are preserved intact (TRUST-06)
 - Two-pass validation: re-analyze anonymized text + verbatim check (TRUST-05)
 - Auto-reject if placeholder tokens exceed 50% of post-strip token count
@@ -32,7 +32,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    # Type-checking only — not imported at runtime until PIIPipeline.__init__
+    # Type-checking only, not imported at runtime until PIIPipeline.__init__
     from presidio_analyzer import AnalyzerEngine, PatternRecognizer, Pattern
     from presidio_analyzer.predefined_recognizers import GLiNERRecognizer
     from presidio_anonymizer import AnonymizerEngine
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 
 # ---------------------------------------------------------------------------
-# Placeholder regex — used for the 50% rejection check
+# Placeholder regex: used for the 50% rejection check
 # Matches all typed placeholders produced by the operator config below
 # ---------------------------------------------------------------------------
 _PLACEHOLDER_RE = re.compile(
@@ -51,7 +51,7 @@ _PLACEHOLDER_RE = re.compile(
 # Code block extraction regexes (TRUST-06)
 # Fenced code blocks: ```...``` or ~~~...~~~
 # Inline code spans: `...`
-# Order of application matters: fenced first, then inline — this ensures
+# Order of application matters: fenced first, then inline, this ensures
 # triple-backtick fenced blocks are already replaced before the inline regex
 # runs, avoiding false matches on the opening/closing triple backticks.
 # (See Phase 2 research: Pitfall 5)
@@ -178,7 +178,7 @@ class PIIPipeline:
     """Singleton PII stripping pipeline.
 
     Loads Presidio + GLiNER + custom recognizers once at construction time.
-    The GLiNER model (~400 MB) is expensive to load — use get_instance() to
+    The GLiNER model (~400 MB) is expensive to load, use get_instance() to
     avoid duplicate loads.
 
     Usage:
@@ -260,14 +260,14 @@ class PIIPipeline:
             should_reject: True if >50% of post-strip tokens are placeholders,
                            indicating the content is too redacted to be useful.
 
-        This method is intentionally SILENT — it does not log what was detected
+        This method is intentionally SILENT, it does not log what was detected
         or produce before/after comparisons. The caller only ever sees the cleaned
         version.
 
         Two-pass validation (TRUST-05):
-            Pass 1 — Standard Presidio analysis + anonymization on narrative text.
-            Pass 2a — Re-run analyzer on anonymized output; re-strip any residual.
-            Pass 2b — Verbatim check: if any original PII value (len >= 4) still
+            Pass 1: Standard Presidio analysis + anonymization on narrative text.
+            Pass 2a: Re-run analyzer on anonymized output; re-strip any residual.
+            Pass 2b: Verbatim check: if any original PII value (len >= 4) still
                       appears literally in the output, replace with [REDACTED].
 
         Markdown-aware (TRUST-06):
@@ -335,6 +335,6 @@ def strip_pii(text: str) -> tuple[str, bool]:
         text: Raw input content.
 
     Returns:
-        (cleaned_text, should_reject) — see PIIPipeline.strip() for details.
+        (cleaned_text, should_reject), see PIIPipeline.strip() for details.
     """
     return PIIPipeline.get_instance().strip(text)

@@ -34,12 +34,12 @@ async def record_signal(
     knowledge_item_id : str
         UUID string of the target knowledge item.
     signal_type : str
-        Event type — one of "retrieval", "outcome_solved",
+        Event type: one of "retrieval", "outcome_solved",
         "outcome_not_helpful", "contradiction".
     agent_id : str | None
         ID of the agent generating this signal (for attribution).
     run_id : str | None
-        Agent run ID — used for deduplication (same run should not
+        Agent run ID: used for deduplication (same run should not
         produce duplicate outcome signals for the same item).
     metadata : dict | None
         Extensible signal-specific payload (e.g. search query, score).
@@ -108,7 +108,7 @@ async def get_signals_for_item(knowledge_item_id: str) -> list[dict]:
 async def increment_retrieval_count(knowledge_item_id: str) -> None:
     """Atomically increment the retrieval_count on a knowledge item.
 
-    Uses a raw SQL UPDATE to avoid race conditions — no ORM read+write
+    Uses a raw SQL UPDATE to avoid race conditions, no ORM read+write
     round-trip.  Safe for concurrent callers.
 
     Parameters

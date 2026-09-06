@@ -1,3 +1,3 @@
-"""HiveMind — shared memory system for AI agents."""
+"""HiveMind: shared memory system for AI agents."""
 
 __version__ = "0.1.0"

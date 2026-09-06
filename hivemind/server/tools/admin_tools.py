@@ -13,9 +13,9 @@ Supported actions:
 - remove_permission: Remove an existing access policy.
 
 Object (obj) format examples:
-- "namespace:<org_id>"   — org-wide access
-- "category:bug_fix"     — category-level access
-- "item:<uuid>"          — item-level access
+- "namespace:<org_id>"  , org-wide access
+- "category:bug_fix"    , category-level access
+- "item:<uuid>"         , item-level access
 
 Requirements: ACL-03 (three-level RBAC), ACL-04 (org admin role management).
 """
@@ -83,9 +83,9 @@ async def manage_roles(
         agent_id:   Target agent (or role name for permission actions).
         role:       Role name for "assign_role" action (e.g. "admin", "contributor").
         obj:        Resource object for permission actions. Format:
-                    - "namespace:<org_id>"  — org-wide
-                    - "category:<cat>"      — category-level
-                    - "item:<uuid>"         — item-level
+                    - "namespace:<org_id>" , org-wide
+                    - "category:<cat>"     , category-level
+                    - "item:<uuid>"        , item-level
         permission: Permission for policy actions (e.g. "read", "write", "*").
 
     Returns:
@@ -111,7 +111,7 @@ async def manage_roles(
     except ValueError as exc:
         return _error(str(exc))
 
-    # Step 2: Admin gate — caller must have admin role for their org namespace (ACL-04)
+    # Step 2: Admin gate, caller must have admin role for their org namespace (ACL-04)
     namespace_obj = f"namespace:{auth.org_id}"
     is_admin = await enforce(auth.agent_id, auth.org_id, namespace_obj, "*")
     if not is_admin:

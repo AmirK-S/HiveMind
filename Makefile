@@ -22,7 +22,7 @@ generate-ts-sdk: generate-openapi
 generate-sdks: generate-python-sdk generate-ts-sdk
 	@echo "SDKs generated successfully"
 
-# CI drift check — fails if generated code differs from committed SDKs
+# CI drift check: fails if generated code differs from committed SDKs
 # Run this in CI to ensure committed SDK code matches the current server spec
 check-sdk-drift: generate-sdks
 	git diff --exit-code sdks/ || (echo "SDK drift detected! Run 'make generate-sdks' and commit the result." && exit 1)

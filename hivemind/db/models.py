@@ -1,15 +1,15 @@
 """SQLAlchemy ORM models for HiveMind.
 
 Tables:
-- pending_contributions  — inbound knowledge queued for user approval (PII-stripped)
-- knowledge_items        — approved knowledge in the commons (with vector embeddings)
-- quality_signals        — per-item behavioral signals for quality scoring (QI-01, QI-02)
-- deployment_config      — key/value store for deployment metadata (e.g. pinned model revision)
+- pending_contributions , inbound knowledge queued for user approval (PII-stripped)
+- knowledge_items       , approved knowledge in the commons (with vector embeddings)
+- quality_signals       , per-item behavioral signals for quality scoring (QI-01, QI-02)
+- deployment_config     , key/value store for deployment metadata (e.g. pinned model revision)
 
 Design decisions:
 - All tables carry org_id for namespace isolation (ACL-01)
 - Knowledge provenance fields (source_agent_id, contributed_at, content_hash, etc.)
-  are set on INSERT and never updated — immutable per KM-01
+  are set on INSERT and never updated, immutable per KM-01
 - content_hash is SHA-256 of the stripped content
 - Unique constraint on (content_hash, org_id) prevents intra-org duplicates while
   allowing two orgs to contribute identical knowledge (pitfall 4 from research)
@@ -22,7 +22,7 @@ Design decisions:
     expired_at     = system-time end (NULL = current version)
     valid_at       = world-time start (NULL = "valid since approval")
     invalid_at     = world-time end (NULL = "still valid")
-  TSTZRANGE avoided — SQLAlchemy has known DataError friction with DateTimeTZRange
+  TSTZRANGE avoided: SQLAlchemy has known DataError friction with DateTimeTZRange
 """
 
 import datetime
@@ -165,10 +165,10 @@ class KnowledgeItem(Base):
     version: Mapped[str | None] = mapped_column(String(50), nullable=True)
     tags: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
-    # Vector embedding (KM-08 — 384 dims for all-MiniLM-L6-v2)
+    # Vector embedding (KM-08, 384 dims for all-MiniLM-L6-v2)
     embedding: Mapped[list | None] = mapped_column(VECTOR(384), nullable=True)
 
-    # Timestamps — contributed_at is immutable provenance copied from pending
+    # Timestamps: contributed_at is immutable provenance copied from pending
     contributed_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
@@ -177,12 +177,12 @@ class KnowledgeItem(Base):
         nullable=False,
         default=datetime.datetime.utcnow,
     )
-    # Soft-delete timestamp — set by delete_knowledge tool; NULL means active
+    # Soft-delete timestamp, set by delete_knowledge tool; NULL means active
     deleted_at: Mapped[datetime.datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, default=None
     )
 
-    # Quality scoring (QI-01, QI-02) — updated via behavioral signal aggregation
+    # Quality scoring (QI-01, QI-02), updated via behavioral signal aggregation
     quality_score: Mapped[float] = mapped_column(
         Float, nullable=False, server_default="0.5"
     )
@@ -244,7 +244,7 @@ class QualitySignal(Base):
     - "outcome_not_helpful" : agent reported the item was not helpful
     - "contradiction"       : item conflicts with another approved item
 
-    run_id enables deduplication — the same agent run should not count twice
+    run_id enables deduplication, the same agent run should not count twice
     for the same outcome signal type on the same item.
     """
 
@@ -315,10 +315,10 @@ class DeploymentConfig(Base):
 class ApiKey(Base):
     """API key for agent/integration authentication with tier-based rate limits (INFRA-04).
 
-    The raw key is never stored — only a SHA-256 hash is persisted.  The first
+    The raw key is never stored: only a SHA-256 hash is persisted.  The first
     8 characters are stored as key_prefix for safe display and lookup.
 
-    Tiers: "free" (default), "pro", "enterprise" — drive rate-limit thresholds.
+    Tiers: "free" (default), "pro", "enterprise", drive rate-limit thresholds.
     """
 
     __tablename__ = "api_keys"
@@ -327,10 +327,10 @@ class ApiKey(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
 
-    # Safe display — first 8 chars of the raw key (e.g. "hm_12345")
+    # Safe display: first 8 chars of the raw key (e.g. "hm_12345")
     key_prefix: Mapped[str] = mapped_column(String(8), nullable=False)
 
-    # SHA-256 of the full API key — unique; raw key is never stored
+    # SHA-256 of the full API key, unique; raw key is never stored
     key_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
 
     # Namespace isolation (ACL-01)
@@ -388,7 +388,7 @@ class AutoApproveRule(Base):
 
     org_id: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    # Reuse the existing knowledgecategory enum type — do not create a new one
+    # Reuse the existing knowledgecategory enum type, do not create a new one
     category: Mapped[KnowledgeCategory] = mapped_column(
         Enum(KnowledgeCategory, name="knowledgecategory"), nullable=False
     )
@@ -411,7 +411,7 @@ class AutoApproveRule(Base):
     )
 
     __table_args__ = (
-        # One rule per (org, category) pair — prevents contradictory entries
+        # One rule per (org, category) pair, prevents contradictory entries
         UniqueConstraint(
             "org_id", "category", name="uq_auto_approve_rules_org_category"
         ),
