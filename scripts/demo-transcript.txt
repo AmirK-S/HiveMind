@@ -1,0 +1,77 @@
+
+0. Waiting for http://localhost:8000/health
+   up
+
+1. server/discover on the 2026-07-28 wire (no initialize, no session)
+   supportedVersions: ['2026-07-28']
+   serverInfo:        {'name': 'HiveMind', 'version': '0.1.0'}
+   tools:             7 tools, ttlMs 0 cacheScope private
+
+2. Two agents of organisation demo-org get a bearer token each (signed with HIVEMIND_SECRET_KEY)
+   alice: eyJhbGciOiJIUzI1NiIsInR5...   bob: eyJhbGciOiJIUzI1NiIsInR5...
+
+   An auto-approval rule for demo-org, so alice's contribution lands in the commons at once
+   (without it the contribution is queued for human review; there is no MCP tool to approve)
+
+3. alice contributes
+   {
+     "contribution_id": "e7c0cb9e-3a79-4ad5-96a6-414692fd5b6a",
+     "status": "auto_approved",
+     "category": "general",
+     "message": "Knowledge contribution auto-approved and added to the commons."
+   }
+
+4. bob searches by meaning, with other words than alice used
+   {
+     "results": [
+       {
+         "id": "e7c0cb9e-3a79-4ad5-96a6-414692fd5b6a",
+         "title": "With asyncpg behind SQLAlchemy 2, a pool_size above the PostgreSQL max_connectio...",
+         "category": "general",
+         "confidence": 0.9,
+         "org_attribution": "demo-org",
+         "relevance_score": 0.0139
+       }
+     ],
+     "total_found": 1,
+     "next_cursor": null
+   }
+
+5. bob fetches the item by the handle alice received (the server-minted identifier, passed as an ordinary argument)
+   {
+     "id": "e7c0cb9e-3a79-4ad5-96a6-414692fd5b6a",
+     "content": "With asyncpg behind SQLAlchemy 2, a pool_size above the PostgreSQL max_connections divided by the number of workers gives 'too many clients already' under load; size the pool per worker, not per service. Observed on 2026-09-06T04:35:49Z.",
+     "category": "general",
+     "confidence": 0.9,
+     "framework": null,
+     "language": null,
+     "version": null,
+     "tags": {
+       "tags": [
+         "asyncpg",
+         "sqlalchemy"
+       ]
+     },
+     "org_attribution": "demo-org",
+     "contributed_at": "2026-09-06T04:35:51.119415+00:00",
+     "integrity_verified": true
+   }
+
+6. bob reports that it solved his problem
+   {
+     "status": "recorded",
+     "item_id": "e7c0cb9e-3a79-4ad5-96a6-414692fd5b6a",
+     "outcome": "solved",
+     "signal_id": "4d154ef2-2b81-4909-ad21-e4c5140821f6"
+   }
+
+7. Each agent lists only its own contributions
+   alice:
+     total_count: 1
+   bob:
+     total_count: 0
+
+8. Without a token, the same call is refused as an MCP error
+   refused: Missing or invalid Authorization header. Expected 'Bearer <token>'.
+
+Done. The item alice contributed is now shared memory: bob found it, used it, rated it.

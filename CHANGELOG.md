@@ -33,6 +33,12 @@ Keep a Changelog. Dates are ISO 8601.
 - Distribution name is `hivemind-mcp`; `hivemind` on PyPI belongs to another project.
 
 ### Fixed
+- PII pipeline redacted library names: the name of the API key pattern
+  recognizer leaked into GLiNER as a zero-shot label with a 0.30 threshold,
+  and the entity order came from a set, so results differed per process. The
+  analyzer now receives a fixed entity list, GLiNER a 0.60 threshold, the
+  second pass ignores its own placeholders, and code block tokens are never
+  analyzed (a classified token used to drop the whole block).
 - `docker-compose.yml` passed `DATABASE_URL` and `REDIS_URL` without the
   `HIVEMIND_` prefix; the container connected to itself.
 - `alembic/env.py` imported a name that does not exist; no migration had ever

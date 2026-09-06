@@ -48,6 +48,41 @@ _PLACEHOLDER_RE = re.compile(
 )
 
 # ---------------------------------------------------------------------------
+# GLiNER confidence floor.
+# Below that, package names such as asyncpg match the zero-shot label API_KEY:
+# the technical false positives measured sit between 0.30 and 0.51, the real
+# secrets, names and addresses between 0.79 and 0.93.
+# ---------------------------------------------------------------------------
+_GLINER_THRESHOLD = 0.60
+
+# ---------------------------------------------------------------------------
+# Entity types the analyzer is asked for, in a fixed order.
+# Passing all registered entities let the pattern recognizer name API_KEY leak
+# into GLiNER as a zero-shot label, and the set order made results differ per
+# process: AnalyzerEngine derives the list from list(set(...)) when entities is
+# omitted, and GLiNERRecognizer appends whatever it does not recognise to its
+# prompt labels, in that order. A literal list has a fixed order and only names
+# the types the operator config below actually types.
+# ---------------------------------------------------------------------------
+_REQUESTED_ENTITIES = [
+    "PERSON",
+    "EMAIL_ADDRESS",
+    "PHONE_NUMBER",
+    "LOCATION",
+    "PASSWORD",
+    "USERNAME",
+    "CREDIT_CARD",
+    "US_SSN",
+    "US_DRIVER_LICENSE",
+    "US_PASSPORT",
+    "US_BANK_NUMBER",
+    "IP_ADDRESS",
+    "MEDICAL_LICENSE",
+    "IBAN_CODE",
+    "API_KEY",
+]
+
+# ---------------------------------------------------------------------------
 # Code block extraction regexes (TRUST-06)
 # Fenced code blocks: ```...``` or ~~~...~~~
 # Inline code spans: `...`
@@ -58,6 +93,22 @@ _PLACEHOLDER_RE = re.compile(
 # ---------------------------------------------------------------------------
 _FENCED_CODE_RE = re.compile(r'(```[\s\S]*?```|~~~[\s\S]*?~~~)', re.MULTILINE)
 _INLINE_CODE_RE = re.compile(r'(`[^`\n]+`)')
+# The placeholders themselves. The analyzer must never touch them: a hex run
+# inside the token gets classified now and then (PERSON at 0.85 by spaCy,
+# MEDICAL_LICENSE at 1.00 on nine digits in a row), the key is anonymized away
+# and _reinject_code_blocks silently loses the whole block, password included.
+_CODE_TOKEN_RE = re.compile(r'__(?:CODE_BLOCK|INLINE)_[0-9a-f]{32}__')
+
+
+def _drop_results_over_code_tokens(text: str, results: list) -> list:
+    """Remove analyzer results that overlap a code block placeholder in *text*."""
+    token_spans = [m.span() for m in _CODE_TOKEN_RE.finditer(text)]
+    if not token_spans:
+        return results
+    return [
+        r for r in results
+        if all(r.end <= start or end <= r.start for start, end in token_spans)
+    ]
 
 
 def _extract_code_blocks(text: str) -> tuple[str, dict[str, str]]:
@@ -108,6 +159,30 @@ def _reinject_code_blocks(text: str, placeholder_map: dict[str, str]) -> str:
     return text
 
 
+_SPAN_MASK_CHAR = "\x00"
+
+
+def _mask_spans(text: str, results: list) -> str:
+    """Return *text* with every analyzer span blanked out.
+
+    Used by the pass 2b verbatim check to count the occurrences of a value the
+    analyzer did NOT flag, so those occurrences are left in place.
+
+    Args:
+        text: The narrative text the analyzer ran on.
+        results: The RecognizerResult objects returned for that text.
+
+    Returns:
+        A string of the same length, with the detected spans replaced by a
+        character that cannot appear in a detected value.
+    """
+    chars = list(text)
+    for result in results:
+        for index in range(max(result.start, 0), min(result.end, len(chars))):
+            chars[index] = _SPAN_MASK_CHAR
+    return "".join(chars)
+
+
 def _build_api_key_patterns() -> list:
     """Return curated regex patterns for API keys, secrets, and private URLs."""
     # Local import to avoid triggering spacy at module load time
@@ -124,6 +199,10 @@ def _build_api_key_patterns() -> list:
         Pattern("google_api_key", r"AIza[0-9A-Za-z\-_]{35}", 0.9),
         # Stripe secret or publishable key
         Pattern("stripe_key", r"(?:sk|pk)_(?:test|live)_[A-Za-z0-9]{24,}", 0.9),
+        # Anthropic API key (dashes, not the underscores of the Stripe format)
+        Pattern("anthropic_key", r"sk-ant-api\d{2}-[A-Za-z0-9_-]{32,}", 0.95),
+        # OpenAI project key
+        Pattern("openai_project_key", r"sk-proj-[A-Za-z0-9_-]{32,}", 0.95),
         # Slack token (bot, app, user, workspace, etc.)
         Pattern("slack_token", r"xox[baprs]-[A-Za-z0-9-]+", 0.85),
         # JSON Web Token
@@ -224,6 +303,7 @@ class PIIPipeline:
             flat_ner=False,
             multi_label=True,
             map_location="cpu",
+            threshold=_GLINER_THRESHOLD,
         )
         self._analyzer.registry.add_recognizer(gliner_recognizer)
 
@@ -280,7 +360,10 @@ class PIIPipeline:
         narrative, code_map = _extract_code_blocks(text)
 
         # Pass 1: detect and anonymize PII in narrative text
-        results = self._analyzer.analyze(text=narrative, language="en")
+        results = self._analyzer.analyze(
+            text=narrative, language="en", entities=_REQUESTED_ENTITIES
+        )
+        results = _drop_results_over_code_tokens(narrative, results)
 
         # Capture original PII values for the verbatim check (Pass 2b).
         # We collect them here, before anonymization modifies the text.
@@ -297,7 +380,24 @@ class PIIPipeline:
         # Presidio may miss PII that becomes visible only after surrounding
         # context is removed (e.g., a name next to a redacted email). Re-strip
         # any residual findings.
-        residual_results = self._analyzer.analyze(text=cleaned_narrative, language="en")
+        # It must not re-read its own markers: GLiNER scores the word API_KEY
+        # inside [API_KEY] higher than the text that produced it, which is what
+        # turned [API_KEY] into [[API_KEY]]. Findings that fall inside, or across
+        # the edge of, a placeholder written by pass 1 are dropped; a finding
+        # that covers a whole placeholder plus surrounding text is kept.
+        residual_results = self._analyzer.analyze(
+            text=cleaned_narrative, language="en", entities=_REQUESTED_ENTITIES
+        )
+        residual_results = _drop_results_over_code_tokens(cleaned_narrative, residual_results)
+        marker_spans = [m.span() for m in _PLACEHOLDER_RE.finditer(cleaned_narrative)]
+        residual_results = [
+            r
+            for r in residual_results
+            if all(
+                r.end <= start or end <= r.start or (r.start <= start and end <= r.end)
+                for start, end in marker_spans
+            )
+        ]
         if residual_results:
             cleaned_narrative = self._anonymizer.anonymize(
                 text=cleaned_narrative,
@@ -305,12 +405,22 @@ class PIIPipeline:
                 operators=self._operators,
             ).text
 
-        # TRUST-05 Pass 2b: verbatim check.
+        # TRUST-05 Pass 2b: verbatim check, bounded to the detected positions.
         # For each original PII value of length >= 4, check if it literally
         # survived into the output. Length threshold avoids false positives from
         # single-character or very short fragments (see Phase 2 research: Pitfall 4).
-        for pii_value in original_pii_values:
-            if len(pii_value) >= 4 and pii_value in cleaned_narrative:
+        # The replacement used to be a global str.replace(), which also erased the
+        # occurrences the analyzer never flagged: once "nginx" was detected in
+        # "behind nginx:", /etc/nginx/nginx.conf became
+        # /etc/[REDACTED]/[REDACTED][REDACTED]. Counting the occurrences that lie
+        # outside every detected span tells the two apart: the value is only
+        # replaced when more of them survived than were left untouched on purpose.
+        masked_narrative = _mask_spans(narrative, results)
+        for pii_value in dict.fromkeys(original_pii_values):
+            if len(pii_value) < 4:
+                continue
+            untouched = masked_narrative.count(pii_value)
+            if cleaned_narrative.count(pii_value) > untouched:
                 cleaned_narrative = cleaned_narrative.replace(pii_value, "[REDACTED]")
 
         # TRUST-06: Reinject code blocks intact.
