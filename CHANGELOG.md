@@ -13,11 +13,18 @@ Keep a Changelog. Dates are ISO 8601.
 - `docker/entrypoint.sh`: Alembic migrations run before uvicorn.
 - Migration 007: `casbin_rule`, the RBAC policy table the server reads at startup.
 - `.env.example`, `LICENSE` (MIT), this changelog.
-- `conformance/`: reports of the official MCP conformance suite. Baseline on
-  fastmcp 2.14.5: 8 of 30 scored scenarios pass for 2025-11-25, 5 of 36 for
-  2026-07-28, zero wire schema violation.
+- `conformance/`: reports of the official MCP conformance suite before and
+  after the upgrade, and the `expected-failures` files that justify every
+  remaining failure. 2026-07-28: 5 of 37 scored scenarios before, 13 after,
+  zero wire schema violation on every run.
 
 ### Changed
+- README rewritten: what the server does and does not do, quick start on a
+  fresh clone, the seven tools, conformance before and after, end of life note.
+- Upgrade to fastmcp 4.0.3 and the mcp 2.1.1 SDK: MCP revision 2026-07-28 is
+  served without sessions, handshake revisions stay served on the same URL.
+  `get_http_headers()` call sites ask for the Authorization header explicitly;
+  the DNS rebinding guard is armed through `HIVEMIND_ALLOWED_HOSTS`.
 - MCP endpoint served at exactly `/mcp`. It used to answer on `/mcp/mcp` while
   `/mcp` returned 307 then 404.
 - Tool refusals are MCP errors (`isError: true`) instead of `CallToolResult`

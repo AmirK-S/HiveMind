@@ -12,9 +12,9 @@ Requirements: DIST-04 (Smithery discovery), DIST-06 (Glama.ai)
 from __future__ import annotations
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from hivemind import __version__
-from fastapi.responses import JSONResponse
 
 # Path of the MCP Streamable HTTP endpoint. Shared with hivemind.server.main so
 # the card and the mounted transport can never disagree.
