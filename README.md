@@ -232,11 +232,13 @@ era for a while; the server serves both.
 
 ## Issues
 
-Issues are welcome and are read. No feature is promised and no response time
-is: this is a demonstration pinned to a date, kept by one person. A
+Issues are welcome and are read, on a best effort basis, with no response time
+commitment: this is a personal demonstration repository pinned to a date, kept
+by one person, with no service expected of it. No feature is promised. A
 reproducible defect in what this README claims is the kind of issue that gets
 fixed; a request for a new capability gets a written answer and is closed as
 out of scope.
+
 
 ## License
 

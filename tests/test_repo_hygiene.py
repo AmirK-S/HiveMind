@@ -56,3 +56,11 @@ def test_container_runs_migrations_before_serving():
     assert "uvicorn" not in joined or "alembic" in joined or "entrypoint" in joined.lower(), (
         "the CMD starts uvicorn without running alembic upgrade head"
     )
+
+
+def test_readme_states_a_best_effort_issue_policy():
+    """A personal demonstration repository promises no response time; the README must say so."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    section = " ".join(readme.split("## Issues", 1)[1].split("\n## ", 1)[0].split())
+    assert "best effort" in section
+    assert "no response time commitment" in section
