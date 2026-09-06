@@ -24,10 +24,11 @@ from __future__ import annotations
 
 import logging
 import uuid as _uuid
+from typing import NoReturn
 
 import sqlalchemy as sa
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
-from mcp.types import CallToolResult, TextContent
 
 from hivemind.db.models import KnowledgeItem, QualitySignal
 from hivemind.db.session import get_session
@@ -66,12 +67,13 @@ def _extract_auth(headers: dict[str, str]):
     return decode_token(token)
 
 
-def _error(message: str) -> CallToolResult:
-    """Return a structured MCP isError response."""
-    return CallToolResult(
-        content=[TextContent(type="text", text=message)],
-        isError=True,
-    )
+def _error(message: str) -> NoReturn:
+    """Raise an MCP tool error.
+
+    FastMCP turns a ToolError into a JSON-RPC result with isError=true and the
+    message in content[0].text.
+    """
+    raise ToolError(message)
 
 
 # ---------------------------------------------------------------------------
@@ -83,7 +85,7 @@ async def report_outcome(
     item_id: str,
     outcome: str,
     run_id: str | None = None,
-) -> dict | CallToolResult:
+) -> dict:
     """Report whether a knowledge item helped solve a problem (MCP-06).
 
     Records an explicit outcome signal for the given knowledge item. This signal
@@ -103,7 +105,10 @@ async def report_outcome(
 
     Returns:
         dict: { status, item_id, outcome, signal_id }
-        CallToolResult with isError=True on validation or auth failure.
+
+    Raises:
+        ToolError: on validation or auth failure; FastMCP renders it with
+        isError=true.
     """
     # -----------------------------------------------------------------------
     # Auth: extract JWT from headers (ACL-01 — org_id never from arguments)

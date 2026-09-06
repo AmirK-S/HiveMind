@@ -41,9 +41,10 @@ import asyncio
 import base64
 import datetime
 import logging
+from typing import NoReturn
 
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
-from mcp.types import CallToolResult, TextContent
 from sqlalchemy import func, select, text, union_all
 
 from hivemind.config import settings
@@ -92,12 +93,13 @@ def _extract_auth(headers: dict[str, str]):
     return decode_token(token)
 
 
-def _auth_error(message: str) -> CallToolResult:
-    """Return a structured MCP isError response for auth failures."""
-    return CallToolResult(
-        content=[TextContent(type="text", text=message)],
-        isError=True,
-    )
+def _auth_error(message: str) -> NoReturn:
+    """Raise an MCP tool error for auth failures.
+
+    FastMCP turns a ToolError into a JSON-RPC result with isError=true and the
+    message in content[0].text.
+    """
+    raise ToolError(message)
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +150,7 @@ async def search_knowledge(
     cursor: str | None = None,
     at_time: str | None = None,
     version: str | None = None,
-) -> dict | CallToolResult:
+) -> dict:
     """Search or fetch knowledge items from HiveMind.
 
     Search mode (query provided):
@@ -185,7 +187,9 @@ async def search_knowledge(
     Returns:
         Search mode: dict with results[], total_found, next_cursor.
         Fetch mode:  dict with full item fields + integrity_verified/integrity_warning.
-        Error:       CallToolResult with isError=True.
+
+    Raises:
+        ToolError: on any failure; FastMCP renders it with isError=true.
     """
     # Extract auth context — org_id never comes from tool arguments (ACL-01)
     try:
@@ -198,13 +202,7 @@ async def search_knowledge(
 
     # Validate that at least one mode parameter is provided
     if query is None and id is None:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text="Provide either 'query' for search or 'id' to fetch a specific item.",
-            )],
-            isError=True,
-        )
+        raise ToolError("Provide either 'query' for search or 'id' to fetch a specific item.")
 
     # -----------------------------------------------------------------------
     # Fetch mode: return full content for a specific item
@@ -226,7 +224,7 @@ async def search_knowledge(
     )
 
 
-async def _fetch_by_id(id: str, org_id: str) -> dict | CallToolResult:
+async def _fetch_by_id(id: str, org_id: str) -> dict:
     """Fetch a single knowledge item by ID with org isolation and hash verification."""
     import uuid as _uuid
 
@@ -234,10 +232,7 @@ async def _fetch_by_id(id: str, org_id: str) -> dict | CallToolResult:
     try:
         item_uuid = _uuid.UUID(id)
     except ValueError:
-        return CallToolResult(
-            content=[TextContent(type="text", text=f"Invalid id format: '{id}' is not a valid UUID.")],
-            isError=True,
-        )
+        raise ToolError(f"Invalid id format: '{id}' is not a valid UUID.")
 
     async with get_session() as session:
         stmt = select(KnowledgeItem).where(
@@ -251,13 +246,7 @@ async def _fetch_by_id(id: str, org_id: str) -> dict | CallToolResult:
 
     if item is None:
         # Per research pitfall 6: never reveal existence of items in other orgs
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=f"Knowledge item '{id}' not found.",
-            )],
-            isError=True,
-        )
+        raise ToolError(f"Knowledge item '{id}' not found.")
 
     # SEC-02: Verify content integrity — detect tampering
     if not verify_content_hash(item.content, item.content_hash):
@@ -304,7 +293,7 @@ async def _search(
     cursor: str | None,
     at_time: str | None = None,
     version: str | None = None,
-) -> dict | CallToolResult:
+) -> dict:
     """Hybrid RRF search with quality-boosted ranking.
 
     Implements two-tier retrieval:
@@ -341,15 +330,9 @@ async def _search(
             category_enum = KnowledgeCategory(category)
         except ValueError:
             valid_values = [c.value for c in KnowledgeCategory]
-            return CallToolResult(
-                content=[TextContent(
-                    type="text",
-                    text=(
-                        f"Invalid category '{category}'. "
-                        f"Valid values: {', '.join(valid_values)}"
-                    ),
-                )],
-                isError=True,
+            raise ToolError(
+                f"Invalid category '{category}'. "
+                f"Valid values: {', '.join(valid_values)}"
             )
 
     # Optional temporal filter: parse at_time ISO 8601 string if provided
@@ -358,15 +341,9 @@ async def _search(
         try:
             target_time = datetime.datetime.fromisoformat(at_time)
         except ValueError:
-            return CallToolResult(
-                content=[TextContent(
-                    type="text",
-                    text=(
-                        f"Invalid at_time format: '{at_time}'. "
-                        "Expected ISO 8601 datetime string, e.g. '2026-01-01T00:00:00Z'."
-                    ),
-                )],
-                isError=True,
+            raise ToolError(
+                f"Invalid at_time format: '{at_time}'. "
+                "Expected ISO 8601 datetime string, e.g. '2026-01-01T00:00:00Z'."
             )
 
     # Embed the query text using the singleton embedding provider

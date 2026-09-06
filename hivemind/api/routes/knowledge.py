@@ -28,6 +28,7 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastmcp.exceptions import ToolError
 from pydantic import BaseModel
 
 from hivemind.api.auth import require_api_key
@@ -116,21 +117,17 @@ async def search_knowledge_endpoint(
     """
     org_id = api_key_record.org_id
 
-    result = await _search(
-        query=query,
-        org_id=org_id,
-        category=category,
-        limit=limit,
-        cursor=cursor,
-    )
-
-    # _search returns CallToolResult on error (e.g. invalid category)
-    from mcp.types import CallToolResult
-
-    if isinstance(result, CallToolResult):
-        # Extract the error message from the MCP result
-        error_text = result.content[0].text if result.content else "Search failed"
-        raise HTTPException(status_code=400, detail=error_text)
+    # _search raises ToolError on refusal (e.g. invalid category)
+    try:
+        result = await _search(
+            query=query,
+            org_id=org_id,
+            category=category,
+            limit=limit,
+            cursor=cursor,
+        )
+    except ToolError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return KnowledgeSearchResponse(
         results=[KnowledgeSearchResult(**r) for r in result["results"]],
@@ -161,15 +158,14 @@ async def get_knowledge_item_endpoint(
     """
     org_id = api_key_record.org_id
 
-    result = await _fetch_by_id(id=item_id, org_id=org_id)
-
-    from mcp.types import CallToolResult
-
-    if isinstance(result, CallToolResult):
-        error_text = result.content[0].text if result.content else "Item not found"
+    # _fetch_by_id raises ToolError on refusal (unknown id, invalid UUID)
+    try:
+        result = await _fetch_by_id(id=item_id, org_id=org_id)
+    except ToolError as exc:
+        error_text = str(exc)
         # Map "not found" errors to 404; validation errors to 400
         if "not found" in error_text.lower():
-            raise HTTPException(status_code=404, detail=error_text)
-        raise HTTPException(status_code=400, detail=error_text)
+            raise HTTPException(status_code=404, detail=error_text) from exc
+        raise HTTPException(status_code=400, detail=error_text) from exc
 
     return KnowledgeItemResponse(**result)

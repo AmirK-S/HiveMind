@@ -16,9 +16,10 @@ from __future__ import annotations
 
 import base64
 import datetime
+from typing import NoReturn
 
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
-from mcp.types import CallToolResult, TextContent
 from sqlalchemy import func, or_, select
 
 from hivemind.db.models import KnowledgeCategory, KnowledgeItem, PendingContribution
@@ -57,11 +58,8 @@ def _extract_auth(headers: dict[str, str]):
     return decode_token(token)
 
 
-def _auth_error(message: str) -> CallToolResult:
-    return CallToolResult(
-        content=[TextContent(type="text", text=message)],
-        isError=True,
-    )
+def _auth_error(message: str) -> NoReturn:
+    raise ToolError(message)
 
 
 # ---------------------------------------------------------------------------
@@ -74,7 +72,7 @@ async def list_knowledge(
     category: str | None = None,
     limit: int = 20,
     cursor: str | None = None,
-) -> dict | CallToolResult:
+) -> dict:
     """List your own knowledge contributions (pending and/or approved).
 
     Returns a paginated view of the contributions this agent has made within
@@ -90,7 +88,10 @@ async def list_knowledge(
 
     Returns:
         Dict with contributions[], total_count, and next_cursor.
-        CallToolResult with isError=True on auth or validation failure.
+
+    Raises:
+        ToolError: on auth or validation failure; FastMCP renders it with
+        isError=true.
     """
     # Extract auth — both org_id and agent_id needed for per-agent isolation
     try:
@@ -105,15 +106,9 @@ async def list_knowledge(
     # Validate status parameter
     valid_statuses = {"pending", "approved", "all"}
     if status not in valid_statuses:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=(
-                    f"Invalid status '{status}'. "
-                    f"Valid values: {', '.join(sorted(valid_statuses))}"
-                ),
-            )],
-            isError=True,
+        raise ToolError(
+            f"Invalid status '{status}'. "
+            f"Valid values: {', '.join(sorted(valid_statuses))}"
         )
 
     # Validate optional category
@@ -123,15 +118,9 @@ async def list_knowledge(
             category_enum = KnowledgeCategory(category)
         except ValueError:
             valid_values = [c.value for c in KnowledgeCategory]
-            return CallToolResult(
-                content=[TextContent(
-                    type="text",
-                    text=(
-                        f"Invalid category '{category}'. "
-                        f"Valid values: {', '.join(valid_values)}"
-                    ),
-                )],
-                isError=True,
+            raise ToolError(
+                f"Invalid category '{category}'. "
+                f"Valid values: {', '.join(valid_values)}"
             )
 
     # Cap limit

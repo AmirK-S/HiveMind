@@ -27,9 +27,10 @@ Flow:
 from __future__ import annotations
 
 import datetime
+from typing import NoReturn
 
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
-from mcp.types import CallToolResult, TextContent
 from sqlalchemy import select
 
 from hivemind.db.models import AutoApproveRule, KnowledgeCategory, KnowledgeItem, PendingContribution
@@ -63,12 +64,13 @@ def _extract_auth(headers: dict[str, str]):
     return decode_token(token)
 
 
-def _auth_error(message: str) -> CallToolResult:
-    """Return a structured MCP isError response for auth failures."""
-    return CallToolResult(
-        content=[TextContent(type="text", text=message)],
-        isError=True,
-    )
+def _auth_error(message: str) -> NoReturn:
+    """Raise an MCP tool error for auth failures.
+
+    FastMCP turns a ToolError into a JSON-RPC result with isError=true and the
+    message in content[0].text.
+    """
+    raise ToolError(message)
 
 
 async def add_knowledge(
@@ -80,7 +82,7 @@ async def add_knowledge(
     version: str | None = None,
     tags: list[str] | None = None,
     run_id: str | None = None,
-) -> dict | CallToolResult:
+) -> dict:
     """Contribute a knowledge item to HiveMind.
 
     The content is scanned for prompt injection, then PII-stripped before any
@@ -101,41 +103,25 @@ async def add_knowledge(
 
     Returns:
         Dict with contribution_id, status, category, and message on success.
-        CallToolResult with isError=True on any failure.
+
+    Raises:
+        ToolError: on any failure; FastMCP renders it with isError=true.
     """
     # Step 0: Validate inputs before touching the DB
     if len(content) < 10:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text="Rejected: content is too short (minimum 10 characters).",
-            )],
-            isError=True,
-        )
+        raise ToolError("Rejected: content is too short (minimum 10 characters).")
 
     if not (0.0 <= confidence <= 1.0):
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text="Rejected: confidence must be between 0.0 and 1.0.",
-            )],
-            isError=True,
-        )
+        raise ToolError("Rejected: confidence must be between 0.0 and 1.0.")
 
     # Step 0b: Validate category against the controlled vocabulary
     try:
         category_enum = KnowledgeCategory(category)
     except ValueError:
         valid_values = [c.value for c in KnowledgeCategory]
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=(
-                    f"Rejected: '{category}' is not a valid category. "
-                    f"Valid values: {', '.join(valid_values)}"
-                ),
-            )],
-            isError=True,
+        raise ToolError(
+            f"Rejected: '{category}' is not a valid category. "
+            f"Valid values: {', '.join(valid_values)}"
         )
 
     # Step 1: Extract auth context from bearer token
@@ -151,16 +137,10 @@ async def add_knowledge(
     # scan raw content before any modification.
     is_injection, injection_score = InjectionScanner.get_instance().is_injection(content)
     if is_injection:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=(
-                    f"Rejected: content contains potential prompt injection "
-                    f"(confidence: {injection_score:.0%}). "
-                    f"Malicious instructions are not allowed in the commons."
-                ),
-            )],
-            isError=True,
+        raise ToolError(
+            f"Rejected: content contains potential prompt injection "
+            f"(confidence: {injection_score:.0%}). "
+            f"Malicious instructions are not allowed in the commons."
         )
 
     # Step 1.6: Anti-sybil burst detection (SEC-03)
@@ -172,15 +152,9 @@ async def add_knowledge(
         contribution_id = str(_uuid.uuid4())  # temp ID for burst tracking
         is_burst = await check_burst(auth.org_id, contribution_id, redis_conn)
         if is_burst:
-            return CallToolResult(
-                content=[TextContent(
-                    type="text",
-                    text=(
-                        "Rate limit exceeded: too many contributions in a short window. "
-                        "Please wait before submitting again."
-                    ),
-                )],
-                isError=True,
+            raise ToolError(
+                "Rate limit exceeded: too many contributions in a short window. "
+                "Please wait before submitting again."
             )
 
     # Step 2: PII-strip the content BEFORE any storage (TRUST-01)
@@ -189,15 +163,9 @@ async def add_knowledge(
 
     # Step 3: Auto-reject if too much was redacted
     if should_reject:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=(
-                    "Rejected: too much content was identified as sensitive and redacted (>50%). "
-                    "The contribution cannot be meaningfully preserved."
-                ),
-            )],
-            isError=True,
+        raise ToolError(
+            "Rejected: too much content was identified as sensitive and redacted (>50%). "
+            "The contribution cannot be meaningfully preserved."
         )
 
     # Step 4: Compute content hash of the cleaned text

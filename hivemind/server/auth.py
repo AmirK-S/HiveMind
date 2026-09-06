@@ -5,12 +5,14 @@ Design decisions:
 - hm_-prefixed tokens are API keys routed through validate_api_key()
 - org_id is ALWAYS extracted from the token, never from tool arguments (ACL-01)
 - decode_token() raises ValueError for invalid/missing tokens so callers can
-  return a structured isError response to the agent
+  re-raise it as a fastmcp ToolError, which FastMCP renders as a JSON-RPC
+  result with isError=true
 - decode_token_async() is the preferred entry point for MCP tool handlers
   as it supports both JWT and hm_-prefixed API keys natively (INFRA-04)
 - create_token() is provided for testing and CLI use only
 
 Usage in tool functions (preferred — handles both JWT and API keys):
+    from fastmcp.exceptions import ToolError
     from fastmcp.server.dependencies import get_http_headers
     from hivemind.server.auth import decode_token_async, AuthContext
 
@@ -18,7 +20,7 @@ Usage in tool functions (preferred — handles both JWT and API keys):
         headers = get_http_headers()
         auth_header = headers.get("authorization", "")
         if not auth_header.startswith("Bearer "):
-            return error_response("Missing or invalid Authorization header")
+            raise ToolError("Missing or invalid Authorization header")
         token = auth_header[len("Bearer "):]
         ctx = await decode_token_async(token)
         # Use ctx.org_id, ctx.agent_id, ctx.tier

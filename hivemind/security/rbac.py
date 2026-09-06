@@ -87,7 +87,10 @@ async def enforce(subject: str, domain: str, obj: str, action: str) -> bool:
     Requirements: ACL-03.
     """
     enforcer = await get_enforcer()
-    return await enforcer.enforce(subject, domain, obj, action)
+    # CoreEnforcer.enforce reste synchrone : AsyncEnforcer n'en fournit pas de
+    # variante coroutine, l'evaluation se fait en memoire sur les politiques
+    # deja chargees par load_policy().
+    return enforcer.enforce(subject, domain, obj, action)
 
 
 async def add_policy(subject: str, domain: str, obj: str, action: str) -> bool:

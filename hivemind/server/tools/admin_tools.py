@@ -22,8 +22,10 @@ Requirements: ACL-03 (three-level RBAC), ACL-04 (org admin role management).
 
 from __future__ import annotations
 
+from typing import NoReturn
+
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
-from mcp.types import CallToolResult, TextContent
 
 from hivemind.server.auth import decode_token
 
@@ -48,12 +50,13 @@ def _extract_auth(headers: dict[str, str]):
     return decode_token(token)
 
 
-def _error(message: str) -> CallToolResult:
-    """Return a structured MCP isError response."""
-    return CallToolResult(
-        content=[TextContent(type="text", text=message)],
-        isError=True,
-    )
+def _error(message: str) -> NoReturn:
+    """Raise an MCP tool error.
+
+    FastMCP turns a ToolError into a JSON-RPC result with isError=true and the
+    message in content[0].text.
+    """
+    raise ToolError(message)
 
 
 async def manage_roles(
@@ -62,7 +65,7 @@ async def manage_roles(
     role: str | None = None,
     obj: str | None = None,
     permission: str | None = None,
-) -> dict | CallToolResult:
+) -> dict:
     """Manage agent roles and access policies within an org namespace.
 
     Organization admins can assign roles, query role assignments, and manage
@@ -87,7 +90,9 @@ async def manage_roles(
 
     Returns:
         Dict describing the outcome on success.
-        CallToolResult with isError=True on any failure.
+
+    Raises:
+        ToolError: on any failure; FastMCP renders it with isError=true.
 
     Requirements: ACL-03 (three-level RBAC), ACL-04 (org admin management).
     """
