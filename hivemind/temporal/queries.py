@@ -48,7 +48,7 @@ def build_temporal_filter(at_time: datetime.datetime) -> list:
       backward-compat), non-NULL items must satisfy valid_at <= T.
     - World-time end (invalid_at): NULL means "still valid" (passes); non-NULL
       must satisfy invalid_at > T (item hadn't been invalidated yet at T).
-    - System-time end (expired_at): must be NULL — only current (non-superseded)
+    - System-time end (expired_at): must be NULL, only current (non-superseded)
       rows are returned.
 
     Args:
@@ -134,7 +134,7 @@ async def query_at_time(
             category_enum = KnowledgeCategory(category)
             stmt = stmt.where(KnowledgeItem.category == category_enum)
         except ValueError:
-            logger.warning("query_at_time: unknown category '%s' — ignoring filter", category)
+            logger.warning("query_at_time: unknown category '%s', ignoring filter", category)
 
     # Rank by cosine distance (ascending = most similar first)
     stmt = stmt.order_by(distance_col.asc()).limit(limit)

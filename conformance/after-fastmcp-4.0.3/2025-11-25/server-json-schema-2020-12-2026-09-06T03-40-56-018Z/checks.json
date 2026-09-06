@@ -1,0 +1,45 @@
+[
+  {
+    "id": "json-schema-2020-12-tool-found",
+    "name": "JsonSchema2020_12ToolFound",
+    "description": "Server advertises tool 'json_schema_2020_12_tool'",
+    "status": "FAILURE",
+    "timestamp": "2026-09-06T03:40:56.029Z",
+    "errorMessage": "Tool 'json_schema_2020_12_tool' not found. Available tools: add_knowledge, search_knowledge, list_knowledge, delete_knowledge, publish_knowledge, manage_roles, report_outcome",
+    "specReferences": [
+      {
+        "id": "SEP-1613",
+        "url": "https://github.com/modelcontextprotocol/specification/pull/655"
+      }
+    ],
+    "details": {
+      "toolFound": false,
+      "availableTools": [
+        "add_knowledge",
+        "search_knowledge",
+        "list_knowledge",
+        "delete_knowledge",
+        "publish_knowledge",
+        "manage_roles",
+        "report_outcome"
+      ]
+    }
+  },
+  {
+    "id": "wire-schema-valid",
+    "name": "WireSchemaValid",
+    "description": "Every JSON-RPC message the implementation sent is valid per the spec JSON schema for the negotiated spec version",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:40:56.029Z",
+    "specReferences": [
+      {
+        "id": "MCP-Schema",
+        "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/2025-11-25/schema.json"
+      }
+    ],
+    "details": {
+      "messagesValidated": 5,
+      "violations": []
+    }
+  }
+]

@@ -2,17 +2,17 @@
 
 This module computes a float 0-1 quality score for a knowledge item using
 weighted behavioral signals. The formula is deterministic and uses only the
-Python standard library (math module) — no external dependencies.
+Python standard library (math module), no external dependencies.
 
 Weight breakdown (tunable via Settings in hivemind/config.py):
-    40% usefulness    — ratio of helpful outcomes to total outcome votes
-    25% popularity    — tanh-saturated retrieval count (saturates at ~200)
-    20% freshness     — exponential decay from last access time
-    15% contradiction — penalty for items flagged as contradicting others
-    +10% bonus        — version_current bonus for items marked as current versions
+    40% usefulness   , ratio of helpful outcomes to total outcome votes
+    25% popularity   , tanh-saturated retrieval count (saturates at ~200)
+    20% freshness    , exponential decay from last access time
+    15% contradiction, penalty for items flagged as contradicting others
+    +10% bonus       , version_current bonus for items marked as current versions
 
 The weights are configuration-time settings (environment variables via Settings).
-Do NOT read weights from deployment_config at compute time — pass them as
+Do NOT read weights from deployment_config at compute time, pass them as
 parameters or read from Settings at call site.
 """
 
@@ -71,7 +71,7 @@ def compute_quality_score(
 
     Notes
     -----
-    Formula (research Pattern 3):
+    Formula:
 
         usefulness = helpful / max(helpful + not_helpful, 1)
         popularity = tanh(retrieval_count / 50)      # saturates at ~200 retrievals

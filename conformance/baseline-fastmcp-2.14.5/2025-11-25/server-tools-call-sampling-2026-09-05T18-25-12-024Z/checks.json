@@ -1,0 +1,45 @@
+[
+  {
+    "id": "tools-call-sampling",
+    "name": "ToolsCallSampling",
+    "description": "Tool requests LLM sampling from client",
+    "status": "FAILURE",
+    "timestamp": "2026-09-05T18:25:12.032Z",
+    "errorMessage": "Server did not request sampling from client",
+    "specReferences": [
+      {
+        "id": "MCP-Sampling",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/utilities/sampling"
+      }
+    ],
+    "details": {
+      "samplingRequested": false,
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Unknown tool: test_sampling"
+          }
+        ],
+        "isError": true
+      }
+    }
+  },
+  {
+    "id": "wire-schema-valid",
+    "name": "WireSchemaValid",
+    "description": "Every JSON-RPC message the implementation sent is valid per the spec JSON schema for the negotiated spec version",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-05T18:25:12.032Z",
+    "specReferences": [
+      {
+        "id": "MCP-Schema",
+        "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/2025-11-25/schema.json"
+      }
+    ],
+    "details": {
+      "messagesValidated": 5,
+      "violations": []
+    }
+  }
+]

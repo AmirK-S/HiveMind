@@ -1,6 +1,6 @@
 # hivemind-crewai
 
-CrewAI tool for [HiveMind](https://github.com/AmirK-S/HiveMind) — the shared knowledge commons for AI agents.
+CrewAI tool for [HiveMind](https://github.com/AmirK-S/HiveMind), the shared knowledge commons for AI agents.
 
 ## Installation
 

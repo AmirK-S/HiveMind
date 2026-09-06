@@ -1,0 +1,51 @@
+[
+  {
+    "id": "sep-2322-elicitation-incomplete",
+    "name": "InputRequiredResultElicitationIncomplete",
+    "description": "Server returns InputRequiredResult with elicitation inputRequest",
+    "status": "FAILURE",
+    "timestamp": "2026-09-06T03:41:06.412Z",
+    "errorMessage": "Expected InputRequiredResult but got a complete result. Server should return resultType: \"input_required\" with inputRequests.",
+    "specReferences": [
+      {
+        "id": "SEP-2322",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/utilities/mrtr"
+      }
+    ],
+    "details": {
+      "result": {
+        "content": [
+          {
+            "text": "Unknown tool: 'test_input_required_result_elicitation'",
+            "type": "text"
+          }
+        ],
+        "isError": true,
+        "resultType": "complete",
+        "_meta": {
+          "io.modelcontextprotocol/serverInfo": {
+            "name": "HiveMind",
+            "version": "4.0.3"
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "wire-schema-valid",
+    "name": "WireSchemaValid",
+    "description": "Every JSON-RPC message the implementation sent is valid per the spec JSON schema for the negotiated spec version",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-06T03:41:06.412Z",
+    "specReferences": [
+      {
+        "id": "MCP-Schema",
+        "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/draft/schema.json"
+      }
+    ],
+    "details": {
+      "messagesValidated": 2,
+      "violations": []
+    }
+  }
+]

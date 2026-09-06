@@ -5,20 +5,30 @@ Design decisions:
 - hm_-prefixed tokens are API keys routed through validate_api_key()
 - org_id is ALWAYS extracted from the token, never from tool arguments (ACL-01)
 - decode_token() raises ValueError for invalid/missing tokens so callers can
-  return a structured isError response to the agent
+  re-raise it as a fastmcp ToolError, which FastMCP renders as a JSON-RPC
+  result with isError=true
 - decode_token_async() is the preferred entry point for MCP tool handlers
   as it supports both JWT and hm_-prefixed API keys natively (INFRA-04)
-- create_token() is provided for testing and CLI use only
+- create_token() is the only way to mint a bearer token; the README shows how
+  to call it
 
-Usage in tool functions (preferred — handles both JWT and API keys):
+Since fastmcp 4.x, get_http_headers() drops credential headers by default,
+"authorization" included (fastmcp/server/dependencies.py, exclude_headers set).
+A bare call would return a dictionary without the bearer, raise nothing, warn
+nothing, and every caller would be refused. include={"authorization"} brings
+back exactly that header and nothing else.
+
+Usage in tool functions (preferred, handles both JWT and API keys):
+    from fastmcp.exceptions import ToolError
     from fastmcp.server.dependencies import get_http_headers
     from hivemind.server.auth import decode_token_async, AuthContext
 
     async def some_tool(...) -> ...:
-        headers = get_http_headers()
+        # include={"authorization"} is required on fastmcp 4.x, see above
+        headers = get_http_headers(include={"authorization"})
         auth_header = headers.get("authorization", "")
         if not auth_header.startswith("Bearer "):
-            return error_response("Missing or invalid Authorization header")
+            raise ToolError("Missing or invalid Authorization header")
         token = auth_header[len("Bearer "):]
         ctx = await decode_token_async(token)
         # Use ctx.org_id, ctx.agent_id, ctx.tier
@@ -28,7 +38,7 @@ Usage for JWT-only callers (backward compatible):
 
     def some_tool(...) -> ...:
         token = ...
-        ctx = decode_token(token)  # JWT only — does not handle hm_ keys
+        ctx = decode_token(token)  # JWT only, does not handle hm_ keys
 """
 
 from __future__ import annotations
@@ -45,8 +55,8 @@ class AuthContext:
     """Authentication context extracted from a verified JWT or API key.
 
     Attributes:
-        org_id:   Organisation identifier — used for namespace isolation (ACL-01).
-        agent_id: Agent identifier — stored as source_agent_id in DB records.
+        org_id:   Organisation identifier, used for namespace isolation (ACL-01).
+        agent_id: Agent identifier, stored as source_agent_id in DB records.
         tier:     Billing tier from API key authentication (e.g. "free", "pro",
                   "enterprise"). None when authenticated via JWT (INFRA-04).
     """
@@ -59,7 +69,7 @@ class AuthContext:
 def decode_token(token: str) -> AuthContext:
     """Decode a HS256 JWT and return an AuthContext.
 
-    JWT-only entry point — does NOT handle hm_-prefixed API keys. Use
+    JWT-only entry point, does NOT handle hm_-prefixed API keys. Use
     decode_token_async() in async contexts (e.g. MCP tool handlers) to
     support both JWT and API key authentication.
 
@@ -121,7 +131,7 @@ async def decode_token_async(token: str) -> AuthContext:
         if result is None:
             raise ValueError("Invalid or inactive API key")
 
-        # Increment request count (best-effort — don't block auth on counter failure)
+        # Increment request count (best-effort, don't block auth on counter failure)
         try:
             await increment_request_count(result["api_key_id"])
         except Exception:
@@ -133,7 +143,7 @@ async def decode_token_async(token: str) -> AuthContext:
             tier=result["tier"],
         )
 
-    # Fall through to existing JWT decode logic (synchronous — no DB query needed)
+    # Fall through to existing JWT decode logic (synchronous, no DB query needed)
     return decode_token(token)
 
 

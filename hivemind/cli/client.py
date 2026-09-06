@@ -8,8 +8,7 @@ The sync URL is derived from settings.database_url by stripping the +asyncpg
 driver suffix so the psycopg2 (or any sync) driver is used instead.
 
 FOR UPDATE SKIP LOCKED is applied to fetch_pending() so that if two CLI
-sessions run concurrently, they don't both process the same contribution
-(per research Pattern 6).
+sessions run concurrently, they don't both process the same contribution.
 """
 
 from __future__ import annotations
@@ -151,10 +150,10 @@ def approve_contribution(
                     dispatched, item.id,
                 )
         except Exception:
-            # Webhook delivery is best-effort — don't block approval on delivery failure
+            # Webhook delivery is best-effort, don't block approval on delivery failure
             import logging  # noqa: PLC0415
             logging.getLogger(__name__).warning(
-                "Failed to dispatch webhooks for item %s — approval still succeeded",
+                "Failed to dispatch webhooks for item %s, approval still succeeded",
                 item.id,
                 exc_info=True,
             )
@@ -218,7 +217,7 @@ def get_org_stats(org_id: str) -> dict:
             or 0
         )
 
-        # "Helped X agents" — distinct agent IDs across all orgs
+        # "Helped X agents", distinct agent IDs across all orgs
         agent_count = (
             session.query(func.count(distinct(KnowledgeItem.source_agent_id)))
             .filter(KnowledgeItem.deleted_at.is_(None))
@@ -249,7 +248,7 @@ def find_similar_knowledge(
 
     Args:
         content:   The pending contribution content to compare against.
-        org_id:    Organisation namespace — scopes results to org + public items.
+        org_id:    Organisation namespace, scopes results to org + public items.
         top_n:     Maximum number of similar items to return.
         threshold: Cosine distance cutoff (0.35 ≈ 65% similarity).  Items with
                    distance > threshold are excluded as insufficiently similar.
@@ -286,7 +285,7 @@ def find_similar_knowledge(
     similar = []
     for item, distance in rows:
         if distance > threshold:
-            continue  # too dissimilar — skip
+            continue  # too dissimilar, skip
         similar.append({
             "id": str(item.id),
             "title": item.content[:80] + ("..." if len(item.content) > 80 else ""),
@@ -308,7 +307,7 @@ def compute_qi_score(contribution: PendingContribution) -> dict:
 
     Scoring rules:
     - Base score:    confidence * 100
-    - Modifier -30:  is_sensitive_flagged (lower trust — PII may still be present)
+    - Modifier -30:  is_sensitive_flagged (lower trust, PII may still be present)
     - Modifier -20:  content length < 50 chars (very short = suspect)
     - Modifier +10:  content length > 200 chars (detailed = higher value signal)
     - Clamped to [0, 100]

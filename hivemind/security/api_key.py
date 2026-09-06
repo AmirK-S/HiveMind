@@ -1,19 +1,19 @@
 """API key creation, validation, and usage tracking for HiveMind.
 
 API keys use a ``hm_`` prefix followed by a URL-safe random token.  Only the
-SHA-256 hash of the raw key is stored in the database — the raw key is shown
+SHA-256 hash of the raw key is stored in the database, the raw key is shown
 exactly ONCE to the caller at creation time and cannot be recovered afterward
-(research anti-pattern: never store raw API keys).
+(raw API keys are never stored).
 
 Key lifecycle:
-1. ``create_api_key()`` — generates key, inserts ApiKey row, returns raw key once.
-2. ``validate_api_key()`` — hashes the presented key, looks up by hash, checks
+1. ``create_api_key()``, generates key, inserts ApiKey row, returns raw key once.
+2. ``validate_api_key()``, hashes the presented key, looks up by hash, checks
    active/billing-period state, returns context dict or None.
-3. ``increment_request_count()`` — updates usage counter and last_used_at for
+3. ``increment_request_count()``, updates usage counter and last_used_at for
    billing analytics.
 
 Requirements: INFRA-04 (API key auth with tier, request counter, billing reset).
-Anti-pattern: SEC-03 note — raw key is NEVER stored (Pitfall: never store raw keys).
+Anti-pattern: SEC-03 note, raw key is NEVER stored.
 """
 
 from __future__ import annotations
@@ -34,13 +34,13 @@ def generate_api_key() -> tuple[str, str, str]:
 
     The raw key uses a ``hm_`` prefix for easy identification in logs/config.
     Only the first 8 characters (``key_prefix``) and the SHA-256 hash
-    (``key_hash``) are safe to persist — the raw key must not be stored.
+    (``key_hash``) are safe to persist, the raw key must not be stored.
 
     Returns:
         A ``(raw_key, key_prefix, key_hash)`` triple where:
-        - ``raw_key``    — full key shown once to the user (e.g. ``"hm_abc..."``).
-        - ``key_prefix`` — first 8 characters for safe display (``"hm_12345"``).
-        - ``key_hash``   — SHA-256 hex digest used for database lookup.
+        - ``raw_key``   , full key shown once to the user (e.g. ``"hm_abc..."``).
+        - ``key_prefix``, first 8 characters for safe display (``"hm_12345"``).
+        - ``key_hash``  , SHA-256 hex digest used for database lookup.
 
     Requirements: INFRA-04.
     """
@@ -63,7 +63,7 @@ async def create_api_key(
     """Create a new API key for the given agent and return the raw key once.
 
     Inserts an ApiKey row into the database with the hashed key.  The raw
-    key is returned to the caller and is NEVER stored — it cannot be recovered
+    key is returned to the caller and is NEVER stored, it cannot be recovered
     from the database after this function returns.
 
     Args:
@@ -73,7 +73,7 @@ async def create_api_key(
                   | ``"enterprise"``).  Defaults to ``"free"``.
 
     Returns:
-        ``(raw_key, api_key_id)`` — the raw key shown once and the UUID of the
+        ``(raw_key, api_key_id)``, the raw key shown once and the UUID of the
         newly created ApiKey row (for audit logging).
 
     Requirements: INFRA-04.

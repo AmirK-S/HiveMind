@@ -1,1 +1,1 @@
-"""Database package — ORM models and async session factory."""
+"""Database package: ORM models and async session factory."""

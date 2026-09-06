@@ -1,8 +1,8 @@
 """Knowledge search and fetch REST endpoints for the HiveMind API (SDK-01).
 
 Endpoints:
-- GET /knowledge/search — semantic search with pagination
-- GET /knowledge/{item_id} — fetch full content by UUID
+- GET /knowledge/search, semantic search with pagination
+- GET /knowledge/{item_id}, fetch full content by UUID
 
 Both endpoints require the ``X-API-Key`` header and delegate search/fetch logic
 to the internal ``_search`` and ``_fetch_by_id`` helpers in
@@ -12,12 +12,12 @@ The REST layer is a thin HTTP adapter over the same embedding + cosine search
 used by the MCP tool.
 
 Security:
-- org_id is extracted from the authenticated ApiKey record — never from query params.
-- Org isolation: (org_id == :org_id) OR (is_public == True) — same as MCP tool.
+- org_id is extracted from the authenticated ApiKey record, never from query params.
+- Org isolation: (org_id == :org_id) OR (is_public == True), same as MCP tool.
 - Content hash integrity check in fetch mode (SEC-02).
 
 Operation IDs are set explicitly so that the OpenAPI spec generates clean method
-names for SDK clients (Pattern 6 from Phase 03 research).
+names for SDK clients.
 
 Requirements: SDK-01.
 """
@@ -28,6 +28,7 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastmcp.exceptions import ToolError
 from pydantic import BaseModel
 
 from hivemind.api.auth import require_api_key
@@ -68,7 +69,7 @@ class KnowledgeSearchResponse(BaseModel):
 
 
 class KnowledgeItemResponse(BaseModel):
-    """Response body for GET /knowledge/{item_id} — full content."""
+    """Response body for GET /knowledge/{item_id}, full content."""
 
     id: str
     content: str
@@ -112,25 +113,21 @@ async def search_knowledge_endpoint(
 ) -> KnowledgeSearchResponse:
     """Search knowledge items by semantic similarity.
 
-    org_id is always extracted from the authenticated API key — never from the query string.
+    org_id is always extracted from the authenticated API key, never from the query string.
     """
     org_id = api_key_record.org_id
 
-    result = await _search(
-        query=query,
-        org_id=org_id,
-        category=category,
-        limit=limit,
-        cursor=cursor,
-    )
-
-    # _search returns CallToolResult on error (e.g. invalid category)
-    from mcp.types import CallToolResult
-
-    if isinstance(result, CallToolResult):
-        # Extract the error message from the MCP result
-        error_text = result.content[0].text if result.content else "Search failed"
-        raise HTTPException(status_code=400, detail=error_text)
+    # _search raises ToolError on refusal (e.g. invalid category)
+    try:
+        result = await _search(
+            query=query,
+            org_id=org_id,
+            category=category,
+            limit=limit,
+            cursor=cursor,
+        )
+    except ToolError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return KnowledgeSearchResponse(
         results=[KnowledgeSearchResult(**r) for r in result["results"]],
@@ -157,19 +154,18 @@ async def get_knowledge_item_endpoint(
 ) -> KnowledgeItemResponse:
     """Fetch a single knowledge item by UUID with integrity verification.
 
-    org_id is always extracted from the authenticated API key — never from the URL.
+    org_id is always extracted from the authenticated API key, never from the URL.
     """
     org_id = api_key_record.org_id
 
-    result = await _fetch_by_id(id=item_id, org_id=org_id)
-
-    from mcp.types import CallToolResult
-
-    if isinstance(result, CallToolResult):
-        error_text = result.content[0].text if result.content else "Item not found"
+    # _fetch_by_id raises ToolError on refusal (unknown id, invalid UUID)
+    try:
+        result = await _fetch_by_id(id=item_id, org_id=org_id)
+    except ToolError as exc:
+        error_text = str(exc)
         # Map "not found" errors to 404; validation errors to 400
         if "not found" in error_text.lower():
-            raise HTTPException(status_code=404, detail=error_text)
-        raise HTTPException(status_code=400, detail=error_text)
+            raise HTTPException(status_code=404, detail=error_text) from exc
+        raise HTTPException(status_code=400, detail=error_text) from exc
 
     return KnowledgeItemResponse(**result)

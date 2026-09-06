@@ -2,8 +2,8 @@
 
 Uses Redis (via redis.asyncio) for anti-sybil burst detection and stores a
 module-level connection for reuse by other modules.  fastapi-limiter 0.2.0
-uses pyrate-limiter ``Limiter`` objects for endpoint-level rate limiting —
-see Plan 06 for per-endpoint wiring.
+uses pyrate-limiter ``Limiter`` objects for endpoint-level rate limiting , 
+per-endpoint wiring is not implemented.
 
 Tier limits (per minute):
 - free:       10 contributions, 30 searches
@@ -11,7 +11,7 @@ Tier limits (per minute):
 - enterprise: 300 contributions, 1000 searches
 
 Rate limit keys are namespaced by ``"{operation}:{org_id}:{agent_id}"`` to
-avoid cross-org bucket collisions (research Pitfall 6).
+avoid cross-org bucket collisions.
 
 Requirements: SEC-03 (anti-sybil burst detection), INFRA-04 (tier-based limits).
 """
@@ -55,8 +55,7 @@ async def init_rate_limiter(redis_url: str) -> None:
     FastMCP lifespan function) before any rate-limited endpoint is served.
 
     Note: fastapi-limiter 0.2.0 uses pyrate-limiter ``Limiter`` objects for
-    endpoint-level rate limiting.  Per-endpoint ``RateLimiter`` dependencies
-    are wired in Plan 06 using these limits.  This function stores the Redis
+    endpoint-level rate limiting.  Per-endpoint ``RateLimiter`` dependencies use these limits.  This function stores the Redis
     connection for anti-sybil ZSET operations via :func:`check_burst`.
 
     Args:
@@ -100,7 +99,7 @@ async def check_burst(org_id: str, contribution_id: str, redis_conn: aioredis.Re
     approved contribution is added to a sorted set keyed by org_id.  Entries
     older than ``settings.burst_window_seconds`` are pruned.  If the remaining
     count exceeds ``settings.burst_threshold``, the call returns ``True``
-    signalling a burst (flag for manual review — do NOT outright block).
+    signalling a burst (flag for manual review, do NOT outright block).
 
     Redis key format: ``"burst:{org_id}:contributions"``
 
@@ -145,7 +144,7 @@ def get_rate_limit_key(org_id: str, agent_id: str, operation: str) -> str:
     Format: ``"{operation}:{org_id}:{agent_id}"``
 
     Namespacing by org_id prevents key collisions across organisations when
-    agent_id values are not globally unique (research Pitfall 6).
+    agent_id values are not globally unique.
 
     Args:
         org_id:    Organisation identifier.

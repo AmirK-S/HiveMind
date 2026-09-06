@@ -1,0 +1,65 @@
+# Changelog
+
+All notable changes to this repository are recorded here. The format follows
+Keep a Changelog. Dates are ISO 8601.
+
+## 0.1.0 - 2026-09-06
+
+First tagged state of the repository. Everything below compares to the
+untagged state of February 2026.
+
+### Added
+- First test suite: startup contract (configuration prefix, migrations on an
+  empty database, /health, MCP endpoint path), one contract file per MCP tool
+  through the HTTP transport with a bearer token, and the 2026-07-28 protocol
+  revision contract. CI on GitHub Actions with a pgvector service. A second
+  stage, marked `models`, loads the real PII pipeline and fixes its contract:
+  technical text intact, secrets, names and addresses removed.
+- `scripts/demo.sh` and `scripts/demo-transcript.txt`: two agents sharing one
+  memory over the 2026-07-28 wire, replayable on a fresh clone.
+- `docker/entrypoint.sh`: Alembic migrations run before uvicorn.
+- Migration 007: `casbin_rule`, the RBAC policy table the server reads at startup.
+- `.env.example`, `LICENSE` (MIT), this changelog.
+- `conformance/`: reports of the official MCP conformance suite before and
+  after the upgrade, and the `expected-failures` files that justify every
+  remaining failure. 2026-07-28: 5 of 37 scored scenarios before, 13 after,
+  zero wire schema violation on every run.
+
+### Changed
+- README rewritten: what the server does and does not do, quick start on a
+  fresh clone, the seven tools, conformance before and after, end of life note.
+- Upgrade to fastmcp 4.0.3 and the mcp 2.1.1 SDK: MCP revision 2026-07-28 is
+  served without sessions, handshake revisions stay served on the same URL.
+  `get_http_headers()` call sites ask for the Authorization header explicitly;
+  the DNS rebinding guard is armed through `HIVEMIND_ALLOWED_HOSTS`.
+- MCP endpoint served at exactly `/mcp`. It used to answer on `/mcp/mcp` while
+  `/mcp` returned 307 then 404.
+- Tool refusals are MCP errors (`isError: true`) instead of `CallToolResult`
+  objects serialised as ordinary values.
+- Server card advertises the transport path and bearer authentication.
+- Distribution name is `hivemind-mcp`; `hivemind` on PyPI belongs to another project.
+
+### Fixed
+- `server/discover` advertised the fastmcp version instead of HiveMind's.
+- PII pipeline redacted library names: the name of the API key pattern
+  recognizer leaked into GLiNER as a zero-shot label with a 0.30 threshold,
+  and the entity order came from a set, so results differed per process. The
+  analyzer now receives a fixed entity list, GLiNER a 0.60 threshold, the
+  second pass ignores its own placeholders, and code block tokens are never
+  analyzed (a classified token used to drop the whole block).
+- `docker-compose.yml` passed `DATABASE_URL` and `REDIS_URL` without the
+  `HIVEMIND_` prefix; the container connected to itself.
+- `alembic/env.py` imported a name that does not exist; no migration had ever
+  applied. Migrations 001 and 004 failed on an empty database.
+- `rbac.py` stripped the async driver from the URL of an async adapter, and
+  awaited the synchronous `enforce()`; `manage_roles` had never completed.
+- Health checks called `curl`, absent from the runtime image.
+
+### Removed
+- `dashboard/` (Next.js), `sdks/` (generated clients that had drifted from the
+  API), `hivemind/graph/` (FalkorDB driver nothing imported) with its three
+  settings, `skills/` and the `Makefile` whose only targets regenerated the
+  SDKs. All of it stays in the git history.
+- `npx/`: the launcher installed a third party's package of the same name and
+  sent `X-API-Key` where the tools read `Authorization: Bearer`.
+- `SITREP.md` and `glama.json`: internal planning and directory listing files.

@@ -1,1 +1,1 @@
-"""HiveMind webhooks package — Celery-based webhook delivery infrastructure (INFRA-03)."""
+"""HiveMind webhooks package: Celery-based webhook delivery infrastructure (INFRA-03)."""

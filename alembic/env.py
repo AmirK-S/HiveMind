@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 
-# Alembic config object — gives access to alembic.ini values
+# Alembic config object: gives access to alembic.ini values
 config = context.config
 
 # Set up logging from alembic.ini
@@ -40,10 +40,9 @@ def do_run_migrations(connection: Connection) -> None:
     Registers the pgvector VECTOR type with the connection so Alembic
     autogenerate can recognise vector columns during diff operations.
     """
-    # Register pgvector types so Alembic autogenerate recognises VECTOR columns
-    from pgvector.sqlalchemy import register_vector
-
-    register_vector(connection)
+    # pgvector.sqlalchemy only exposes the Vector column type. There is no
+    # register_vector to call on a SQLAlchemy connection; the earlier import
+    # of that name made every migration fail before running.
 
     context.configure(
         connection=connection,
@@ -58,7 +57,7 @@ def do_run_migrations(connection: Connection) -> None:
 async def run_async_migrations() -> None:
     """Create an async engine and run migrations online.
 
-    Uses NullPool so connections are not pooled during migrations — each
+    Uses NullPool so connections are not pooled during migrations, each
     migration command gets a fresh connection and releases it immediately.
     """
     connectable = create_async_engine(

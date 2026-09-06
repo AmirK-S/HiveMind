@@ -1,4 +1,4 @@
-"""Initial schema — pgvector extension, core tables, indexes.
+"""Initial schema: pgvector extension, core tables, indexes.
 
 Revision ID: 001
 Revises:
@@ -20,8 +20,8 @@ Indexes created at table-creation time to avoid locking large tables later:
 Design notes:
 - pgvector VECTOR(384) for all-MiniLM-L6-v2 embeddings (384 dimensions)
 - HNSW parameters: m=16, ef_construction=64 (pgvector recommended defaults for balanced recall/speed)
-- Unique constraint is (content_hash, org_id) not just content_hash — two orgs can hold
-  identical knowledge without conflicting (pitfall 4 from research)
+- Unique constraint is (content_hash, org_id) not just content_hash, two orgs can hold
+  identical knowledge without conflicting
 """
 
 from typing import Sequence, Union
@@ -55,10 +55,11 @@ def upgrade() -> None:
         "version_workaround",
         "general",
         name="knowledgecategory",
+        create_type=False,  # created explicitly below; create_table must not emit CREATE TYPE again
     )
     knowledgecategory_enum.create(op.get_bind())
 
-    # 3. deployment_config — key/value store for deployment metadata
+    # 3. deployment_config, key/value store for deployment metadata
     op.create_table(
         "deployment_config",
         sa.Column("key", sa.String(255), primary_key=True),
@@ -78,7 +79,7 @@ def upgrade() -> None:
         ),
     )
 
-    # 4. pending_contributions — inbound queue (PII already stripped before insert)
+    # 4. pending_contributions, inbound queue (PII already stripped before insert)
     op.create_table(
         "pending_contributions",
         sa.Column(
@@ -123,7 +124,7 @@ def upgrade() -> None:
         ["org_id"],
     )
 
-    # 5. knowledge_items — approved knowledge with embeddings
+    # 5. knowledge_items, approved knowledge with embeddings
     op.create_table(
         "knowledge_items",
         sa.Column(
@@ -148,7 +149,7 @@ def upgrade() -> None:
         sa.Column("language", sa.String(50), nullable=True),
         sa.Column("version", sa.String(50), nullable=True),
         sa.Column("tags", postgresql.JSONB, nullable=True),
-        # VECTOR type for pgvector — 384 dims matches all-MiniLM-L6-v2 output
+        # VECTOR type for pgvector: 384 dims matches all-MiniLM-L6-v2 output
         sa.Column("embedding", sa.Text, nullable=True),  # placeholder; overridden below
         sa.Column("contributed_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column(
@@ -161,13 +162,13 @@ def upgrade() -> None:
 
     # Replace the placeholder embedding column with the actual VECTOR type
     # (Using raw SQL because SQLAlchemy Column creation doesn't support VECTOR(384) DDL directly
-    #  without the pgvector extension already loaded — which we ensured above)
+    #  without the pgvector extension already loaded, which we ensured above)
     op.execute("ALTER TABLE knowledge_items DROP COLUMN embedding")
     op.execute(
         "ALTER TABLE knowledge_items ADD COLUMN embedding vector(384)"
     )
 
-    # Unique constraint: (content_hash, org_id) — intra-org dedup; cross-org allowed
+    # Unique constraint: (content_hash, org_id), intra-org dedup; cross-org allowed
     op.create_unique_constraint(
         "uq_knowledge_items_hash_org",
         "knowledge_items",

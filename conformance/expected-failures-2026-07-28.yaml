@@ -1,0 +1,66 @@
+# Expected conformance failures for HiveMind on MCP revision 2026-07-28.
+#
+# Tool: @modelcontextprotocol/conformance@0.2.0-alpha.11
+# Run:  npx conformance server --url http://localhost:8000/mcp \
+#         --requirements 2026-07-28 \
+#         --expected-failures conformance/expected-failures-2026-07-28.yaml
+#
+# HiveMind is a business server. It exposes seven domain tools and no prompts,
+# no resources, no completion and no tasks extension. The conformance suite is a
+# reference-server validator: most of its scenarios drive tools, prompts and
+# resources with imposed names (test_simple_text, test_input_required_result_*,
+# json_schema_2020_12_tool, ...). Every entry below is one of those, and each
+# carries the one-line reason on the same line.
+#
+# Entry grammar: "<scenario>" waives the whole scenario, "<scenario>:<check-id>"
+# waives exactly one check and keeps the scenario's other checks enforced.
+
+server:
+  # --- scored scenarios ---------------------------------------------------
+  # server-stateless is waived check by check: 23 of its 30 checks are enforced
+  # and pass; only the two SEP-2575 diagnostic-tool checks are excused.
+  - server-stateless:sep-2575-server-rejects-undeclared-capability # reference tool test_missing_capability not exposed by a business server
+  - server-stateless:sep-2575-missing-capability-http-400 # reference tool test_missing_capability not exposed by a business server; the tool itself reports the check as "Not testable"
+  - completion-complete # capability not exposed: completion
+  - tools-call-image # reference tool test_image not exposed by a business server
+  - tools-call-audio # reference tool test_audio not exposed by a business server
+  - tools-call-embedded-resource # reference tool test_embedded_resource not exposed by a business server
+  - tools-call-mixed-content # reference tool test_mixed_content not exposed by a business server
+  - tools-call-with-progress # reference tool test_tool_with_progress not exposed by a business server
+  - resources-read-text # capability not exposed: resources
+  - resources-read-binary # capability not exposed: resources
+  - resources-templates-read # capability not exposed: resources
+  - prompts-get-simple # capability not exposed: prompts
+  - prompts-get-with-args # capability not exposed: prompts
+  - prompts-get-embedded-resource # capability not exposed: prompts
+  - prompts-get-with-image # capability not exposed: prompts
+  - input-required-result-basic-elicitation # reference tool test_input_required_result_elicitation not exposed by a business server
+  - input-required-result-basic-sampling # reference tool test_input_required_result_sampling not exposed by a business server
+  - input-required-result-basic-list-roots # reference tool test_input_required_result_list_roots not exposed by a business server
+  - input-required-result-request-state # reference tool test_input_required_result_* not exposed by a business server
+  - input-required-result-multiple-input-requests # reference tool test_input_required_result_* not exposed by a business server
+  - input-required-result-multi-round # reference tool test_input_required_result_multi_round not exposed by a business server
+  - input-required-result-non-tool-request # capability not exposed: prompts (drives the reference prompt test_input_required_result_prompt)
+  - input-required-result-result-type # reference tool test_input_required_result_* not exposed by a business server
+  - input-required-result-tampered-state # reference tool test_input_required_result_* not exposed by a business server
+  - input-required-result-capability-check # reference tool test_input_required_result_* not exposed by a business server
+  # These two scenarios report ✓ in the summary (no FAILURE check) but carry a
+  # WARNING check, which the baseline comparison treats as a failure. Both drive
+  # the reference tool test_input_required_result_elicitation; the server answers
+  # isError "Unknown tool", which the suite reads as a complete result.
+  - input-required-result-missing-input-response:sep-2322-missing-response-rerequests # reference tool test_input_required_result_elicitation not exposed by a business server
+  - input-required-result-validate-input:sep-2322-error-on-protocol-error # reference tool test_input_required_result_elicitation not exposed by a business server
+
+  # --- scenarios the tool marks "not scored for 2026-07-28" ---------------
+  # Kept in the baseline so the run reports nothing unexpected.
+  - tasks-lifecycle # capability not exposed: tasks extension io.modelcontextprotocol/tasks
+  - tasks-capability-negotiation # capability not exposed: tasks extension io.modelcontextprotocol/tasks
+  - tasks-wire-fields # capability not exposed: tasks extension io.modelcontextprotocol/tasks
+  - tasks-request-state-removal # capability not exposed: tasks extension io.modelcontextprotocol/tasks
+  - tasks-mrtr-input # capability not exposed: tasks extension io.modelcontextprotocol/tasks
+  - tasks-request-headers # capability not exposed: tasks extension io.modelcontextprotocol/tasks
+  - tasks-dispatch-and-envelope # capability not exposed: tasks extension io.modelcontextprotocol/tasks
+  - tasks-required-task-error # capability not exposed: tasks extension io.modelcontextprotocol/tasks
+  - tasks-mrtr-composition # capability not exposed: tasks extension io.modelcontextprotocol/tasks
+  - json-schema-2020-12 # reference tool json_schema_2020_12_tool not exposed by a business server
+  - http-custom-header-server-validation # reference tool with x-mcp-header annotations not exposed by a business server; the tool itself reports the check as "Not testable"

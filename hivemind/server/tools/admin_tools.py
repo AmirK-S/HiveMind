@@ -13,17 +13,19 @@ Supported actions:
 - remove_permission: Remove an existing access policy.
 
 Object (obj) format examples:
-- "namespace:<org_id>"   — org-wide access
-- "category:bug_fix"     — category-level access
-- "item:<uuid>"          — item-level access
+- "namespace:<org_id>"  , org-wide access
+- "category:bug_fix"    , category-level access
+- "item:<uuid>"         , item-level access
 
 Requirements: ACL-03 (three-level RBAC), ACL-04 (org admin role management).
 """
 
 from __future__ import annotations
 
+from typing import NoReturn
+
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
-from mcp.types import CallToolResult, TextContent
 
 from hivemind.server.auth import decode_token
 
@@ -48,12 +50,13 @@ def _extract_auth(headers: dict[str, str]):
     return decode_token(token)
 
 
-def _error(message: str) -> CallToolResult:
-    """Return a structured MCP isError response."""
-    return CallToolResult(
-        content=[TextContent(type="text", text=message)],
-        isError=True,
-    )
+def _error(message: str) -> NoReturn:
+    """Raise an MCP tool error.
+
+    FastMCP turns a ToolError into a JSON-RPC result with isError=true and the
+    message in content[0].text.
+    """
+    raise ToolError(message)
 
 
 async def manage_roles(
@@ -62,7 +65,7 @@ async def manage_roles(
     role: str | None = None,
     obj: str | None = None,
     permission: str | None = None,
-) -> dict | CallToolResult:
+) -> dict:
     """Manage agent roles and access policies within an org namespace.
 
     Organization admins can assign roles, query role assignments, and manage
@@ -80,14 +83,16 @@ async def manage_roles(
         agent_id:   Target agent (or role name for permission actions).
         role:       Role name for "assign_role" action (e.g. "admin", "contributor").
         obj:        Resource object for permission actions. Format:
-                    - "namespace:<org_id>"  — org-wide
-                    - "category:<cat>"      — category-level
-                    - "item:<uuid>"         — item-level
+                    - "namespace:<org_id>" , org-wide
+                    - "category:<cat>"     , category-level
+                    - "item:<uuid>"        , item-level
         permission: Permission for policy actions (e.g. "read", "write", "*").
 
     Returns:
         Dict describing the outcome on success.
-        CallToolResult with isError=True on any failure.
+
+    Raises:
+        ToolError: on any failure; FastMCP renders it with isError=true.
 
     Requirements: ACL-03 (three-level RBAC), ACL-04 (org admin management).
     """
@@ -101,12 +106,12 @@ async def manage_roles(
 
     # Step 1: Extract auth context from bearer token
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _error(str(exc))
 
-    # Step 2: Admin gate — caller must have admin role for their org namespace (ACL-04)
+    # Step 2: Admin gate, caller must have admin role for their org namespace (ACL-04)
     namespace_obj = f"namespace:{auth.org_id}"
     is_admin = await enforce(auth.agent_id, auth.org_id, namespace_obj, "*")
     if not is_admin:

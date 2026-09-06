@@ -7,11 +7,11 @@ Prefix:  /api/v1
 Tags:    ["rest-api"]
 
 Sub-routers included:
-- knowledge_router      — GET /api/v1/knowledge/search, GET /api/v1/knowledge/{item_id}
-- outcomes_router       — POST /api/v1/outcomes
-- stream_router         — GET /api/v1/stream/feed (SSE real-time knowledge feed)
-- contributions_router  — GET /api/v1/contributions, POST /api/v1/contributions/{id}/approve|reject
-- stats_router          — GET /api/v1/stats/commons|org|user
+- knowledge_router     , GET /api/v1/knowledge/search, GET /api/v1/knowledge/{item_id}
+- outcomes_router      , POST /api/v1/outcomes
+- stream_router        , GET /api/v1/stream/feed (SSE real-time knowledge feed)
+- contributions_router , GET /api/v1/contributions, POST /api/v1/contributions/{id}/approve|reject
+- stats_router         , GET /api/v1/stats/commons|org|user
 
 Requirements: SDK-01, DASH-01, DASH-03, DASH-05, DASH-06.
 """

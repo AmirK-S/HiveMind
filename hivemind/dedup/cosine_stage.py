@@ -2,7 +2,7 @@
 
 Reuses the same vector search pattern from search_knowledge.py to find the
 top-K most similar knowledge items to a given content string. Items with
-cosine distance >= 0.35 (< 65% similarity) are not returned — they are too
+cosine distance >= 0.35 (< 65% similarity) are not returned, they are too
 dissimilar to be near-duplicates.
 """
 
@@ -31,7 +31,7 @@ async def find_cosine_candidates(
 
     Args:
         content: The new content to compare against existing items.
-        org_id:  The contributing org's ID — used for namespace isolation.
+        org_id:  The contributing org's ID, used for namespace isolation.
         top_k:   Maximum number of candidate results to return (default 10).
 
     Returns:

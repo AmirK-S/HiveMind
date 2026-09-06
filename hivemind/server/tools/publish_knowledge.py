@@ -22,9 +22,10 @@ Requirements: ACL-02 (reversible publication to the public commons).
 from __future__ import annotations
 
 import uuid as _uuid
+from typing import NoReturn
 
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
-from mcp.types import CallToolResult, TextContent
 from sqlalchemy import select
 
 from hivemind.db.models import KnowledgeItem
@@ -52,15 +53,16 @@ def _extract_auth(headers: dict[str, str]):
     return decode_token(token)
 
 
-def _error(message: str) -> CallToolResult:
-    """Return a structured MCP isError response."""
-    return CallToolResult(
-        content=[TextContent(type="text", text=message)],
-        isError=True,
-    )
+def _error(message: str) -> NoReturn:
+    """Raise an MCP tool error.
+
+    FastMCP turns a ToolError into a JSON-RPC result with isError=true and the
+    message in content[0].text.
+    """
+    raise ToolError(message)
 
 
-async def publish_knowledge(id: str, is_public: bool) -> dict | CallToolResult:
+async def publish_knowledge(id: str, is_public: bool) -> dict:
     """Toggle the public visibility of a knowledge item in HiveMind.
 
     Publishes a private knowledge item to the public commons, or unpublishes
@@ -68,7 +70,7 @@ async def publish_knowledge(id: str, is_public: bool) -> dict | CallToolResult:
 
     Security: The calling agent must own the item (org_id from bearer token
     must match item.org_id). Items belonging to other orgs are never revealed
-    — a 404 is returned regardless of whether the item exists in another org.
+   , a 404 is returned regardless of whether the item exists in another org.
 
     Args:
         id:        UUID string of the KnowledgeItem to publish or unpublish.
@@ -77,13 +79,15 @@ async def publish_knowledge(id: str, is_public: bool) -> dict | CallToolResult:
 
     Returns:
         Dict with id, is_public, and message on success.
-        CallToolResult with isError=True on any failure.
+
+    Raises:
+        ToolError: on any failure; FastMCP renders it with isError=true.
 
     Requirements: ACL-02 (reversible publication to the public commons).
     """
     # Step 1: Extract auth context from bearer token (org_id NEVER from args)
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _error(str(exc))
@@ -105,13 +109,13 @@ async def publish_knowledge(id: str, is_public: bool) -> dict | CallToolResult:
         )
         item = result.scalar_one_or_none()
 
-        # Step 4: Return 404 if not found — never reveal cross-org existence
+        # Step 4: Return 404 if not found, never reveal cross-org existence
         if item is None:
             return _error(
                 f"Knowledge item '{id}' not found or you do not have access to it."
             )
 
-        # Step 5: Toggle is_public (reversible — ACL-02)
+        # Step 5: Toggle is_public (reversible, ACL-02)
         item.is_public = is_public
         await session.commit()
 

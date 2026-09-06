@@ -1,0 +1,43 @@
+[
+  {
+    "id": "tools-call-error",
+    "name": "ToolsCallError",
+    "description": "Tool returns error correctly",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-05T18:25:12.017Z",
+    "specReferences": [
+      {
+        "id": "MCP-Error-Handling",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle"
+      }
+    ],
+    "details": {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Unknown tool: test_error_handling"
+          }
+        ],
+        "isError": true
+      }
+    }
+  },
+  {
+    "id": "wire-schema-valid",
+    "name": "WireSchemaValid",
+    "description": "Every JSON-RPC message the implementation sent is valid per the spec JSON schema for the negotiated spec version",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-05T18:25:12.017Z",
+    "specReferences": [
+      {
+        "id": "MCP-Schema",
+        "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/2025-11-25/schema.json"
+      }
+    ],
+    "details": {
+      "messagesValidated": 5,
+      "violations": []
+    }
+  }
+]

@@ -2,7 +2,7 @@
 
 The ``require_api_key`` FastAPI dependency:
 1. Reads the ``X-API-Key`` header from the incoming request.
-2. Hashes the presented key with SHA-256 (same as create_api_key — raw key never stored).
+2. Hashes the presented key with SHA-256 (same as create_api_key, raw key never stored).
 3. Looks up the hash in the ``api_keys`` table and checks ``is_active``.
 4. Checks if the billing period has expired; resets ``request_count`` atomically if so.
 5. Increments ``request_count`` and updates ``last_used_at`` (usage metering, INFRA-04).
@@ -13,7 +13,7 @@ keeps the logic in one place, runs inside the same DB session, and is trivially 
 by substituting the dependency in test clients.
 
 Requirements: INFRA-04, SDK-01.
-Anti-pattern: Raw key is NEVER stored — only SHA-256 hash is persisted (SEC-03).
+Anti-pattern: Raw key is NEVER stored, only SHA-256 hash is persisted (SEC-03).
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from hivemind.db.models import ApiKey
 from hivemind.db.session import AsyncSessionFactory
 
 # ---------------------------------------------------------------------------
-# Header definition — FastAPI will return 403 automatically if header is absent
+# Header definition: FastAPI will return 403 automatically if header is absent
 # when auto_error=True. We set auto_error=False so we can return a custom 401.
 # ---------------------------------------------------------------------------
 
@@ -81,7 +81,7 @@ async def require_api_key(
     if not api_key:
         raise HTTPException(status_code=401, detail="Invalid or inactive API key")
 
-    # Hash the presented key — only the hash is stored (SEC-03)
+    # Hash the presented key: only the hash is stored (SEC-03)
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
 
     # Look up the key record by hash
@@ -96,7 +96,7 @@ async def require_api_key(
     # Billing period reset: if the period has expired, reset request_count to 0.
     now = datetime.datetime.now(datetime.timezone.utc)
 
-    # billing_period_start may be naive (stored as UTC without tzinfo) — normalise.
+    # billing_period_start may be naive (stored as UTC without tzinfo), normalise.
     billing_start = record.billing_period_start
     if billing_start.tzinfo is None:
         billing_start = billing_start.replace(tzinfo=datetime.timezone.utc)
@@ -110,7 +110,7 @@ async def require_api_key(
             .values(request_count=1, billing_period_start=now, last_used_at=now)
         )
     else:
-        # Normal request — increment counter and update last_used_at atomically
+        # Normal request: increment counter and update last_used_at atomically
         await session.execute(
             update(ApiKey)
             .where(ApiKey.id == record.id)

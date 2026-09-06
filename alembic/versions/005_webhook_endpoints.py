@@ -9,14 +9,14 @@ Creates:
 
 Columns:
 - id          : UUID primary key
-- org_id      : String(255) — which org registered this endpoint
-- url          : Text — the HTTPS URL to POST events to
-- event_types  : JSONB, nullable — JSON array of subscribed event type strings
+- org_id      : String(255), which org registered this endpoint
+- url          : Text, the HTTPS URL to POST events to
+- event_types  : JSONB, nullable, JSON array of subscribed event type strings
                  e.g. ["knowledge.approved", "knowledge.published"]
                  NULL = subscribe to all events
-- is_active    : Boolean, default true — soft-disable without deleting the endpoint
-- created_at   : DateTime — registration timestamp
-- updated_at   : DateTime — last modified timestamp
+- is_active    : Boolean, default true, soft-disable without deleting the endpoint
+- created_at   : DateTime, registration timestamp
+- updated_at   : DateTime, last modified timestamp
 
 Indexes:
 - ix_webhook_endpoints_org_id : org-scoped endpoint listing
@@ -24,7 +24,7 @@ Indexes:
 Design notes:
 - JSONB array for event_types enables flexible subscription model without schema changes
   when new event types are introduced
-- NULL event_types acts as a wildcard — receives all events (useful for debugging/audits)
+- NULL event_types acts as a wildcard, receives all events (useful for debugging/audits)
 - Soft-delete via is_active preserves configuration history and allows re-activation
 - Delivery worker will POST to all active endpoints where org_id matches and
   (event_types IS NULL OR event_type = ANY(event_types))

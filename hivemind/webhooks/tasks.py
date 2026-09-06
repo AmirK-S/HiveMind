@@ -7,7 +7,7 @@ items are approved.  The delivery model is fire-and-forget with retry:
 
 **Design:**
 - Celery broker and result backend are both Redis (same instance as rate limiter)
-- Serialization is JSON — payloads are always JSON-serializable dicts
+- Serialization is JSON, payloads are always JSON-serializable dicts
 - deliver_webhook retries up to 3 times with 5-second delay on any failure
 - dispatch_webhooks uses the sync SQLAlchemy session (same pattern as cli/client.py)
   because it is called from the CLI approval flow which is synchronous
@@ -47,7 +47,7 @@ def configure_celery(redis_url: str) -> None:
     - distillation-every-30m:     every 30 minutes (QI-04, QI-05)
 
     Note: Celery Beat only supports time-based triggering.  Condition checks
-    (volume/conflict thresholds) live inside the task body — research Pitfall 6.
+    (volume/conflict thresholds) live inside the task body.
 
     Args:
         redis_url: Redis connection URL (e.g. "redis://localhost:6379/0").
@@ -83,7 +83,7 @@ def deliver_webhook(self, webhook_url: str, payload: dict) -> dict:
     Retries up to 3 times with 5-second delay on any failure (network error,
     non-2xx response, timeout, etc.).
 
-    Uses httpx synchronous client — Celery tasks run in a synchronous worker
+    Uses httpx synchronous client: Celery tasks run in a synchronous worker
     process and cannot use asyncio.
 
     Args:
@@ -99,7 +99,7 @@ def deliver_webhook(self, webhook_url: str, payload: dict) -> dict:
         Dict with status_code and url on success.
 
     Raises:
-        self.retry: On any exception — propagates after max_retries exhausted.
+        self.retry: On any exception, propagates after max_retries exhausted.
     """
     import httpx  # noqa: PLC0415
 
@@ -185,7 +185,7 @@ def dispatch_webhooks(
 
 @celery_app.task(name="hivemind.aggregate_quality_signals")
 def aggregate_quality_signals_task() -> dict:
-    """Quality signal aggregation — called by Celery Beat every 10 minutes.
+    """Quality signal aggregation: called by Celery Beat every 10 minutes.
 
     Queries knowledge items that received new behavioral signals since the last
     aggregation, recomputes their quality_score via the weighted formula in
@@ -211,11 +211,11 @@ def aggregate_quality_signals_task() -> dict:
 
 @celery_app.task(name="hivemind.distill")
 def run_distillation_task() -> dict:
-    """Sleep-time distillation — called by Celery Beat every 30 minutes.
+    """Sleep-time distillation, called by Celery Beat every 30 minutes.
 
     Evaluates volume/conflict thresholds inside the task body and short-circuits
     if conditions are not met (Celery Beat only supports time-based triggering;
-    condition logic must live in the task body — research Pitfall 6).
+    condition logic must live in the task body).
 
     Merges confirmed duplicates, flags contradiction clusters, generates
     LLM summaries with mandatory PII re-scan, and pre-screens pending

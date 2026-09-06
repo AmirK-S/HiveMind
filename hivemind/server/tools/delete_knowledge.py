@@ -2,12 +2,12 @@
 
 Soft-deletes an approved knowledge item owned by the calling agent.
 
-Security (ACL-01, pitfall 6):
+Security (ACL-01):
 - org_id and agent_id are extracted from the bearer token, never from tool args
-- Query filters by id AND org_id AND source_agent_id — agents can only delete
+- Query filters by id AND org_id AND source_agent_id, agents can only delete
   their own items within their own org namespace
 - Returns 404 (not 403) for items not found or owned by another agent/org so
-  existence of items in other namespaces is not revealed (per research pitfall 6)
+  existence of items in other namespaces is not revealed
 
 Soft-delete:
 - Sets deleted_at timestamp instead of removing the physical row
@@ -19,9 +19,10 @@ from __future__ import annotations
 
 import datetime
 import uuid as _uuid
+from typing import NoReturn
 
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
-from mcp.types import CallToolResult, TextContent
 from sqlalchemy import select
 
 from hivemind.db.models import KnowledgeItem
@@ -44,22 +45,13 @@ def _extract_auth(headers: dict[str, str]):
     return decode_token(token)
 
 
-def _auth_error(message: str) -> CallToolResult:
-    return CallToolResult(
-        content=[TextContent(type="text", text=message)],
-        isError=True,
-    )
+def _auth_error(message: str) -> NoReturn:
+    raise ToolError(message)
 
 
-def _not_found(id: str) -> CallToolResult:
-    """Return 404-style error — does NOT reveal whether item exists in another org."""
-    return CallToolResult(
-        content=[TextContent(
-            type="text",
-            text=f"Knowledge item '{id}' not found.",
-        )],
-        isError=True,
-    )
+def _not_found(id: str) -> NoReturn:
+    """Raise a 404-style error, does NOT reveal whether item exists in another org."""
+    raise ToolError(f"Knowledge item '{id}' not found.")
 
 
 # ---------------------------------------------------------------------------
@@ -67,7 +59,7 @@ def _not_found(id: str) -> CallToolResult:
 # ---------------------------------------------------------------------------
 
 
-async def delete_knowledge(id: str) -> dict | CallToolResult:
+async def delete_knowledge(id: str) -> dict:
     """Soft-delete a knowledge item you contributed.
 
     Sets the deleted_at timestamp on the item so it no longer appears in
@@ -79,13 +71,15 @@ async def delete_knowledge(id: str) -> dict | CallToolResult:
 
     Returns:
         Dict with id, status "deleted", and a confirmation message on success.
-        CallToolResult with isError=True if not found, already deleted, or on
-        auth failure.  Returns a 404-style error for items in other orgs (does
-        not reveal existence per research pitfall 6).
+
+    Raises:
+        ToolError: if not found, already deleted, or on auth failure; FastMCP
+        renders it with isError=true.  Items in other orgs get the same
+        404-style error (does not reveal existence).
     """
-    # Extract auth — org_id and agent_id both needed for ownership check
+    # Extract auth: org_id and agent_id both needed for ownership check
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _auth_error(str(exc))
@@ -97,13 +91,7 @@ async def delete_knowledge(id: str) -> dict | CallToolResult:
     try:
         item_uuid = _uuid.UUID(id)
     except ValueError:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=f"Invalid id format: '{id}' is not a valid UUID.",
-            )],
-            isError=True,
-        )
+        raise ToolError(f"Invalid id format: '{id}' is not a valid UUID.")
 
     async with get_session() as session:
         # Ownership check: id + org_id + agent_id + not-already-deleted
@@ -117,7 +105,7 @@ async def delete_knowledge(id: str) -> dict | CallToolResult:
         item = result.scalar_one_or_none()
 
         if item is None:
-            # Per research pitfall 6: return 404 (not 403) — never reveal that
+            # return 404 (not 403), never reveal that
             # an item exists in another org or belongs to another agent
             return _not_found(id)
 

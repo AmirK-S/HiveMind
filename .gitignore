@@ -41,6 +41,8 @@ Thumbs.db
 # Planning (internal project management)
 .planning/
 
-# Misc
-ls
--la
+# Local configuration and secrets
+.env
+
+# Internal research material, never published
+deep_research/

@@ -17,7 +17,7 @@ from datasketch import MinHash, MinHashLSH
 
 logger = logging.getLogger(__name__)
 
-# Module-level singleton — initialized lazily on first call to get_lsh_index()
+# Module-level singleton, initialized lazily on first call to get_lsh_index()
 _lsh_index: MinHashLSH | None = None
 
 
@@ -32,7 +32,7 @@ def get_lsh_index() -> MinHashLSH:
     """
     global _lsh_index
     if _lsh_index is None:
-        from hivemind.config import settings  # lazy import — avoid circular deps
+        from hivemind.config import settings  # lazy import, avoid circular deps
 
         _lsh_index = MinHashLSH(
             threshold=settings.minhash_threshold,
@@ -71,20 +71,20 @@ def insert_into_lsh(item_id: str, content: str) -> None:
 
     Computes a MinHash for the content and inserts it using item_id as the key.
     If the item is already in the index (same key), the duplicate is silently
-    ignored — this is safe and expected during server restart or re-indexing.
+    ignored, this is safe and expected during server restart or re-indexing.
 
     Args:
         item_id: The knowledge item's UUID string (used as the LSH key).
         content: The item's text content to compute the MinHash from.
     """
-    from hivemind.config import settings  # lazy import — avoid circular deps
+    from hivemind.config import settings  # lazy import, avoid circular deps
 
     lsh = get_lsh_index()
     mh = minhash_for_text(content, num_perm=settings.minhash_num_perm)
     try:
         lsh.insert(item_id, mh)
     except ValueError:
-        # Item already in index — safe to ignore (e.g. duplicate insert on restart)
+        # Item already in index: safe to ignore (e.g. duplicate insert on restart)
         logger.debug("MinHash LSH: item %s already in index, skipping insert", item_id)
 
 
@@ -98,7 +98,7 @@ def find_minhash_candidates(content: str) -> list[str]:
         List of item ID strings with Jaccard similarity at or above the
         configured minhash_threshold. Returns empty list if index is empty.
     """
-    from hivemind.config import settings  # lazy import — avoid circular deps
+    from hivemind.config import settings  # lazy import, avoid circular deps
 
     lsh = get_lsh_index()
     mh = minhash_for_text(content, num_perm=settings.minhash_num_perm)
@@ -123,7 +123,7 @@ async def rebuild_lsh_index() -> int:
     """
     global _lsh_index
 
-    from hivemind.config import settings  # lazy import — avoid circular deps
+    from hivemind.config import settings  # lazy import, avoid circular deps
     from hivemind.db.models import KnowledgeItem
     from hivemind.db.session import get_session
     from sqlalchemy import select
@@ -152,5 +152,5 @@ async def rebuild_lsh_index() -> int:
         except ValueError:
             logger.debug("rebuild_lsh_index: item %s already in index", item_id)
 
-    logger.info("MinHash LSH index rebuilt — %d items indexed", count)
+    logger.info("MinHash LSH index rebuilt, %d items indexed", count)
     return count

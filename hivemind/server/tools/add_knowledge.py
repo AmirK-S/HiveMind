@@ -4,9 +4,9 @@ Security design (ACL-01, TRUST-01, SEC-01, SEC-03, TRUST-04):
 - org_id is ALWAYS taken from the bearer token, never from tool arguments
 - Raw content is scanned for prompt injection BEFORE PII stripping (SEC-01)
 - Anti-sybil burst detection enforced after injection scan (SEC-03)
-- Raw content is PII-stripped BEFORE any DB insert — raw text is never stored
+- Raw content is PII-stripped BEFORE any DB insert, raw text is never stored
 - Content with >50% placeholders is auto-rejected (too redacted to be useful)
-- Auto-approve rules checked post-hash — matching org+category skips pending queue (TRUST-04)
+- Auto-approve rules checked post-hash, matching org+category skips pending queue (TRUST-04)
 - Contributions enter pending_contributions (quarantine) or knowledge_items (auto-approved)
 
 Flow:
@@ -18,8 +18,8 @@ Flow:
   4. Auto-reject if should_reject is True
   5. Compute content hash of cleaned text
   5a. Check auto-approve rules (TRUST-04)
-  5b. Run dedup pipeline (KM-03) — three-stage near-duplicate detection
-  5c. If DUPLICATE: run conflict resolution (KM-07) — UPDATE/ADD/NOOP/VERSION_FORK
+  5b. Run dedup pipeline (KM-03), three-stage near-duplicate detection
+  5c. If DUPLICATE: run conflict resolution (KM-07), UPDATE/ADD/NOOP/VERSION_FORK
   5d. Insert directly with embedding (auto-approve path) OR into pending queue (normal path)
   6. Return contribution_id + status
 """
@@ -27,9 +27,10 @@ Flow:
 from __future__ import annotations
 
 import datetime
+from typing import NoReturn
 
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
-from mcp.types import CallToolResult, TextContent
 from sqlalchemy import select
 
 from hivemind.db.models import AutoApproveRule, KnowledgeCategory, KnowledgeItem, PendingContribution
@@ -63,12 +64,13 @@ def _extract_auth(headers: dict[str, str]):
     return decode_token(token)
 
 
-def _auth_error(message: str) -> CallToolResult:
-    """Return a structured MCP isError response for auth failures."""
-    return CallToolResult(
-        content=[TextContent(type="text", text=message)],
-        isError=True,
-    )
+def _auth_error(message: str) -> NoReturn:
+    """Raise an MCP tool error for auth failures.
+
+    FastMCP turns a ToolError into a JSON-RPC result with isError=true and the
+    message in content[0].text.
+    """
+    raise ToolError(message)
 
 
 async def add_knowledge(
@@ -80,7 +82,7 @@ async def add_knowledge(
     version: str | None = None,
     tags: list[str] | None = None,
     run_id: str | None = None,
-) -> dict | CallToolResult:
+) -> dict:
     """Contribute a knowledge item to HiveMind.
 
     The content is scanned for prompt injection, then PII-stripped before any
@@ -92,7 +94,7 @@ async def add_knowledge(
     Args:
         content:    The knowledge text to contribute (min 10 characters).
         category:   Knowledge category (must be a valid KnowledgeCategory value).
-        confidence: Confidence score 0.0–1.0 (default 0.8).
+        confidence: Confidence score 0.0-1.0 (default 0.8).
         framework:  Optional framework name (e.g. "fastapi", "langchain").
         language:   Optional programming language (e.g. "python", "typescript").
         version:    Optional version string.
@@ -101,66 +103,44 @@ async def add_knowledge(
 
     Returns:
         Dict with contribution_id, status, category, and message on success.
-        CallToolResult with isError=True on any failure.
+
+    Raises:
+        ToolError: on any failure; FastMCP renders it with isError=true.
     """
     # Step 0: Validate inputs before touching the DB
     if len(content) < 10:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text="Rejected: content is too short (minimum 10 characters).",
-            )],
-            isError=True,
-        )
+        raise ToolError("Rejected: content is too short (minimum 10 characters).")
 
     if not (0.0 <= confidence <= 1.0):
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text="Rejected: confidence must be between 0.0 and 1.0.",
-            )],
-            isError=True,
-        )
+        raise ToolError("Rejected: confidence must be between 0.0 and 1.0.")
 
     # Step 0b: Validate category against the controlled vocabulary
     try:
         category_enum = KnowledgeCategory(category)
     except ValueError:
         valid_values = [c.value for c in KnowledgeCategory]
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=(
-                    f"Rejected: '{category}' is not a valid category. "
-                    f"Valid values: {', '.join(valid_values)}"
-                ),
-            )],
-            isError=True,
+        raise ToolError(
+            f"Rejected: '{category}' is not a valid category. "
+            f"Valid values: {', '.join(valid_values)}"
         )
 
     # Step 1: Extract auth context from bearer token
     # org_id is NEVER taken from tool arguments (ACL-01)
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _auth_error(str(exc))
 
     # Step 1.5: Scan for prompt injection BEFORE PII stripping (SEC-01)
-    # Injection patterns may be hidden in text that gets partially redacted —
+    # Injection patterns may be hidden in text that gets partially redacted , 
     # scan raw content before any modification.
     is_injection, injection_score = InjectionScanner.get_instance().is_injection(content)
     if is_injection:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=(
-                    f"Rejected: content contains potential prompt injection "
-                    f"(confidence: {injection_score:.0%}). "
-                    f"Malicious instructions are not allowed in the commons."
-                ),
-            )],
-            isError=True,
+        raise ToolError(
+            f"Rejected: content contains potential prompt injection "
+            f"(confidence: {injection_score:.0%}). "
+            f"Malicious instructions are not allowed in the commons."
         )
 
     # Step 1.6: Anti-sybil burst detection (SEC-03)
@@ -172,39 +152,27 @@ async def add_knowledge(
         contribution_id = str(_uuid.uuid4())  # temp ID for burst tracking
         is_burst = await check_burst(auth.org_id, contribution_id, redis_conn)
         if is_burst:
-            return CallToolResult(
-                content=[TextContent(
-                    type="text",
-                    text=(
-                        "Rate limit exceeded: too many contributions in a short window. "
-                        "Please wait before submitting again."
-                    ),
-                )],
-                isError=True,
+            raise ToolError(
+                "Rate limit exceeded: too many contributions in a short window. "
+                "Please wait before submitting again."
             )
 
     # Step 2: PII-strip the content BEFORE any storage (TRUST-01)
-    # Raw content is never persisted — only the cleaned version.
+    # Raw content is never persisted: only the cleaned version.
     cleaned_content, should_reject = strip_pii(content)
 
     # Step 3: Auto-reject if too much was redacted
     if should_reject:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=(
-                    "Rejected: too much content was identified as sensitive and redacted (>50%). "
-                    "The contribution cannot be meaningfully preserved."
-                ),
-            )],
-            isError=True,
+        raise ToolError(
+            "Rejected: too much content was identified as sensitive and redacted (>50%). "
+            "The contribution cannot be meaningfully preserved."
         )
 
     # Step 4: Compute content hash of the cleaned text
     import hashlib
     content_hash = hashlib.sha256(cleaned_content.encode()).hexdigest()
 
-    # Step 5: Dedup pipeline — three-stage near-duplicate detection (KM-03)
+    # Step 5: Dedup pipeline, three-stage near-duplicate detection (KM-03)
     # Runs BEFORE the DB insert to avoid writing duplicates into the commons.
     # Lazy imports to avoid circular dependencies.
     from hivemind.dedup.pipeline import run_dedup_pipeline
@@ -216,12 +184,12 @@ async def add_knowledge(
     _fork_valid_at = None
 
     if dedup_result.get("action") == "DUPLICATE":
-        # Step 5a: Conflict resolution — classify relationship with the best match
+        # Step 5a: Conflict resolution, classify relationship with the best match
         top_duplicate = dedup_result["duplicates"][0] if dedup_result.get("duplicates") else {}
         resolution = await resolve_conflict(cleaned_content, top_duplicate, auth.org_id)
 
         if resolution["action"] == "NOOP":
-            # Exact or near-exact duplicate — block insertion, return informational
+            # Exact or near-exact duplicate, block insertion, return informational
             return {
                 "contribution_id": resolution.get("existing_item_id", ""),
                 "status": "duplicate_detected",
@@ -234,7 +202,7 @@ async def add_knowledge(
             }
 
         if resolution["action"] in ("UPDATE", "VERSION_FORK"):
-            # Apply resolution — expire/invalidate the existing item
+            # Apply resolution: expire/invalidate the existing item
             applied = await apply_conflict_resolution(
                 resolution=resolution,
                 new_content=cleaned_content,
@@ -247,7 +215,7 @@ async def add_knowledge(
             # Fall through to insert the new item below
 
         elif resolution["action"] == "FLAGGED_FOR_REVIEW":
-            # Multi-hop conflict — insert as pending with a conflict flag note
+            # Multi-hop conflict, insert as pending with a conflict flag note
             # Store the flag in the tags field to avoid schema change
             if tags is None:
                 tags = []
@@ -258,7 +226,7 @@ async def add_knowledge(
 
         # resolution["action"] == "ADD": fall through to normal insert (no DB changes)
 
-    # Step 5b: Insert — either directly (auto-approve) or into pending queue
+    # Step 5b: Insert, either directly (auto-approve) or into pending queue
     async with get_session() as session:
         # Step 5b-i: Check auto-approve rules (TRUST-04)
         auto_approve_result = await session.execute(

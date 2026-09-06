@@ -25,8 +25,9 @@ from fastapi.routing import APIRoute
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
 
+from hivemind import __version__
 from hivemind.api.router import api_router
-from hivemind.api.routes.well_known import well_known_router
+from hivemind.api.routes.well_known import MCP_PATH, well_known_router
 from hivemind.config import settings
 from hivemind.db.models import DeploymentConfig
 from hivemind.db.session import engine, get_session
@@ -57,14 +58,14 @@ async def lifespan(server: FastMCP) -> AsyncIterator[None]:
     """Lifespan context manager: startup init and shutdown cleanup.
 
     Startup order:
-    1. Initialize PIIPipeline singleton — triggers GLiNER model load (~400 MB)
-    2. Initialize EmbeddingProvider singleton — loads sentence-transformers model
-    2.5. Initialize InjectionScanner — pre-loads DeBERTa model (SEC-01)
-    2.6. Initialize rate limiter — connects to Redis (SEC-03, INFRA-04)
-    2.7. Initialize RBAC enforcer — loads Casbin policies from PostgreSQL (ACL-03)
-    2.8. Configure Celery — sets Redis broker for webhook delivery (INFRA-03)
+    1. Initialize PIIPipeline singleton, triggers GLiNER model load (~400 MB)
+    2. Initialize EmbeddingProvider singleton, loads sentence-transformers model
+    2.5. Initialize InjectionScanner, pre-loads DeBERTa model (SEC-01)
+    2.6. Initialize rate limiter, connects to Redis (SEC-03, INFRA-04)
+    2.7. Initialize RBAC enforcer, loads Casbin policies from PostgreSQL (ACL-03)
+    2.8. Configure Celery, sets Redis broker for webhook delivery (INFRA-03)
     3. Store or verify deployment config (embedding model name + revision, KM-08)
-    4. Yield — server handles requests
+    4. Yield, server handles requests
 
     Shutdown:
     5. Dispose the async engine and close all pooled connections
@@ -85,33 +86,33 @@ async def lifespan(server: FastMCP) -> AsyncIterator[None]:
         embedder.dimensions,
     )
 
-    # 2.5: Injection scanner — pre-load DeBERTa model (SEC-01)
+    # 2.5: Injection scanner, pre-load DeBERTa model (SEC-01)
     logger.info("Loading injection scanner (DeBERTa model)...")
     InjectionScanner.get_instance()
     logger.info("Injection scanner ready.")
 
-    # 2.6: Rate limiter — connect to Redis (SEC-03, INFRA-04)
+    # 2.6: Rate limiter, connect to Redis (SEC-03, INFRA-04)
     logger.info("Initializing rate limiter...")
     await init_rate_limiter(settings.redis_url)
     logger.info("Rate limiter ready.")
 
-    # 2.7: RBAC enforcer — load Casbin policies from PostgreSQL (ACL-03)
+    # 2.7: RBAC enforcer, load Casbin policies from PostgreSQL (ACL-03)
     logger.info("Loading RBAC enforcer...")
     await init_enforcer()
     logger.info("RBAC enforcer ready.")
 
-    # 2.8: Celery — configure broker for webhook delivery (INFRA-03)
+    # 2.8: Celery, configure broker for webhook delivery (INFRA-03)
     configure_celery(settings.redis_url)
     logger.info("Celery configured for webhook delivery.")
     logger.info("Celery Beat schedule configured with quality signal aggregation.")
 
-    # 3. Store deployment config — KM-08 model drift detection
+    # 3. Store deployment config, KM-08 model drift detection
     await _store_deployment_config(embedder)
 
     yield
 
     # 5. Cleanup: dispose async engine
-    logger.info("HiveMind server shutting down — disposing database engine...")
+    logger.info("HiveMind server shutting down, disposing database engine...")
     await engine.dispose()
     logger.info("Database engine disposed.")
 
@@ -120,7 +121,7 @@ async def _store_deployment_config(embedder) -> None:
     """Store or verify embedding model deployment config in the database.
 
     On first startup: INSERT model_name and model_revision.
-    On subsequent startups: SELECT and compare — log a warning if the model
+    On subsequent startups: SELECT and compare, log a warning if the model
     changed (but don't block startup; an operator should handle the drift).
     """
     model_name_key = "embedding_model_name"
@@ -141,7 +142,7 @@ async def _store_deployment_config(embedder) -> None:
         rows = {row.key: row.value for row in result.scalars().all()}
 
         if not rows:
-            # First startup — insert both keys
+            # First startup: insert both keys
             now = datetime.datetime.now(datetime.timezone.utc)
             session.add(DeploymentConfig(
                 key=model_name_key,
@@ -160,14 +161,14 @@ async def _store_deployment_config(embedder) -> None:
                 "Deployment config stored: %s @ %s", current_name, current_revision
             )
         else:
-            # Subsequent startup — compare and warn on drift
+            # Subsequent startup: compare and warn on drift
             stored_name = rows.get(model_name_key, "")
             stored_revision = rows.get(model_revision_key, "")
 
             if stored_name != current_name:
                 logger.warning(
                     "Embedding model changed! Stored: %s, Current: %s. "
-                    "Vectors from old model are incompatible — consider re-embedding.",
+                    "Vectors from old model are incompatible, consider re-embedding.",
                     stored_name,
                     current_name,
                 )
@@ -185,46 +186,20 @@ async def _store_deployment_config(embedder) -> None:
 
 
 # ---------------------------------------------------------------------------
-# FastMCP server instance
+# Application factory
 # ---------------------------------------------------------------------------
 
-mcp = FastMCP(
-    "HiveMind",
-    lifespan=lifespan,
+_TOOL_FUNCTIONS = (
+    add_knowledge,
+    search_knowledge,
+    list_knowledge,
+    delete_knowledge,
+    # Publication and RBAC management
+    publish_knowledge,
+    manage_roles,
+    # Quality signal reporting (MCP-06)
+    report_outcome,
 )
-
-# Register tools using Tool.from_function() — the correct FastMCP v2 API.
-# mcp.add_tool() expects a Tool instance, not a raw function.
-# Seven total MCP tools registered.
-mcp.add_tool(Tool.from_function(add_knowledge))
-mcp.add_tool(Tool.from_function(search_knowledge))
-mcp.add_tool(Tool.from_function(list_knowledge))
-mcp.add_tool(Tool.from_function(delete_knowledge))
-# Phase 2 tools — publication and RBAC management
-mcp.add_tool(Tool.from_function(publish_knowledge))
-mcp.add_tool(Tool.from_function(manage_roles))
-# Phase 3 tools — quality signal reporting (MCP-06)
-mcp.add_tool(Tool.from_function(report_outcome))
-
-# ---------------------------------------------------------------------------
-# ASGI app: Streamable HTTP at /mcp
-# ---------------------------------------------------------------------------
-
-# Create the Starlette ASGI app from FastMCP with Streamable HTTP transport.
-# stateless_http=True allows horizontal scaling — no per-session state is held.
-# json_response=True returns JSON instead of SSE streams for compatibility.
-_mcp_app = mcp.http_app(
-    path="/mcp",
-    transport="streamable-http",
-    stateless_http=True,
-    json_response=True,
-)
-
-# ---------------------------------------------------------------------------
-# Clean operation IDs for SDK generation (Pattern 6 from Phase 03 research).
-# Generates "rest-api-search_knowledge" style IDs from explicit operation_id
-# names set on each route, ensuring generated SDK method names are readable.
-# ---------------------------------------------------------------------------
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -234,31 +209,76 @@ def custom_generate_unique_id(route: APIRoute) -> str:
     return route.name
 
 
-# Wrap in a FastAPI app to add the /health endpoint and REST routes.
-# We mount the MCP Starlette app under the FastAPI instance.
-app = FastAPI(
-    title="HiveMind",
-    description="Shared memory system for AI agents — MCP server + REST API",
-    version="0.1.0",
-    lifespan=_mcp_app.lifespan if hasattr(_mcp_app, "lifespan") else None,
-    generate_unique_id_function=custom_generate_unique_id,
-)
+def create_mcp_server() -> FastMCP:
+    """Build the FastMCP server and register the seven tools.
+
+    Tools are registered through Tool.from_function(); mcp.add_tool() expects
+    a Tool instance, not a raw function.
+    """
+    mcp = FastMCP("HiveMind", version=__version__, lifespan=lifespan)
+    for function in _TOOL_FUNCTIONS:
+        mcp.add_tool(Tool.from_function(function))
+    return mcp
 
 
-@app.get("/health")
-async def health() -> JSONResponse:
-    """Simple health check endpoint for load balancers and readiness probes."""
-    return JSONResponse({"status": "ok", "service": "hivemind"})
+def create_app() -> FastAPI:
+    """Build the ASGI application: FastAPI routes plus the MCP transport.
+
+    A fresh application per call matters for tests: the Streamable HTTP
+    session manager can only be started once per instance.
+
+    Layout:
+    - GET /health, the REST API under /api/v1 and /.well-known/ are FastAPI routes.
+    - The MCP Streamable HTTP endpoint is served at exactly /mcp. The FastMCP
+      app is mounted at the root, after every other route, so that its own
+      /mcp route answers without a redirect. Mounting it at /mcp with
+      path="/mcp" as well used to serve /mcp/mcp and leave /mcp answering
+      307 then 404.
+    - stateless_http=True: no per-session state is held, which allows
+      horizontal scaling. json_response=True returns JSON instead of SSE.
+    - host_origin_protection="auto" plus allowed_hosts: DNS rebinding guard.
+      FastMCP 4 ships HostOriginGuardMiddleware but leaves it off by default
+      (fastmcp.settings.http_host_origin_protection is False), so it has to be
+      asked for. Passing allowed_hosts explicitly makes the guard validate the
+      Host header on every request, including when uvicorn listens on 0.0.0.0
+      as it does in Docker, where "auto" alone would infer nothing.
+    """
+    mcp = create_mcp_server()
+    mcp_app = mcp.http_app(
+        path=MCP_PATH,
+        transport="streamable-http",
+        stateless_http=True,
+        json_response=True,
+        host_origin_protection="auto",
+        allowed_hosts=settings.allowed_hosts_list,
+    )
+
+    app = FastAPI(
+        title="HiveMind",
+        description="Shared memory system for AI agents: MCP server plus REST API",
+        version=__version__,
+        lifespan=mcp_app.lifespan,
+        generate_unique_id_function=custom_generate_unique_id,
+    )
+
+    @app.get("/health")
+    async def health() -> JSONResponse:
+        """Simple health check endpoint for load balancers and readiness probes."""
+        return JSONResponse({"status": "ok", "service": "hivemind"})
+
+    # REST API at /api/v1/ (SDK-01). Registered after /health so it does not
+    # shadow the health endpoint.
+    app.include_router(api_router)
+
+    # /.well-known/ is a root path outside /api/v1/, hence on the top-level app.
+    app.include_router(well_known_router)
+
+    # MCP transport, mounted last so it only receives what nothing else matched.
+    app.mount("/", mcp_app)
+
+    app.state.mcp = mcp
+    return app
 
 
-# REST API at /api/v1/ — developer HTTP access without MCP (SDK-01)
-# Mounted AFTER /health so it does not shadow the health endpoint.
-app.include_router(api_router)
-
-# Well-known MCP discovery endpoints — MUST be registered on top-level app
-# (not api_router) because /.well-known/ is a root path outside /api/v1/.
-# Registered BEFORE the MCP mount to ensure the route is visible to FastAPI.
-app.include_router(well_known_router)
-
-# Mount the MCP ASGI app at /mcp
-app.mount("/mcp", _mcp_app)
+app = create_app()
+mcp: FastMCP = app.state.mcp

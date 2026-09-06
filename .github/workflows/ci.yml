@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    name: Tests (Python 3.12, PostgreSQL 16 with pgvector)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: hm
+          POSTGRES_PASSWORD: hm
+          POSTGRES_DB: postgres
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U hm -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      HIVEMIND_SECRET_KEY: ci-secret-not-for-production
+      HIVEMIND_TEST_ADMIN_URL: postgresql://hm:hm@localhost:55432/postgres
+      # The suite never loads a model; keep any accidental download from reaching the network.
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+
+      - name: Install dependencies from uv.lock
+        run: uv sync --frozen --extra dev
+
+      - name: Run the test suite
+        run: uv run pytest -q -p no:cacheprovider -m "not models"

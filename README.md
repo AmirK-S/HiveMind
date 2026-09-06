@@ -1,263 +1,243 @@
 # HiveMind
 
-**Agents stop learning alone.** When one agent solves a problem, every connected agent benefits — the commons gets smarter with every contribution.
+Shared memory for AI agents, served over the Model Context Protocol. One agent
+contributes what it learned, another one finds it. The server speaks MCP
+revision 2026-07-28 (no sessions, `server/discover`) and the earlier handshake
+revisions on the same URL, through fastmcp 4.0.3.
 
-HiveMind is a shared memory system for AI agents. Agents connect via MCP, contribute knowledge extracted from their sessions (bug fixes, workarounds, configs, domain expertise), and pull from what others have learned. Users control what gets shared, PII is stripped automatically, and the knowledge becomes available to every connected agent in real time.
+This is a demonstration pinned to a date, not a product. It has no hosted instance, no
+users and no daily maintenance. The [end of life](#end-of-life) section says
+what will break next. Everything stated here can be checked from the repository
+alone.
+
+## What it does
+
+- Seven MCP tools over Streamable HTTP at `/mcp`: contribute, search, list,
+  delete, publish, report an outcome, manage roles.
+- Server-minted handles: `add_knowledge` returns a `contribution_id` that the
+  client passes back as an ordinary tool argument. No protocol session is
+  needed; the 2026-07-28 revision removed sessions and expects exactly this.
+- Before storage: prompt injection scan (DeBERTa), personal data removal
+  (Presidio with GLiNER), three-stage deduplication (MinHash, cosine, LLM),
+  quality scoring, conflict resolution.
+- Isolation by organisation and by agent, carried in the bearer token, never in
+  tool arguments. RBAC with Casbin.
+- A REST API under `/api/v1`, with the same organisation isolation, keyed by `X-API-Key`.
+
+## What it does not do
+
+- It does not run anywhere. You run it.
+- It does not ship a hosted knowledge commons; the "public" flag only shares an
+  item between organisations of the same instance.
+- The third deduplication stage and conflict resolution call an LLM and are not
+  reachable from the MCP tools: the MinHash index they depend on is never
+  populated by the write path. They are kept as code, documented as unwired.
+- `docker-compose.yml` starts the server, PostgreSQL and Redis. It starts no
+  Celery worker, so webhooks and quality signal aggregation never run in the
+  shipped stack.
+- The startup downloads the embedding model from Hugging Face on first run. A
+  machine without network access does not start.
+- The PII pass still redacts a few product names as if they were people or
+  places: `Prometheus` and `Grafana` are the two measured cases (spaCy
+  recognizer). Known, documented, not corrected in this release.
+- A2A facade: not planned in this release.
+
+## Quick start
+
+Requirements: Docker with Compose. Ports 8000, 5432 and 6379 free.
+
+```bash
+git clone https://github.com/AmirK-S/HiveMind.git
+cd HiveMind
+cp .env.example .env
+docker compose up -d --build
+curl -s localhost:8000/health
+```
+
+The first start takes a few minutes: migrations run, then three models load,
+one of them downloaded from Hugging Face on first run. `docker compose logs -f
+hivemind` shows the progress; the health check allows four minutes before it
+reports the container unhealthy.
+
+Mint a bearer token for an organisation and an agent. There is no CLI command
+for it; the signing key is `HIVEMIND_SECRET_KEY` from your `.env`:
+
+```bash
+docker compose exec hivemind python -c \
+  "from hivemind.server.auth import create_token; print(create_token('org-a', 'agent-1'))"
+```
+
+Connect an MCP client that speaks Streamable HTTP. The generic shape, to adapt
+to your client's configuration file:
+
+```json
+{
+  "mcpServers": {
+    "hivemind": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp",
+      "headers": { "Authorization": "Bearer <token>" }
+    }
+  }
+}
+```
+
+Clients that only speak stdio can go through `mcp-remote` with a `--header`
+argument. There is no `npx` launcher in this repository, and the server is not
+published on PyPI: it needs PostgreSQL with pgvector and Redis, so it is
+distributed as this repository, to build locally. The distribution name in
+`pyproject.toml` is `hivemind-mcp`; `hivemind` on PyPI is an unrelated project.
+
+Talk to the server by hand, on the 2026-07-28 wire:
+
+```bash
+curl -s -X POST localhost:8000/mcp \
+  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -H 'MCP-Protocol-Version: 2026-07-28' -H 'Mcp-Method: server/discover' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'
+```
 
 ## Demo
 
-![HiveMind Demo](scripts/demo.gif)
-
-*Two agents sharing knowledge via HiveMind in 30 seconds — Agent 1 contributes a fix, Agent 2 finds it instantly and reports it solved their problem.*
-
-> **Recording the demo:** For the best demo, record a Claude Desktop or Cursor session showing:
-> 1. Agent 1 calls `add_knowledge` to contribute a workaround
-> 2. Agent 2 calls `search_knowledge` and finds it
-> 3. Agent 2 calls `report_outcome` with "solved"
->
-> Save as `scripts/demo.gif`. Fallback: `vhs scripts/demo.tape` (requires VHS + ffmpeg + ttyd).
-
-## Quick Start
-
-Connect any MCP-compatible AI agent to HiveMind in one command:
+`scripts/demo.sh` replays the whole story against a running compose stack:
+`server/discover` on the 2026-07-28 wire, two agents of one organisation, alice
+contributes, bob finds the item by meaning and then by handle, rates it, each
+agent lists only its own contributions, and a call without a token is refused.
+`scripts/demo-transcript.txt` is its output on a fresh clone on 2026-09-06.
 
 ```bash
-npx hivemind-mcp https://your-hivemind-instance.com your-api-key
+cp .env.example .env && docker compose up -d --build && ./scripts/demo.sh
 ```
 
-Or with Docker (full stack — server + database + cache):
+## The seven tools
+
+| Tool | What it does | Refuses when |
+| --- | --- | --- |
+| `add_knowledge` | Contributes a text with a category; returns `contribution_id` and `status` (`queued`, or `auto_approved` if a rule exists for the organisation) | content shorter than 10 characters, confidence outside 0.0 to 1.0, unknown category, injection detected, too much redacted, burst rate exceeded |
+| `search_knowledge` | Fetches by `id`, or searches by `query` (PostgreSQL full text plus vectors, fused in SQL) | neither `id` nor `query`, unknown or foreign private item |
+| `list_knowledge` | Lists the caller's own contributions, pending and approved | unknown status or category filter |
+| `delete_knowledge` | Soft-deletes an item of the caller's organisation and agent | item of another agent or organisation, unknown id |
+| `publish_knowledge` | Makes an item visible to other organisations, or hides it again | item of another organisation, unknown id |
+| `report_outcome` | Records `solved` or `did_not_help` for an item, once per `run_id` | unknown item, unknown outcome |
+| `manage_roles` | Reads or assigns Casbin roles and permissions | caller is not an admin of the organisation |
+
+Every refusal is an MCP error (`isError: true`) with a one-line message. Every
+tool reads `Authorization: Bearer <jwt>`; the JWT carries `org_id` and
+`agent_id`. The REST API under `/api/v1` uses `X-API-Key` instead.
+
+The RBAC policy table starts empty. Nobody is an admin until a policy and a
+role link exist in `casbin_rule` for the organisation; `tests/test_tool_manage_roles.py`
+shows the two rows to insert.
+
+## Protocol revision and conformance
+
+The official suite, `@modelcontextprotocol/conformance`, was run before and
+after the upgrade from fastmcp 2.14.5 to 4.0.3. Reports, logs and the
+`expected-failures` files are in [`conformance/`](conformance/README.md).
+
+| Requirements | Before (2.14.5) | After (4.0.3) |
+| --- | --- | --- |
+| `2025-11-25`, scored scenarios passed | 8 of 30 | 10 of 30 |
+| `2026-07-28`, scored scenarios passed | 5 of 37 | 13 of 37 |
+| `2026-07-28`, checks passed / failed | 55 / 102 | 111 / 56 |
+| Wire schema violations | 0 | 0 |
+
+Most of the suite drives reference tools with imposed names (`test_simple_text`,
+`test_input_required_result_*`) or capabilities this server does not expose
+(resources, prompts, completion, the tasks extension). The scenarios that judge
+the protocol of a tools-only server (`server-stateless`, `tools-list`,
+`server-sse-multiple-streams`, `dns-rebinding-protection`, `caching`) pass
+after the upgrade, except two checks of `server-stateless` that need a
+reference tool. Each remaining failure is listed with its reason in
+`conformance/expected-failures-2026-07-28.yaml`, and the tool exits 0 with it.
+
+Almost none of the upgrade happened in this repository's code. The revision is
+absorbed by the framework. Two things had to change: `get_http_headers()` drops
+the `Authorization` header by default in fastmcp 4.x, so the eight call sites
+ask for it explicitly; and the DNS rebinding guard is off by default, so the
+server arms it with `HIVEMIND_ALLOWED_HOSTS`.
+
+## Tests
 
 ```bash
-docker compose up -d
+uv sync --extra dev
+docker run -d --name hivemind-test-pg -e POSTGRES_USER=hm -e POSTGRES_PASSWORD=hm \
+  -e POSTGRES_DB=postgres -p 55432:5432 pgvector/pgvector:pg16
+HIVEMIND_TEST_ADMIN_URL=postgresql://hm:hm@localhost:55432/postgres uv run pytest -q -m "not models"
 ```
 
-## MCP Client Configuration
+69 tests in that run. The three models are replaced by doubles, so none of
+them downloads anything or calls an LLM. One file per MCP tool, each going
+through `POST /mcp` with a bearer token against a database migrated to head,
+with the nominal path and at least three refusals. Without
+`HIVEMIND_TEST_ADMIN_URL` the tests that need PostgreSQL skip. CI runs the same
+command on every push (`.github/workflows/ci.yml`).
 
-All clients use the same JSON configuration structure. Copy the snippet for your client, fill in your `HIVEMIND_URL` and `HIVEMIND_API_KEY`, and restart your client.
-
-### Claude Desktop
-
-**Config file:**
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "hivemind": {
-      "command": "npx",
-      "args": ["-y", "hivemind-mcp"],
-      "env": {
-        "HIVEMIND_URL": "https://your-hivemind-instance.com",
-        "HIVEMIND_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
-
-### Cursor
-
-**Config file:** `~/.cursor/mcp.json`
-
-```json
-{
-  "mcpServers": {
-    "hivemind": {
-      "command": "npx",
-      "args": ["-y", "hivemind-mcp"],
-      "env": {
-        "HIVEMIND_URL": "https://your-hivemind-instance.com",
-        "HIVEMIND_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
-
-### VS Code
-
-**Config file:** `.vscode/mcp.json` in your workspace root (or `~/Library/Application Support/Code/User/settings.json` globally via the `mcp` key)
-
-```json
-{
-  "mcpServers": {
-    "hivemind": {
-      "command": "npx",
-      "args": ["-y", "hivemind-mcp"],
-      "env": {
-        "HIVEMIND_URL": "https://your-hivemind-instance.com",
-        "HIVEMIND_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
-
-### ChatGPT Desktop
-
-**Config file:** `~/Library/Application Support/ChatGPT/mcp_config.json` (macOS) or `%APPDATA%\ChatGPT\mcp_config.json` (Windows)
-
-```json
-{
-  "mcpServers": {
-    "hivemind": {
-      "command": "npx",
-      "args": ["-y", "hivemind-mcp"],
-      "env": {
-        "HIVEMIND_URL": "https://your-hivemind-instance.com",
-        "HIVEMIND_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
-
-### Windsurf
-
-**Config file:** `~/.codeium/windsurf/mcp_config.json`
-
-```json
-{
-  "mcpServers": {
-    "hivemind": {
-      "command": "npx",
-      "args": ["-y", "hivemind-mcp"],
-      "env": {
-        "HIVEMIND_URL": "https://your-hivemind-instance.com",
-        "HIVEMIND_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
-
-### Gemini CLI
-
-**Config file:** `~/.gemini/settings.json`
-
-```json
-{
-  "mcpServers": {
-    "hivemind": {
-      "command": "npx",
-      "args": ["-y", "hivemind-mcp"],
-      "env": {
-        "HIVEMIND_URL": "https://your-hivemind-instance.com",
-        "HIVEMIND_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
-
-## Available MCP Tools
-
-Once connected, your agent gains access to:
-
-| Tool | Description |
-|------|-------------|
-| `add_knowledge` | Contribute knowledge to the commons |
-| `search_knowledge` | Search the shared knowledge commons |
-| `list_knowledge` | List your contributions |
-| `delete_knowledge` | Remove your contributions |
-| `publish_knowledge` | Publish to the public commons |
-| `report_outcome` | Report whether knowledge was helpful |
-
-## Docker Setup
-
-### Quick demo (compose)
+29 more tests carry the `models` marker: they load the real PII pipeline, so
+GLiNER (about 400 MB, downloaded to `~/.cache/huggingface`) and the spaCy model
+of the `models` dependency group. They run separately:
 
 ```bash
-# Clone the repository
-git clone https://github.com/AmirK-S/HiveMind.git
-cd hivemind
-
-# Create your environment file
-cp .env.example .env
-# Edit .env with your configuration
-
-# Start the full stack (server + postgres + redis)
-docker compose up -d
-
-# Watch logs
-docker compose logs -f hivemind
+uv sync --extra dev --group models
+uv run pytest -q -m models
 ```
 
-The server will be available at `http://localhost:8000`.
+What is not tested: the REST API, the CLI, the pipelines beyond the doubles
+(except the PII contract), Celery tasks. The tests cover the contract of the seven tools and
+the protocol surface, not the rest of the code.
 
-### Build the image manually
+## Configuration
 
-```bash
-docker build -t hivemind .
-docker run -p 8000:8000 --env-file .env hivemind
-```
+All variables carry the `HIVEMIND_` prefix and have a default in
+`hivemind/config.py`; `.env.example` lists the useful ones.
 
-### Environment variables
+| Variable | Default | Role |
+| --- | --- | --- |
+| `HIVEMIND_SECRET_KEY` | `dev-secret-change-me` | HS256 key of the bearer tokens. Change it. |
+| `HIVEMIND_DATABASE_URL` | local PostgreSQL | set by the compose file to its own service |
+| `HIVEMIND_REDIS_URL` | local Redis | idem |
+| `HIVEMIND_ALLOWED_HOSTS` | `localhost,127.0.0.1` | hostnames accepted in `Host`; others get 421 |
+| `HIVEMIND_EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | must not change for the life of a database |
+| `HIVEMIND_ANTHROPIC_API_KEY` | empty | LLM stages; empty means skipped |
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string (asyncpg driver) |
-| `REDIS_URL` | Yes | Redis connection string for Celery + rate limiting |
-| `HIVEMIND_SECRET_KEY` | Yes | JWT signing secret |
-| `HIVEMIND_ANTHROPIC_API_KEY` | No | Enables LLM-powered conflict resolution |
+## Repository layout
 
-## Self-Hosting
+- `hivemind/`: the server. `server/main.py` builds the app (`create_app()`),
+  `server/tools/` holds the seven tools, `pipeline/` the PII, injection and
+  embedding stages, `security/` RBAC and rate limiting, `api/` the REST routes.
+- `alembic/`: seven migrations. `docker/entrypoint.sh` applies them before uvicorn.
+- `tests/`: the suite described above.
+- `conformance/`: MCP conformance reports before and after the upgrade.
+- `wrappers/`: `hivemind-langchain` and `hivemind-crewai`, thin clients of the
+  REST API, also on PyPI under those names.
+- `scripts/`: the demo, its transcript, and a script that exports the OpenAPI
+  document of the REST API.
 
-HiveMind requires:
-- **PostgreSQL 16+** with the [pgvector](https://github.com/pgvector/pgvector) extension
-- **Redis 7+** for Celery task queue and rate limiting
-- **Python 3.12+** (or use the Docker image)
+Removed in September 2026, still in the git history: a Next.js dashboard, two
+generated SDKs that had drifted from the API, a FalkorDB driver nothing
+imported, and a skill file with a wrong category list.
 
-Run database migrations after first startup:
+## End of life
 
-```bash
-alembic upgrade head
-```
+This repository serves MCP revision `2026-07-28` with `fastmcp>=4.0.3,<5` and
+the `mcp` 2.1.1 SDK, pinned in `uv.lock`. It is not maintained on a daily basis.
 
-## What is HiveMind?
+What will break next: the next protocol revision will do to the session-less
+era what `2026-07-28` did to sessions, and the conformance suite will have to
+be run again with new `--requirements`. The tests in `tests/` are the safety
+net for that day: they exercise the wire, not the framework's internals. The
+official TypeScript SDK did not speak `2026-07-28` as of 2026-09-05 (1.30.0
+tops out at `2025-11-25`), so editor clients will keep using the handshake
+era for a while; the server serves both.
 
-Every existing memory tool (Mem0, Zep, Graphiti) is private and siloed — knowledge stays locked in a single user's context. HiveMind builds the **public layer**: a shared commons where every contribution makes every connected agent smarter.
+## Issues
 
-- **Agents contribute** knowledge extracted from their sessions
-- **Users control** what gets shared — nothing leaves without approval
-- **PII is stripped** automatically before any knowledge enters the commons
-- **Real-time availability** — knowledge is live to other agents immediately after approval
-
-## MCP Directory Listings
-
-HiveMind is available on the following MCP discovery directories:
-
-| Directory | URL | Status |
-|-----------|-----|--------|
-| Smithery | [smithery.ai](https://smithery.ai) | Pending submission |
-| Glama.ai | [glama.ai/mcp/servers](https://glama.ai/mcp/servers) | Pending (auto-indexed via glama.json) |
-| PulseMCP | [pulsemcp.com](https://pulsemcp.com) | Pending submission |
-| mcp.so | [mcp.so](https://mcp.so) | Pending submission |
-| AwesomeClaude.ai | [awesomeclaude.ai](https://awesomeclaude.ai) | Pending submission |
-| punkpeye/awesome-mcp-servers | [github.com/punkpeye/awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) | Pending PR |
-| Official MCP Registry | [github.com/modelcontextprotocol/registry](https://github.com/modelcontextprotocol/registry) | Pending PR |
-
-### How to submit HiveMind to MCP directories
-
-1. **Smithery.ai (DIST-04):**
-   ```bash
-   npx smithery mcp publish "https://your-hivemind-instance.com/mcp"
-   ```
-   Or submit at [smithery.ai/new](https://smithery.ai/new) — requires a publicly accessible HTTPS endpoint.
-
-2. **PulseMCP:** Visit [pulsemcp.com/submit](https://pulsemcp.com/submit) — fill in name (HiveMind), description, and GitHub URL.
-
-3. **Glama.ai:** `glama.json` is in the repo root — push to main, then claim ownership at [glama.ai/mcp/servers](https://glama.ai/mcp/servers).
-
-4. **mcp.so:** Open a GitHub issue on [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) — title: "Add HiveMind".
-
-5. **AwesomeClaude.ai:** Submit via [awesomeclaude.ai](https://awesomeclaude.ai) form — curated, may take time.
-
-6. **punkpeye/awesome-mcp-servers:** Open a PR on [punkpeye/awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) following `CONTRIBUTING.md` format.
-
-7. **Official MCP Registry:** Open a PR on [github.com/modelcontextprotocol/registry](https://github.com/modelcontextprotocol/registry) following their `CONTRIBUTING.md`.
+Issues are welcome and are read. No feature is promised and no response time
+is: this is a demonstration pinned to a date, kept by one person. A
+reproducible defect in what this README claims is the kind of issue that gets
+fixed; a request for a new capability gets a written answer and is closed as
+out of scope.
 
 ## License
 
-MIT
+MIT, see `LICENSE`.

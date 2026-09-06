@@ -2,16 +2,16 @@
 Content integrity verification helpers for HiveMind.
 
 Provides SHA-256 hash computation and verification for knowledge item content.
-The hash is stored at insert time (content_hash column, set in Phase 1) and
+The hash is stored at insert time (content_hash column) and
 re-verified at retrieval time to detect tampering.
 
 Requirements addressed:
   - SEC-02: Content hash (SHA-256) on every knowledge item for integrity
-    verification. Hash storage was implemented in Phase 1; this module provides
+    verification. This module provides
     the retrieval-time verification function.
 
 Design decisions:
-- Only stdlib hashlib — no external dependencies.
+- Only stdlib hashlib, no external dependencies.
 - compute_content_hash() is deterministic and side-effect free: same input
   always produces the same hex digest.
 - verify_content_hash() does a constant-time-equivalent comparison via string

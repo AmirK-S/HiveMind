@@ -4,37 +4,37 @@ Revision ID: 006
 Revises: 005
 Create Date: 2026-02-19
 
-This migration creates the data foundation for all Quality Intelligence features (Phase 3).
-Every subsequent plan in Phase 3 depends on the columns and table created here.
+This migration creates the data foundation for all Quality Intelligence features.
+Every quality feature depends on the columns and table created here.
 
 Adds to knowledge_items:
 - quality_score        : Float, NOT NULL, server_default=0.5 (QI-01: neutral prior for new items)
 - retrieval_count      : Integer, NOT NULL, server_default=0 (QI-02: denormalized for dashboard)
 - helpful_count        : Integer, NOT NULL, server_default=0 (QI-02: denormalized for dashboard)
 - not_helpful_count    : Integer, NOT NULL, server_default=0 (QI-02: denormalized for dashboard)
-- valid_at             : DateTime(tz), nullable (KM-05: world-time start — NULL = "valid since approval")
-- invalid_at           : DateTime(tz), nullable (KM-05: world-time end — NULL = "still valid")
-- expired_at           : DateTime(tz), nullable (KM-05: system-time end — NULL = "current version")
+- valid_at             : DateTime(tz), nullable (KM-05: world-time start, NULL = "valid since approval")
+- invalid_at           : DateTime(tz), nullable (KM-05: world-time end, NULL = "still valid")
+- expired_at           : DateTime(tz), nullable (KM-05: system-time end, NULL = "current version")
 
 Note: system-time start is already `contributed_at` (existing column). No duplicate created_at added.
 
 New table quality_signals:
 - id                   : UUID primary key
 - knowledge_item_id    : UUID FK to knowledge_items.id
-- signal_type          : String(50) — "retrieval", "outcome_solved", "outcome_not_helpful", "contradiction"
+- signal_type          : String(50), "retrieval", "outcome_solved", "outcome_not_helpful", "contradiction"
 - agent_id             : String(255), nullable
-- run_id               : String(255), nullable — for deduplication of outcome reports
-- metadata             : JSONB, nullable — extensible signal-specific data
+- run_id               : String(255), nullable, for deduplication of outcome reports
+- metadata             : JSONB, nullable, extensible signal-specific data
 - created_at           : DateTime(tz), NOT NULL
 
 Backfill:
 - Sets quality_score = LEAST(1.0, confidence * 0.5) for existing items
-  (items with high agent confidence get a slight head start — research Open Question 5)
+  (items with high agent confidence get a slight head start)
 
 Design notes:
-- TSTZRANGE columns avoided — SQLAlchemy has known friction with DateTimeTZRange DataError
+- TSTZRANGE columns avoided, SQLAlchemy has known friction with DateTimeTZRange DataError
 - Four explicit nullable DateTime(timezone=True) columns used instead
-- valid_at is nullable — existing items have no world-time data; NULL is semantically correct
+- valid_at is nullable, existing items have no world-time data; NULL is semantically correct
 """
 
 from typing import Sequence, Union
@@ -152,7 +152,7 @@ def upgrade() -> None:
 
     # -------------------------------------------------------------------------
     # 3. Backfill quality_score for existing knowledge_items
-    #    Items with high agent confidence get a slight head start (research Q5)
+    #    Items with high agent confidence get a slight head start
     # -------------------------------------------------------------------------
     op.execute(
         "UPDATE knowledge_items SET quality_score = LEAST(1.0, confidence * 0.5)"
@@ -160,7 +160,7 @@ def upgrade() -> None:
 
     # -------------------------------------------------------------------------
     # 4. Partial index on quality_score for quality-ranked queries
-    #    WHERE deleted_at IS NULL — active items only
+    #    WHERE deleted_at IS NULL, active items only
     # -------------------------------------------------------------------------
     op.create_index(
         "ix_knowledge_items_quality_score",

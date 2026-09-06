@@ -1,9 +1,9 @@
 """Contribution approval and rejection REST endpoints for the HiveMind dashboard (DASH-01).
 
 Endpoints:
-- GET  /contributions                     — list pending contributions (paginated)
-- POST /contributions/{id}/approve        — approve a pending contribution
-- POST /contributions/{id}/reject         — reject a pending contribution
+- GET  /contributions                    , list pending contributions (paginated)
+- POST /contributions/{id}/approve       , approve a pending contribution
+- POST /contributions/{id}/reject        , reject a pending contribution
 
 The approve endpoint mirrors the CLI approval flow in hivemind/cli/client.py:
 - Generate embedding from contribution content
@@ -15,7 +15,7 @@ The approve endpoint mirrors the CLI approval flow in hivemind/cli/client.py:
 Security:
 - All endpoints require X-API-Key header via require_api_key dependency
 - org_id is always extracted from the authenticated ApiKey record (ACL-01)
-- Contributions are filtered by org_id — cross-org access returns 404
+- Contributions are filtered by org_id, cross-org access returns 404
 
 Requirements: DASH-01, DASH-05.
 """
@@ -115,7 +115,7 @@ async def list_pending_contributions(
 ) -> ContributionListResponse:
     """Return paginated pending contributions for the authenticated organisation.
 
-    org_id is always extracted from the authenticated API key — never from query params.
+    org_id is always extracted from the authenticated API key, never from query params.
     """
     org_id = api_key_record.org_id
 
@@ -141,7 +141,7 @@ async def list_pending_contributions(
     items = [
         PendingContributionItem(
             id=str(c.id),
-            # PendingContribution has no title — use first 80 chars of content
+            # PendingContribution has no title, use first 80 chars of content
             title=c.content[:80] + ("..." if len(c.content) > 80 else ""),
             # Content truncated to 500 chars for list view
             content_preview=c.content[:500] + ("..." if len(c.content) > 500 else ""),
@@ -186,7 +186,7 @@ async def approve_contribution_endpoint(
     org_id = api_key_record.org_id
 
     async with get_session() as session:
-        # Query by id AND org_id — namespace isolation (404-not-403 pattern, ACL-01)
+        # Query by id AND org_id, namespace isolation (404-not-403 pattern, ACL-01)
         result = await session.execute(
             sa.select(PendingContribution).where(
                 PendingContribution.id == contribution_id,
@@ -268,7 +268,7 @@ async def approve_contribution_endpoint(
             )
     except Exception:
         logger.warning(
-            "Failed to dispatch webhooks for item %s — approval still succeeded",
+            "Failed to dispatch webhooks for item %s, approval still succeeded",
             item.id,
             exc_info=True,
         )

@@ -1,0 +1,94 @@
+[
+  {
+    "id": "sep-2243-server-standard-setup",
+    "name": "HttpHeaderValidationSetup",
+    "description": "Setup for header validation tests",
+    "status": "FAILURE",
+    "timestamp": "2026-09-05T18:25:59.018Z",
+    "errorMessage": "tools/list discovery failed: HTTP 400, JSON-RPC error -32600: Bad Request: Unsupported protocol version: 2026-07-28. Supported versions: 2024-11-05, 2025-03-26, 2025-06-18, 2025-11-25",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Server-Validation",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#server-validation"
+      }
+    ],
+    "details": {
+      "httpStatus": 400,
+      "error": {
+        "code": -32600,
+        "message": "Bad Request: Unsupported protocol version: 2026-07-28. Supported versions: 2024-11-05, 2025-03-26, 2025-06-18, 2025-11-25"
+      }
+    }
+  },
+  {
+    "id": "sep-2243-server-reject-invalid-headers",
+    "name": "ServerRejectsMismatchedNameHeader",
+    "description": "Server rejects tools/call where Mcp-Name does not match body params.name",
+    "status": "FAILURE",
+    "timestamp": "2026-09-05T18:25:59.018Z",
+    "errorMessage": "Not testable: tools/list discovery failed, so the Mcp-Name header-validation cases could not be exercised",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Server-Validation",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#server-validation"
+      }
+    ],
+    "details": {
+      "untestable": true,
+      "reason": "tools/list discovery failed, so the Mcp-Name header-validation cases could not be exercised"
+    }
+  },
+  {
+    "id": "sep-2243-server-accepts-whitespace-header-value",
+    "name": "ServerAcceptsWhitespaceHeaderValue",
+    "description": "Server MUST accept leading/trailing whitespace in Mcp-Name value (RFC 9110 §5.5: field parsing MUST exclude OWS before evaluating)",
+    "status": "FAILURE",
+    "timestamp": "2026-09-05T18:25:59.018Z",
+    "errorMessage": "Not testable: tools/list discovery failed, so the Mcp-Name header-validation cases could not be exercised",
+    "specReferences": [
+      {
+        "id": "RFC-9110-5.5-Field-Values",
+        "url": "https://www.rfc-editor.org/rfc/rfc9110#section-5.5"
+      }
+    ],
+    "details": {
+      "untestable": true,
+      "reason": "tools/list discovery failed, so the Mcp-Name header-validation cases could not be exercised"
+    }
+  },
+  {
+    "id": "sep-2243-server-reject-invalid-headers",
+    "name": "ServerRejectsMissingNameHeader",
+    "description": "Server MUST reject tools/call with missing Mcp-Name header when body has params.name",
+    "status": "FAILURE",
+    "timestamp": "2026-09-05T18:25:59.018Z",
+    "errorMessage": "Not testable: tools/list discovery failed, so the Mcp-Name header-validation cases could not be exercised",
+    "specReferences": [
+      {
+        "id": "SEP-2243-Server-Validation",
+        "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#server-validation"
+      }
+    ],
+    "details": {
+      "untestable": true,
+      "reason": "tools/list discovery failed, so the Mcp-Name header-validation cases could not be exercised"
+    }
+  },
+  {
+    "id": "wire-schema-valid",
+    "name": "WireSchemaValid",
+    "description": "Every JSON-RPC message the implementation sent is valid per the spec JSON schema for the negotiated spec version",
+    "status": "SUCCESS",
+    "timestamp": "2026-09-05T18:25:59.018Z",
+    "specReferences": [
+      {
+        "id": "MCP-Schema",
+        "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/draft/schema.json"
+      }
+    ],
+    "details": {
+      "messagesValidated": 2,
+      "violations": []
+    }
+  }
+]

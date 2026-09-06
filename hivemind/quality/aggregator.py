@@ -8,7 +8,7 @@ Design:
 - Incremental: only items with new signals since last aggregation are recomputed.
   This scales with signal volume, not total item count.
 - Synchronous: Celery workers run in sync processes. Use the sync SessionFactory
-  pattern from hivemind/cli/client.py — NOT asyncio or async SQLAlchemy.
+  pattern from hivemind/cli/client.py, NOT asyncio or async SQLAlchemy.
 - last_run timestamp is stored in the deployment_config table under the key
   "quality_aggregation_last_run" (ISO 8601 UTC string).
 - Quality score formula is delegated to compute_quality_score() in scorer.py.
@@ -37,7 +37,7 @@ def aggregate_quality_signals() -> dict:
     an updated quality_score using compute_quality_score() and writes it back.
 
     Uses the sync SQLAlchemy SessionFactory (cli pattern) because Celery workers
-    are synchronous — asyncio is not available in worker process context.
+    are synchronous, asyncio is not available in worker process context.
 
     Returns:
         dict with:
@@ -66,16 +66,16 @@ def aggregate_quality_signals() -> dict:
             try:
                 last_run = datetime.datetime.fromisoformat(last_run_row)
             except ValueError:
-                # Corrupt value — treat as epoch (process all items)
+                # Corrupt value: treat as epoch (process all items)
                 last_run = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
                 logger.warning(
-                    "quality_aggregation_last_run has invalid value '%s' — resetting to epoch",
+                    "quality_aggregation_last_run has invalid value '%s', resetting to epoch",
                     last_run_row,
                 )
         else:
-            # First run — process all items with any signals
+            # First run: process all items with any signals
             last_run = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
-            logger.info("quality_aggregation_last_run not set — first run, processing all items.")
+            logger.info("quality_aggregation_last_run not set, first run, processing all items.")
 
         # -------------------------------------------------------------------
         # Step 2: Find items with new signals since last aggregation
@@ -94,7 +94,7 @@ def aggregate_quality_signals() -> dict:
         )
 
         if not affected_ids:
-            # No new signals — update timestamp and return early
+            # No new signals: update timestamp and return early
             _upsert_last_run(session, LAST_RUN_KEY, run_at_str, last_run_row)
             session.commit()
             return {"items_updated": 0, "run_at": run_at_str}
@@ -112,7 +112,7 @@ def aggregate_quality_signals() -> dict:
 
             if item is None:
                 logger.warning(
-                    "aggregate_quality_signals: item %s in signals but not in knowledge_items — skipping",
+                    "aggregate_quality_signals: item %s in signals but not in knowledge_items, skipping",
                     item_id,
                 )
                 continue
@@ -155,7 +155,7 @@ def aggregate_quality_signals() -> dict:
                 delta = run_at - last_retrieval_dt
                 days_since_last_access = max(0.0, delta.total_seconds() / 86400.0)
             else:
-                # No retrieval signal — compute days since approved_at
+                # No retrieval signal: compute days since approved_at
                 if item.approved_at is not None:
                     approved = item.approved_at
                     if approved.tzinfo is None:

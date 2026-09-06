@@ -4,7 +4,7 @@ MCP-06: Explicit active confirmation signal for quality scoring.
 
 When an agent calls this tool, it records whether retrieved knowledge actually
 helped solve a problem. These outcome signals are the primary driver of quality
-score evolution (QI-01, QI-02) — they distinguish knowledge that is retrieved
+score evolution (QI-01, QI-02), they distinguish knowledge that is retrieved
 from knowledge that is genuinely useful.
 
 Signal types recorded:
@@ -12,7 +12,7 @@ Signal types recorded:
 - "outcome_not_helpful"  : item was retrieved but did not help
 
 Deduplication: if a run_id is provided and a signal with that (item_id, run_id)
-combination already exists, the call is idempotent — the existing signal is
+combination already exists, the call is idempotent, the existing signal is
 returned with status "already_recorded".
 
 Security (ACL-01):
@@ -24,10 +24,11 @@ from __future__ import annotations
 
 import logging
 import uuid as _uuid
+from typing import NoReturn
 
 import sqlalchemy as sa
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
-from mcp.types import CallToolResult, TextContent
 
 from hivemind.db.models import KnowledgeItem, QualitySignal
 from hivemind.db.session import get_session
@@ -66,12 +67,13 @@ def _extract_auth(headers: dict[str, str]):
     return decode_token(token)
 
 
-def _error(message: str) -> CallToolResult:
-    """Return a structured MCP isError response."""
-    return CallToolResult(
-        content=[TextContent(type="text", text=message)],
-        isError=True,
-    )
+def _error(message: str) -> NoReturn:
+    """Raise an MCP tool error.
+
+    FastMCP turns a ToolError into a JSON-RPC result with isError=true and the
+    message in content[0].text.
+    """
+    raise ToolError(message)
 
 
 # ---------------------------------------------------------------------------
@@ -83,7 +85,7 @@ async def report_outcome(
     item_id: str,
     outcome: str,
     run_id: str | None = None,
-) -> dict | CallToolResult:
+) -> dict:
     """Report whether a knowledge item helped solve a problem (MCP-06).
 
     Records an explicit outcome signal for the given knowledge item. This signal
@@ -99,17 +101,20 @@ async def report_outcome(
         item_id:  UUID of the knowledge item being rated.
         outcome:  Must be "solved" or "did_not_help".
         run_id:   Optional agent run ID for deduplication and tracing. Strongly
-                  recommended — prevents double-counting when retries occur.
+                  recommended, prevents double-counting when retries occur.
 
     Returns:
         dict: { status, item_id, outcome, signal_id }
-        CallToolResult with isError=True on validation or auth failure.
+
+    Raises:
+        ToolError: on validation or auth failure; FastMCP renders it with
+        isError=true.
     """
     # -----------------------------------------------------------------------
-    # Auth: extract JWT from headers (ACL-01 — org_id never from arguments)
+    # Auth: extract JWT from headers (ACL-01, org_id never from arguments)
     # -----------------------------------------------------------------------
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _error(str(exc))
@@ -148,7 +153,7 @@ async def report_outcome(
         item_exists = result.scalar_one_or_none() is not None
 
     if not item_exists:
-        # Never reveal existence of items in other orgs (ACL-01, pitfall 6)
+        # Never reveal existence of items in other orgs (ACL-01)
         return _error(f"Knowledge item '{item_id}' not found.")
 
     # -----------------------------------------------------------------------
@@ -169,7 +174,7 @@ async def report_outcome(
 
         if existing_signal is not None:
             logger.info(
-                "Duplicate outcome report detected: item_id=%s run_id=%s — returning existing signal",
+                "Duplicate outcome report detected: item_id=%s run_id=%s, returning existing signal",
                 item_id,
                 run_id,
             )
