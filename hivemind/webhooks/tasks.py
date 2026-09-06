@@ -47,7 +47,7 @@ def configure_celery(redis_url: str) -> None:
     - distillation-every-30m:     every 30 minutes (QI-04, QI-05)
 
     Note: Celery Beat only supports time-based triggering.  Condition checks
-    (volume/conflict thresholds) live inside the task body, research Pitfall 6.
+    (volume/conflict thresholds) live inside the task body.
 
     Args:
         redis_url: Redis connection URL (e.g. "redis://localhost:6379/0").
@@ -215,7 +215,7 @@ def run_distillation_task() -> dict:
 
     Evaluates volume/conflict thresholds inside the task body and short-circuits
     if conditions are not met (Celery Beat only supports time-based triggering;
-    condition logic must live in the task body, research Pitfall 6).
+    condition logic must live in the task body).
 
     Merges confirmed duplicates, flags contradiction clusters, generates
     LLM summaries with mandatory PII re-scan, and pre-screens pending

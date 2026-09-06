@@ -3,7 +3,7 @@
 Uses Redis (via redis.asyncio) for anti-sybil burst detection and stores a
 module-level connection for reuse by other modules.  fastapi-limiter 0.2.0
 uses pyrate-limiter ``Limiter`` objects for endpoint-level rate limiting , 
-see Plan 06 for per-endpoint wiring.
+per-endpoint wiring is not implemented.
 
 Tier limits (per minute):
 - free:       10 contributions, 30 searches

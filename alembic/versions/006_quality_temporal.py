@@ -5,7 +5,7 @@ Revises: 005
 Create Date: 2026-02-19
 
 This migration creates the data foundation for all Quality Intelligence features.
-Every subsequent plan in Phase 3 depends on the columns and table created here.
+Every quality feature depends on the columns and table created here.
 
 Adds to knowledge_items:
 - quality_score        : Float, NOT NULL, server_default=0.5 (QI-01: neutral prior for new items)
@@ -29,7 +29,7 @@ New table quality_signals:
 
 Backfill:
 - Sets quality_score = LEAST(1.0, confidence * 0.5) for existing items
-  (items with high agent confidence get a slight head start, research Open Question 5)
+  (items with high agent confidence get a slight head start)
 
 Design notes:
 - TSTZRANGE columns avoided, SQLAlchemy has known friction with DateTimeTZRange DataError
@@ -152,7 +152,7 @@ def upgrade() -> None:
 
     # -------------------------------------------------------------------------
     # 3. Backfill quality_score for existing knowledge_items
-    #    Items with high agent confidence get a slight head start (research Q5)
+    #    Items with high agent confidence get a slight head start
     # -------------------------------------------------------------------------
     op.execute(
         "UPDATE knowledge_items SET quality_score = LEAST(1.0, confidence * 0.5)"
