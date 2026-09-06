@@ -7,7 +7,7 @@ Usage:
     python scripts/export_openapi.py
 
 The generated openapi.json is a build artifact, do NOT commit it to version control.
-It is consumed by `make generate-sdks` and then discarded.
+It documents the REST API; the file itself is ignored by git.
 """
 
 import json

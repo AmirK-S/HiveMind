@@ -48,6 +48,10 @@ Keep a Changelog. Dates are ISO 8601.
 - Health checks called `curl`, absent from the runtime image.
 
 ### Removed
+- `dashboard/` (Next.js), `sdks/` (generated clients that had drifted from the
+  API), `hivemind/graph/` (FalkorDB driver nothing imported) with its three
+  settings, `skills/` and the `Makefile` whose only targets regenerated the
+  SDKs. All of it stays in the git history.
 - `npx/`: the launcher installed a third party's package of the same name and
   sent `X-API-Key` where the tools read `Authorization: Bearer`.
 - `SITREP.md` and `glama.json`: internal planning and directory listing files.

@@ -46,10 +46,6 @@ class Settings(BaseSettings):
     burst_threshold: int = 50
     burst_window_seconds: int = 60
 
-    # FalkorDB (INFRA-02)
-    falkordb_host: str = "localhost"
-    falkordb_port: int = 6379
-    falkordb_database: str = "hivemind"
 
     # Injection scanner (SEC-01)
     injection_threshold: float = 0.5

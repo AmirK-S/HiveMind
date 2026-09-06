@@ -61,7 +61,6 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
-    "openapi-python-client",
     "asgi-lifespan>=2.1.0",
     "pyyaml>=6.0.3",
 ]

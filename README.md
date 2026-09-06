@@ -22,7 +22,7 @@ alone.
   quality scoring, conflict resolution.
 - Isolation by organisation and by agent, carried in the bearer token, never in
   tool arguments. RBAC with Casbin.
-- A REST API under `/api/v1` and a Next.js dashboard that reads it.
+- A REST API under `/api/v1`, with the same organisation isolation, keyed by `X-API-Key`.
 
 ## What it does not do
 
@@ -37,6 +37,10 @@ alone.
   shipped stack.
 - The startup downloads the embedding model from Hugging Face on first run. A
   machine without network access does not start.
+- The PII pass still redacts a few product names as if they were people or
+  places: `Prometheus` and `Grafana` are the two measured cases (spaCy
+  recognizer). Known, documented, not corrected in this release.
+- A2A facade: not planned in this release.
 
 ## Quick start
 
@@ -178,8 +182,8 @@ part :
 uv run pytest -m models
 ```
 
-What is not tested: the REST API, the dashboard, the CLI, the pipelines beyond
-the doubles, Celery tasks. The tests cover the contract of the seven tools and
+What is not tested: the REST API, the CLI, the pipelines beyond the doubles
+(except the PII contract), Celery tasks. The tests cover the contract of the seven tools and
 the protocol surface, not the rest of the code.
 
 ## Configuration
@@ -204,13 +208,13 @@ All variables carry the `HIVEMIND_` prefix and have a default in
 - `alembic/`: seven migrations. `docker/entrypoint.sh` applies them before uvicorn.
 - `tests/`: the suite described above.
 - `conformance/`: MCP conformance reports before and after the upgrade.
-- `dashboard/`: Next.js dashboard reading `/api/v1` with `X-API-Key`. Builds
-  and lints clean as of 2026-09-06; not started by the compose file.
 - `wrappers/`: `hivemind-langchain` and `hivemind-crewai`, thin clients of the
   REST API, published on PyPI in February 2026.
-- `sdks/`: clients generated from the OpenAPI document in February 2026 and not
-  regenerated since; the current generator rewrites most files. Do not rely on them.
-- `hivemind/graph/`: a FalkorDB driver that nothing imports.
+- `scripts/`: the demo, its transcript, and an OpenAPI export of the REST API.
+
+Removed in September 2026, still in the git history: a Next.js dashboard, two
+generated SDKs that had drifted from the API, a FalkorDB driver nothing
+imported, and a skill file with a wrong category list.
 
 ## End of life
 
@@ -224,6 +228,13 @@ net for that day: they exercise the wire, not the framework's internals. The
 official TypeScript SDK did not speak `2026-07-28` as of 2026-09-05 (1.30.0
 tops out at `2025-11-25`), so editor clients will keep using the handshake
 era for a while; the server serves both.
+
+## Issues
+
+Issues are read and answered within seven days. No feature is promised: this
+is a dated demonstration. A reproducible defect in what the README claims gets
+fixed; a request for a new capability gets a written answer and stays open or
+is closed as out of scope.
 
 ## License
 
