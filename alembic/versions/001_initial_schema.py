@@ -21,7 +21,7 @@ Design notes:
 - pgvector VECTOR(384) for all-MiniLM-L6-v2 embeddings (384 dimensions)
 - HNSW parameters: m=16, ef_construction=64 (pgvector recommended defaults for balanced recall/speed)
 - Unique constraint is (content_hash, org_id) not just content_hash, two orgs can hold
-  identical knowledge without conflicting (pitfall 4 from research)
+  identical knowledge without conflicting
 """
 
 from typing import Sequence, Union

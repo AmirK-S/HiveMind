@@ -2,12 +2,12 @@
 
 Soft-deletes an approved knowledge item owned by the calling agent.
 
-Security (ACL-01, pitfall 6):
+Security (ACL-01):
 - org_id and agent_id are extracted from the bearer token, never from tool args
 - Query filters by id AND org_id AND source_agent_id, agents can only delete
   their own items within their own org namespace
 - Returns 404 (not 403) for items not found or owned by another agent/org so
-  existence of items in other namespaces is not revealed (per research pitfall 6)
+  existence of items in other namespaces is not revealed
 
 Soft-delete:
 - Sets deleted_at timestamp instead of removing the physical row
@@ -75,7 +75,7 @@ async def delete_knowledge(id: str) -> dict:
     Raises:
         ToolError: if not found, already deleted, or on auth failure; FastMCP
         renders it with isError=true.  Items in other orgs get the same
-        404-style error (does not reveal existence per research pitfall 6).
+        404-style error (does not reveal existence).
     """
     # Extract auth: org_id and agent_id both needed for ownership check
     try:
@@ -105,7 +105,7 @@ async def delete_knowledge(id: str) -> dict:
         item = result.scalar_one_or_none()
 
         if item is None:
-            # Per research pitfall 6: return 404 (not 403), never reveal that
+            # return 404 (not 403), never reveal that
             # an item exists in another org or belongs to another agent
             return _not_found(id)
 

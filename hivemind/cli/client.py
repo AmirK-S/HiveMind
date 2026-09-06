@@ -8,8 +8,7 @@ The sync URL is derived from settings.database_url by stripping the +asyncpg
 driver suffix so the psycopg2 (or any sync) driver is used instead.
 
 FOR UPDATE SKIP LOCKED is applied to fetch_pending() so that if two CLI
-sessions run concurrently, they don't both process the same contribution
-(per research Pattern 6).
+sessions run concurrently, they don't both process the same contribution.
 """
 
 from __future__ import annotations

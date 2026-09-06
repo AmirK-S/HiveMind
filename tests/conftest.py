@@ -1,14 +1,15 @@
-"""Fixtures partagees par la suite de tests HiveMind.
+"""Fixtures shared by the HiveMind test suite.
 
-Regles :
-- aucun test ne telecharge un modele ni n'appelle un LLM. Les trois singletons de
-  modeles (PII, embeddings, injection) sont remplaces par des doubles poses sur leur
-  attribut de classe avant tout import du serveur, sans toucher au code de production ;
-- les tests d'outils traversent le vrai transport HTTP (POST /mcp, tools/call) avec un
-  jeton Bearer, contre une base PostgreSQL migree a head, creee une fois par session ;
-- la base est designee par HIVEMIND_TEST_ADMIN_URL (exemple :
-  postgresql://hm:hm@localhost:55432/postgres). Sans elle, les tests qui en dependent
-  se sautent proprement.
+Rules:
+- no test downloads a model or calls an LLM. The three model singletons (PII,
+  embeddings, injection) are replaced by doubles set on their class attribute
+  before any import of the server, without touching production code;
+- the tool tests cross the real HTTP transport (POST /mcp, tools/call) with a
+  Bearer token, against a PostgreSQL database migrated to head and created once
+  per session;
+- the database is named by HIVEMIND_TEST_ADMIN_URL (for example:
+  postgresql://hm:hm@localhost:55432/postgres). Without it, the tests that
+  depend on it skip cleanly.
 """
 
 from __future__ import annotations
@@ -40,13 +41,13 @@ EXPECTED_TOOLS = {
     "report_outcome",
 }
 
-# Doit preceder tout import de hivemind.config : le singleton settings lit
-# l'environnement a l'import.
+# Must come before any import of hivemind.config: the settings singleton reads
+# the environment at import time.
 os.environ.setdefault("HIVEMIND_SECRET_KEY", "test-secret-not-for-production")
 
 # ---------------------------------------------------------------------------
-# Base de donnees de session : creee et migree avant tout import de hivemind, parce
-# que hivemind.db.session construit son moteur a l'import depuis settings.database_url.
+# Session database: created and migrated before any import of hivemind, because
+# hivemind.db.session builds its engine at import time from settings.database_url.
 # ---------------------------------------------------------------------------
 
 ADMIN_URL = os.environ.get("HIVEMIND_TEST_ADMIN_URL")
@@ -80,12 +81,12 @@ if ADMIN_URL:
         text=True,
     )
     if _migration.returncode != 0:  # pragma: no cover
-        raise RuntimeError(f"alembic upgrade head a echoue :\n{_migration.stderr[-3000:]}")
+        raise RuntimeError(f"alembic upgrade head failed:\n{_migration.stderr[-3000:]}")
     os.environ["HIVEMIND_DATABASE_URL"] = _async_url
     DATABASE_READY = True
 
 requires_database = pytest.mark.skipif(
-    not DATABASE_READY, reason="HIVEMIND_TEST_ADMIN_URL absent : PostgreSQL pgvector requis"
+    not DATABASE_READY, reason="HIVEMIND_TEST_ADMIN_URL is unset: PostgreSQL with pgvector is required"
 )
 
 
@@ -98,30 +99,31 @@ def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
 
 
 # ---------------------------------------------------------------------------
-# Doubles des modeles
+# Model doubles
 # ---------------------------------------------------------------------------
 
 
 class FakePIIPipeline:
-    """Double du pipeline PII : ne retire rien, ne rejette rien."""
+    """PII pipeline double: removes nothing, rejects nothing."""
 
     def strip(self, text: str) -> tuple[str, bool]:
         return text, False
 
 
 class FakeInjectionScanner:
-    """Double du scanner d'injection : rien n'est une injection."""
+    """Injection scanner double: nothing is an injection."""
 
     def is_injection(self, text: str, *args, **kwargs) -> tuple[bool, float]:
         return False, 0.0
 
 
 class FakeEmbedder:
-    """Double du fournisseur d'embeddings.
+    """Embedding provider double.
 
-    Vecteur deterministe, non nul, unitaire, fonction du texte : le meme texte donne le
-    meme vecteur (distance cosinus nulle), deux textes differents donnent deux vecteurs
-    quasi orthogonaux. Un vecteur nul rendrait la distance cosinus indefinie cote pgvector.
+    A deterministic, non-zero, unit vector derived from the text: the same text
+    gives the same vector (zero cosine distance), two different texts give two
+    nearly orthogonal vectors. A zero vector would make the cosine distance
+    undefined on the pgvector side.
     """
 
     def embed(self, text: str) -> list[float]:
@@ -148,7 +150,7 @@ class FakeEmbedder:
 
 @pytest.fixture(scope="session", autouse=True)
 def model_doubles() -> None:
-    """Pose les doubles sur les trois singletons avant tout chargement de modele."""
+    """Set the doubles on the three singletons before any model is loaded."""
     from hivemind.pipeline import embedder as embedder_module
     from hivemind.pipeline.injection import InjectionScanner
     from hivemind.pipeline.pii import PIIPipeline
@@ -159,7 +161,7 @@ def model_doubles() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Clients HTTP en memoire
+# In-memory HTTP clients
 # ---------------------------------------------------------------------------
 
 
@@ -179,10 +181,11 @@ async def _client_for(app):
 
 @pytest.fixture
 async def http_client(monkeypatch):
-    """Client sur l'application complete, stockage debranche.
+    """Client on the full application, storage disconnected.
 
-    Sert a tester la surface HTTP et le protocole (routes, chemin MCP, tools/list).
-    Les etapes du lifespan qui touchent Redis ou PostgreSQL sont neutralisees.
+    Used to test the HTTP surface and the protocol (routes, MCP path,
+    tools/list). The lifespan steps that touch Redis or PostgreSQL are stubbed
+    out.
     """
     import hivemind.server.main as main
 
@@ -197,24 +200,24 @@ async def http_client(monkeypatch):
 
 @pytest.fixture
 async def tool_client(monkeypatch, clean_tables):  # noqa: ARG001
-    """Client sur l'application complete, stockage branche sur la base de session.
+    """Client on the full application, storage wired to the session database.
 
-    Seuls Redis (limiteur de debit) et Celery sont neutralises : aucun des sept outils
-    n'a besoin d'un broker, et le limiteur n'est actif que si Redis est initialise.
+    Only Redis (rate limiter) and Celery are stubbed out: none of the seven tools
+    needs a broker, and the limiter is only active once Redis is initialised.
     """
     import hivemind.security.rbac as rbac
     import hivemind.server.main as main
 
     monkeypatch.setattr(main, "init_rate_limiter", _async_noop)
     monkeypatch.setattr(main, "configure_celery", lambda *args, **kwargs: None)
-    rbac._enforcer = None  # politiques rechargees depuis la base au premier appel
+    rbac._enforcer = None  # policies reloaded from the database on the first call
 
     async for client in _client_for(main.create_app()):
         yield client
 
 
 # ---------------------------------------------------------------------------
-# Base : acces SQL direct et nettoyage entre tests
+# Database: direct SQL access and cleanup between tests
 # ---------------------------------------------------------------------------
 
 _TABLES_TO_CLEAN = (
@@ -228,11 +231,11 @@ _TABLES_TO_CLEAN = (
 
 @pytest.fixture
 def sql():
-    """Execute une requete SQL sur la base de test et renvoie toutes les lignes."""
+    """Run one SQL query against the test database and return every row."""
     import psycopg2
 
     if not DATABASE_READY:
-        pytest.skip("HIVEMIND_TEST_ADMIN_URL absent : PostgreSQL pgvector requis")
+        pytest.skip("HIVEMIND_TEST_ADMIN_URL is unset: PostgreSQL with pgvector is required")
     connection = psycopg2.connect(TEST_DB_SYNC_URL)
     connection.autocommit = True
 
@@ -252,7 +255,7 @@ def clean_tables(sql):
 
 
 # ---------------------------------------------------------------------------
-# Jetons et appels d'outils
+# Tokens and tool calls
 # ---------------------------------------------------------------------------
 
 ORG_A = "org-a"
@@ -283,7 +286,7 @@ def other_agent_token() -> str:
 
 
 async def call_tool(client, name: str, arguments: dict, token: str | None = None) -> dict:
-    """POST tools/call sur /mcp et renvoie l'objet `result` JSON-RPC."""
+    """POST tools/call on /mcp and return the JSON-RPC `result` object."""
     headers = dict(MCP_HEADERS)
     if token is not None:
         headers["Authorization"] = f"Bearer {token}"
@@ -296,12 +299,12 @@ async def call_tool(client, name: str, arguments: dict, token: str | None = None
     response = await client.post("/mcp", json=body, headers=headers)
     assert response.status_code == 200, f"{response.status_code} {response.text[:300]}"
     payload = response.json()
-    assert "result" in payload, f"erreur JSON-RPC : {payload.get('error')}"
+    assert "result" in payload, f"JSON-RPC error: {payload.get('error')}"
     return payload["result"]
 
 
 def tool_ok(result: dict) -> dict:
-    """Le resultat d'outil doit etre un succes ; renvoie sa charge utile."""
+    """The tool result must be a success; return its payload."""
     assert result.get("isError") is not True, result["content"][0]["text"][:400]
     structured = result.get("structuredContent")
     if isinstance(structured, dict) and "result" in structured and len(structured) == 1:
@@ -312,17 +315,17 @@ def tool_ok(result: dict) -> dict:
 
 
 def tool_error(result: dict) -> str:
-    """Le resultat doit etre un refus au sens MCP (isError vrai) ; renvoie son texte."""
+    """The result must be an MCP-level refusal (isError true); return its text."""
     assert result.get("isError") is True, (
-        "l'outil a renvoye un succes au niveau JSON-RPC ; "
-        f"contenu : {result['content'][0]['text'][:300]}"
+        "the tool returned a success at the JSON-RPC level; "
+        f"content: {result['content'][0]['text'][:300]}"
     )
     return result["content"][0]["text"]
 
 
 @pytest.fixture
 def auto_approve(sql):
-    """Une regle d'auto-approbation pour org-a : add_knowledge ecrit alors dans knowledge_items."""
+    """An auto-approve rule for org-a: add_knowledge then writes into knowledge_items."""
     sql(
         "INSERT INTO auto_approve_rules (id, org_id, category, is_auto_approve, created_at, updated_at) "
         "VALUES (gen_random_uuid(), %s, 'general', true, now(), now())",
@@ -338,10 +341,10 @@ SAMPLE_CONTENT = (
 
 @pytest.fixture
 async def approved_item(tool_client, token, auto_approve):  # noqa: ARG001
-    """Un item de connaissance approuve, prive, appartenant a org-a / agent-1.
+    """An approved, private knowledge item owned by org-a / agent-1.
 
-    Cree par l'outil add_knowledge lui-meme, a travers le transport, pour que le handle
-    renvoye soit celui qu'un client reel obtiendrait.
+    Created by the add_knowledge tool itself, through the transport, so that the
+    handle returned is the one a real client would obtain.
     """
     result = await call_tool(
         tool_client, "add_knowledge", {"content": SAMPLE_CONTENT, "category": "general"}, token

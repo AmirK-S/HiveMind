@@ -1,9 +1,10 @@
-"""Le serveur parle la revision MCP 2026-07-28 sans session, et sert encore l'ere a poignee de main.
+"""The server speaks the sessionless MCP revision 2026-07-28, and still serves the handshake era.
 
-Formes de requete verifiees sur le SDK Python v2 (recherche/Q3-fastmcp4.md, 05/09/2026) :
-une requete 2026-07-28 est un POST autonome, en-tete MCP-Protocol-Version, en-tete
-Mcp-Method egal a la methode du corps, Mcp-Name pour tools/call, et une enveloppe
-_meta portant la version et les capacites du client. Aucun initialize, aucun Mcp-Session-Id.
+Request shapes checked against the Python SDK v2: a 2026-07-28 request is a
+self-contained POST, with an MCP-Protocol-Version header, an Mcp-Method header
+equal to the method in the body, an Mcp-Name header for tools/call, and a _meta
+envelope carrying the client version and capabilities. No initialize, no
+Mcp-Session-Id.
 """
 
 from __future__ import annotations
@@ -100,7 +101,7 @@ async def test_legacy_era_is_still_served_on_the_same_url(http_client):
 
 
 async def test_foreign_host_header_is_refused(http_client):
-    """Protection contre le DNS rebinding : un Host inconnu ne doit pas atteindre le serveur."""
+    """DNS rebinding protection: an unknown Host must not reach the server."""
     headers = {**_modern_headers("tools/list"), "Host": "evil.example.com"}
     response = await http_client.post("/mcp", json=_modern_body("tools/list"), headers=headers)
     assert response.status_code in {400, 403, 421}, response.text[:300]
@@ -108,7 +109,7 @@ async def test_foreign_host_header_is_refused(http_client):
 
 @requires_database
 async def test_bearer_token_reaches_the_tools_on_the_modern_era(tool_client, token):
-    """Le refus sans jeton et le succes avec jeton, tous deux sur l'ere sans session."""
+    """The refusal without a token and the success with one, both on the sessionless era."""
     body = _modern_body("tools/call", {"name": "list_knowledge", "arguments": {}})
     headers = _modern_headers("tools/call", "list_knowledge")
 

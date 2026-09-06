@@ -1,4 +1,4 @@
-"""manage_roles : administration RBAC, reservee aux administrateurs de l'organisation."""
+"""manage_roles: RBAC administration, reserved for the organisation admins."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ ADMIN_ERROR = (
 
 @pytest.fixture
 def admin_policies(sql):
-    """agent-1 est administrateur d'org-a : une politique et un lien de role dans casbin_rule."""
+    """agent-1 is an admin of org-a: one policy and one role binding in casbin_rule."""
     import hivemind.security.rbac as rbac
 
     sql(

@@ -19,7 +19,7 @@ dependencies = [
     "uvicorn",
     # Database
     "sqlalchemy[asyncio]>=2.0",
-    # asyncpg: research pinned <0.29.0 for Python 3.11 compat; Python 3.14 requires >=0.30
+    # asyncpg >= 0.30 is required from Python 3.12 onwards
     "asyncpg>=0.30.0",
     # psycopg2-binary: sync PostgreSQL driver for CLI (avoids asyncio event loop issues)
     "psycopg2-binary",
@@ -82,4 +82,6 @@ packages = ["hivemind"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-markers = ["models: exige le telechargement d'un modele (lancement separe)"]
+markers = [
+    "models: needs the GLiNER model (about 400 MB, downloaded from Hugging Face); excluded in CI",
+]

@@ -1,8 +1,8 @@
-"""Les migrations Alembic s'appliquent sur une base vide et decrivent tout le schema.
+"""The Alembic migrations apply on an empty database and describe the whole schema.
 
-Necessite un PostgreSQL avec pgvector, designe par HIVEMIND_TEST_ADMIN_URL
-(exemple : postgresql://hm:hm@localhost:55432/postgres). Une base jetable est
-creee par test puis supprimee.
+Requires a PostgreSQL with pgvector, named by HIVEMIND_TEST_ADMIN_URL (for
+example: postgresql://hm:hm@localhost:55432/postgres). A throwaway database is
+created per test and then dropped.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from tests.conftest import ROOT
 ADMIN_URL = os.environ.get("HIVEMIND_TEST_ADMIN_URL")
 
 pytestmark = pytest.mark.skipif(
-    not ADMIN_URL, reason="HIVEMIND_TEST_ADMIN_URL absent : PostgreSQL pgvector requis"
+    not ADMIN_URL, reason="HIVEMIND_TEST_ADMIN_URL is unset: PostgreSQL with pgvector is required"
 )
 
 
@@ -77,7 +77,7 @@ def test_schema_covers_every_table_the_server_touches_at_startup(fresh_database)
     tables = _tables(fresh_database["sync"])
     required = {"alembic_version", "deployment_config", "casbin_rule"}
     missing = required - tables
-    assert not missing, f"tables absentes apres upgrade head : {sorted(missing)}"
+    assert not missing, f"tables missing after upgrade head: {sorted(missing)}"
 
 
 def test_category_enum_exists_once_with_labels(fresh_database):
@@ -92,4 +92,4 @@ def test_category_enum_exists_once_with_labels(fresh_database):
             "SELECT count(*) FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid "
             "WHERE t.typname = 'knowledgecategory'"
         )
-        assert cur.fetchone()[0] > 0, "l'enum knowledgecategory est vide"
+        assert cur.fetchone()[0] > 0, "the knowledgecategory enum is empty"

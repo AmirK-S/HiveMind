@@ -17,7 +17,7 @@ Security:
 - Content hash integrity check in fetch mode (SEC-02).
 
 Operation IDs are set explicitly so that the OpenAPI spec generates clean method
-names for SDK clients (Pattern 6 from Phase 03 research).
+names for SDK clients.
 
 Requirements: SDK-01.
 """

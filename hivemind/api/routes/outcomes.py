@@ -131,7 +131,7 @@ async def report_outcome_endpoint(
         item_exists = result.scalar_one_or_none() is not None
 
     if not item_exists:
-        # Never reveal existence of items in other orgs (ACL-01, pitfall 6)
+        # Never reveal existence of items in other orgs (ACL-01)
         raise HTTPException(
             status_code=404,
             detail=f"Knowledge item '{body.item_id}' not found.",

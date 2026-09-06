@@ -1,4 +1,4 @@
-"""report_outcome : signaler si une connaissance retrouvee a aide, avec deduplication par run_id."""
+"""report_outcome: report whether a retrieved item helped, deduplicated by run_id."""
 
 from __future__ import annotations
 

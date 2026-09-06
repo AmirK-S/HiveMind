@@ -4,7 +4,7 @@ Revision ID: 006
 Revises: 005
 Create Date: 2026-02-19
 
-This migration creates the data foundation for all Quality Intelligence features (Phase 3).
+This migration creates the data foundation for all Quality Intelligence features.
 Every subsequent plan in Phase 3 depends on the columns and table created here.
 
 Adds to knowledge_items:

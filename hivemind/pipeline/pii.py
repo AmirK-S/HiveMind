@@ -89,7 +89,6 @@ _REQUESTED_ENTITIES = [
 # Order of application matters: fenced first, then inline, this ensures
 # triple-backtick fenced blocks are already replaced before the inline regex
 # runs, avoiding false matches on the opening/closing triple backticks.
-# (See Phase 2 research: Pitfall 5)
 # ---------------------------------------------------------------------------
 _FENCED_CODE_RE = re.compile(r'(```[\s\S]*?```|~~~[\s\S]*?~~~)', re.MULTILINE)
 _INLINE_CODE_RE = re.compile(r'(`[^`\n]+`)')
@@ -408,7 +407,7 @@ class PIIPipeline:
         # TRUST-05 Pass 2b: verbatim check, bounded to the detected positions.
         # For each original PII value of length >= 4, check if it literally
         # survived into the output. Length threshold avoids false positives from
-        # single-character or very short fragments (see Phase 2 research: Pitfall 4).
+        # single-character or very short fragments.
         # The replacement used to be a global str.replace(), which also erased the
         # occurrences the analyzer never flagged: once "nginx" was detected in
         # "behind nginx:", /etc/nginx/nginx.conf became

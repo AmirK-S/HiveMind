@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     quality_weights_freshness: float = 0.20   # exp(-ln2 * days / half_life)
     quality_weights_contradiction: float = 0.15  # penalty for contradiction flags
 
-    # Distillation thresholds (KM-03, Phase 3)
+    # Distillation thresholds (KM-03)
     distillation_volume_threshold: int = 50   # min pending items before distillation runs
     distillation_conflict_threshold: int = 5  # min unresolved conflicts before distillation
 
@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     minhash_threshold: float = 0.95   # Jaccard similarity threshold for near-duplicate detection
     minhash_num_perm: int = 128       # number of permutations for MinHash accuracy/speed tradeoff
 
-    # LLM for conflict resolution and stage-3 dedup (Phase 3)
+    # LLM for conflict resolution and stage-3 dedup
     llm_provider: str = "anthropic"                    # LLM provider backend
     llm_model: str = "claude-3-haiku-20240307"         # model for conflict resolution
     anthropic_api_key: str = ""                        # HIVEMIND_ANTHROPIC_API_KEY, empty = LLM stages skip gracefully

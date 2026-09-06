@@ -1,4 +1,4 @@
-"""add_knowledge : contribuer une connaissance et recevoir un handle frappe par le serveur."""
+"""add_knowledge: contribute a piece of knowledge and get back a server-minted handle."""
 
 from __future__ import annotations
 

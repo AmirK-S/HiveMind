@@ -3,7 +3,7 @@
 Provides the `hivemind review` command that lets operators walk through
 pending contributions, approve or reject them, and see gamification stats.
 
-Design decisions (locked in research):
+Design decisions:
 - Feel is POSITIVE and REWARDING, no scary PII warnings; users see clean content
 - Users only see the already-PII-stripped version (no before/after comparison)
 - Light gamification: contribution count + "helped X agents" after each approval

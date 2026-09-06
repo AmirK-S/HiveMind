@@ -3,7 +3,7 @@ Embedding model abstraction layer for HiveMind (KM-08).
 
 Provides an abstract EmbeddingProvider interface so the embedding model can be
 swapped without modifying callers. The SentenceTransformerProvider is the default
-Phase 1 implementation using all-MiniLM-L6-v2 (384 dimensions, ~22 MB).
+Uses all-MiniLM-L6-v2 (384 dimensions, ~22 MB).
 
 Design decisions:
 - model_id and model_revision are queryable properties, stored in deployment_config

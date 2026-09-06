@@ -1,4 +1,4 @@
-"""list_knowledge : ce que l'agent appelant a contribue, et rien d'autre."""
+"""list_knowledge: what the calling agent contributed, and nothing else."""
 
 from __future__ import annotations
 

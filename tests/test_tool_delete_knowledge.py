@@ -1,4 +1,4 @@
-"""delete_knowledge : suppression logique, par l'agent qui a contribue, dans son organisation."""
+"""delete_knowledge: soft delete, by the agent who contributed, inside its own organisation."""
 
 from __future__ import annotations
 

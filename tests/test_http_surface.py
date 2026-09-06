@@ -1,7 +1,7 @@
-"""La surface HTTP annoncee par le README : /health, /mcp, la carte serveur.
+"""The HTTP surface the README advertises: /health, /mcp, the server card.
 
-Le point MCP doit repondre sur /mcp, pas sur /mcp/mcp. Avant correction,
-POST /mcp renvoyait 307 vers /mcp/ puis 404 (mesure du 05/09/2026).
+The MCP endpoint must answer on /mcp, not on /mcp/mcp. Before the fix,
+POST /mcp returned a 307 to /mcp/ and then a 404 (measured on 2026-09-05).
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ async def test_mcp_endpoint_is_served_at_slash_mcp(http_client):
 
 async def test_mcp_endpoint_is_not_doubled(http_client):
     response = await http_client.post("/mcp/mcp", json=_tools_list_request(), headers=MCP_HEADERS)
-    assert response.status_code == 404, "le point MCP repond encore sur /mcp/mcp"
+    assert response.status_code == 404, "the MCP endpoint still answers on /mcp/mcp"
 
 
 async def test_server_card_advertises_slash_mcp(http_client):

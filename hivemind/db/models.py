@@ -12,7 +12,7 @@ Design decisions:
   are set on INSERT and never updated, immutable per KM-01
 - content_hash is SHA-256 of the stripped content
 - Unique constraint on (content_hash, org_id) prevents intra-org duplicates while
-  allowing two orgs to contribute identical knowledge (pitfall 4 from research)
+  allowing two orgs to contribute identical knowledge
 - embedding column uses VECTOR(384) matching all-MiniLM-L6-v2 output dimensions
 - HNSW index created at table creation time (before any data) to avoid table-lock
   during a future online re-index
@@ -212,7 +212,7 @@ class KnowledgeItem(Base):
     )
 
     __table_args__ = (
-        # Prevents intra-org duplicates; allows same content across orgs (pitfall 4)
+        # Prevents intra-org duplicates; allows same content across orgs
         UniqueConstraint("content_hash", "org_id", name="uq_knowledge_items_hash_org"),
         # HNSW index for cosine similarity search (created before data to avoid lock)
         Index(

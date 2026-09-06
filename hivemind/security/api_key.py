@@ -3,7 +3,7 @@
 API keys use a ``hm_`` prefix followed by a URL-safe random token.  Only the
 SHA-256 hash of the raw key is stored in the database, the raw key is shown
 exactly ONCE to the caller at creation time and cannot be recovered afterward
-(research anti-pattern: never store raw API keys).
+(raw API keys are never stored).
 
 Key lifecycle:
 1. ``create_api_key()``, generates key, inserts ApiKey row, returns raw key once.
@@ -13,7 +13,7 @@ Key lifecycle:
    billing analytics.
 
 Requirements: INFRA-04 (API key auth with tier, request counter, billing reset).
-Anti-pattern: SEC-03 note, raw key is NEVER stored (Pitfall: never store raw keys).
+Anti-pattern: SEC-03 note, raw key is NEVER stored.
 """
 
 from __future__ import annotations

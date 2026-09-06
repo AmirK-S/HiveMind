@@ -1,4 +1,4 @@
-"""publish_knowledge : rendre un item visible aux autres organisations, et revenir en arriere."""
+"""publish_knowledge: make an item visible to other organisations, and undo it."""
 
 from __future__ import annotations
 

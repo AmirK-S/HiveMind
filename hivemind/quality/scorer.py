@@ -71,7 +71,7 @@ def compute_quality_score(
 
     Notes
     -----
-    Formula (research Pattern 3):
+    Formula:
 
         usefulness = helpful / max(helpful + not_helpful, 1)
         popularity = tanh(retrieval_count / 50)      # saturates at ~200 retrievals

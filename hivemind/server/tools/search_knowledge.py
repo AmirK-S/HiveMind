@@ -12,7 +12,7 @@ Search architecture (KM-02, QI-03):
 - Quality boosting: final_score = rrf_score * (0.7 + 0.3 * quality_score)
   Applied in SQL so the DB engine can order results without Python post-processing.
 - Text search: PostgreSQL built-in to_tsvector/ts_rank (not pg_search/pg_textsearch).
-  Extensions avoided per research Open Question 1, native FTS is adequate for V1.
+  Extensions avoided: native FTS is adequate for V1.
 - Retrieval count tracking: batch UPDATE after results collected; retrieval signals
   recorded via fire-and-forget asyncio task (non-blocking).
 
@@ -245,7 +245,7 @@ async def _fetch_by_id(id: str, org_id: str) -> dict:
         item = result.scalar_one_or_none()
 
     if item is None:
-        # Per research pitfall 6: never reveal existence of items in other orgs
+        # never reveal existence of items in other orgs
         raise ToolError(f"Knowledge item '{id}' not found.")
 
     # SEC-02: Verify content integrity, detect tampering

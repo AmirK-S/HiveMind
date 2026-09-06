@@ -153,7 +153,7 @@ async def report_outcome(
         item_exists = result.scalar_one_or_none() is not None
 
     if not item_exists:
-        # Never reveal existence of items in other orgs (ACL-01, pitfall 6)
+        # Never reveal existence of items in other orgs (ACL-01)
         return _error(f"Knowledge item '{item_id}' not found.")
 
     # -----------------------------------------------------------------------

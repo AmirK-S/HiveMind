@@ -138,7 +138,7 @@ async def get_roles_for_user(user: str, domain: str) -> list[str]:
 async def seed_default_policies(org_id: str) -> None:
     """Seed baseline policies for a newly onboarded organisation.
 
-    Per research Open Question 1 (default permissive approach): grants the
+    default permissive approach: grants the
     ``admin`` role full access to the org namespace, and grants the
     ``contributor`` role read + write access to the org namespace.  These
     defaults ensure existing orgs are not locked out when RBAC is first

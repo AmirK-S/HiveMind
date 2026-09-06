@@ -1,4 +1,4 @@
-"""Quality Intelligence module for HiveMind (Phase 3).
+"""Quality Intelligence module for HiveMind.
 
 Public API:
 - scorer.compute_quality_score : compute quality score from behavioral signals

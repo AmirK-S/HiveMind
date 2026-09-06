@@ -1,8 +1,8 @@
-"""La configuration ne se lit que sous le prefixe HIVEMIND_.
+"""Configuration is only read under the HIVEMIND_ prefix.
 
-Le docker-compose d'origine passait DATABASE_URL et REDIS_URL sans prefixe,
-et le conteneur se connectait a lui-meme en silence. Ces tests fixent le
-contrat et verifient que .env.example ne reproduit pas l'erreur.
+The original docker-compose passed DATABASE_URL and REDIS_URL without a prefix,
+and the container silently connected to itself. These tests pin the contract and
+check that .env.example does not repeat the mistake.
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ def test_unprefixed_variable_is_ignored(monkeypatch):
 
 
 def test_env_example_exists_at_root():
-    assert (ROOT / ".env.example").is_file(), ".env.example manque a la racine, le README et le compose le supposent"
+    assert (ROOT / ".env.example").is_file(), ".env.example is missing at the root; the README and the compose file assume it"
 
 
 def test_env_example_keys_are_prefixed_and_known():
@@ -47,9 +47,9 @@ def test_env_example_keys_are_prefixed_and_known():
 
     path = ROOT / ".env.example"
     if not path.is_file():
-        pytest.skip("teste par test_env_example_exists_at_root")
+        pytest.skip("covered by test_env_example_exists_at_root")
     known = {f"HIVEMIND_{name.upper()}" for name in Settings.model_fields}
     keys = re.findall(r"^\s*#?\s*([A-Z_][A-Z0-9_]*)\s*=", path.read_text(encoding="utf-8"), flags=re.M)
-    assert keys, ".env.example ne declare aucune variable"
+    assert keys, ".env.example declares no variable"
     unknown = [k for k in keys if k not in known]
-    assert not unknown, f"variables inconnues de Settings ou sans prefixe HIVEMIND_ : {unknown}"
+    assert not unknown, f"variables unknown to Settings or missing the HIVEMIND_ prefix: {unknown}"

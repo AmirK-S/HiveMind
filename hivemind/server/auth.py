@@ -9,7 +9,8 @@ Design decisions:
   result with isError=true
 - decode_token_async() is the preferred entry point for MCP tool handlers
   as it supports both JWT and hm_-prefixed API keys natively (INFRA-04)
-- create_token() is provided for testing and CLI use only
+- create_token() is the only way to mint a bearer token; the README shows how
+  to call it
 
 Since fastmcp 4.x, get_http_headers() drops credential headers by default,
 "authorization" included (fastmcp/server/dependencies.py, exclude_headers set).

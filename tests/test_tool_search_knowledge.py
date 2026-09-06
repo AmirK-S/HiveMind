@@ -1,4 +1,4 @@
-"""search_knowledge : retrouver un item par son handle, ou par recherche."""
+"""search_knowledge: fetch an item by its handle, or find it by search."""
 
 from __future__ import annotations
 
