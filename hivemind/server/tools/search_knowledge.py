@@ -193,7 +193,7 @@ async def search_knowledge(
     """
     # Extract auth context — org_id never comes from tool arguments (ACL-01)
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _auth_error(str(exc))

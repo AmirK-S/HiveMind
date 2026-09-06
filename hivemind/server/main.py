@@ -235,6 +235,12 @@ def create_app() -> FastAPI:
       307 then 404.
     - stateless_http=True: no per-session state is held, which allows
       horizontal scaling. json_response=True returns JSON instead of SSE.
+    - host_origin_protection="auto" plus allowed_hosts: DNS rebinding guard.
+      FastMCP 4 ships HostOriginGuardMiddleware but leaves it off by default
+      (fastmcp.settings.http_host_origin_protection is False), so it has to be
+      asked for. Passing allowed_hosts explicitly makes the guard validate the
+      Host header on every request, including when uvicorn listens on 0.0.0.0
+      as it does in Docker, where "auto" alone would infer nothing.
     """
     mcp = create_mcp_server()
     mcp_app = mcp.http_app(
@@ -242,6 +248,8 @@ def create_app() -> FastAPI:
         transport="streamable-http",
         stateless_http=True,
         json_response=True,
+        host_origin_protection="auto",
+        allowed_hosts=settings.allowed_hosts_list,
     )
 
     app = FastAPI(

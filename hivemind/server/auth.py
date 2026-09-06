@@ -11,13 +11,20 @@ Design decisions:
   as it supports both JWT and hm_-prefixed API keys natively (INFRA-04)
 - create_token() is provided for testing and CLI use only
 
+Since fastmcp 4.x, get_http_headers() drops credential headers by default,
+"authorization" included (fastmcp/server/dependencies.py, exclude_headers set).
+A bare call would return a dictionary without the bearer, raise nothing, warn
+nothing, and every caller would be refused. include={"authorization"} brings
+back exactly that header and nothing else.
+
 Usage in tool functions (preferred — handles both JWT and API keys):
     from fastmcp.exceptions import ToolError
     from fastmcp.server.dependencies import get_http_headers
     from hivemind.server.auth import decode_token_async, AuthContext
 
     async def some_tool(...) -> ...:
-        headers = get_http_headers()
+        # include={"authorization"} is required on fastmcp 4.x, see above
+        headers = get_http_headers(include={"authorization"})
         auth_header = headers.get("authorization", "")
         if not auth_header.startswith("Bearer "):
             raise ToolError("Missing or invalid Authorization header")

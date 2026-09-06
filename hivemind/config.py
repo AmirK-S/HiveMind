@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     # Security
     secret_key: str = "dev-secret-change-me"
 
+    # DNS rebinding guard (fastmcp 4, HostOriginGuardMiddleware). Comma-separated
+    # hostnames accepted in the Host header. Ports are covered: the guard normalises
+    # "localhost:8000" to "localhost" before comparing. In Docker, uvicorn listens on
+    # 0.0.0.0, so the guard cannot infer a trusted host: this explicit list arms it.
+    allowed_hosts: str = "localhost,127.0.0.1"
+
     # Embeddings
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     embedding_dimensions: int = 384
@@ -69,6 +75,11 @@ class Settings(BaseSettings):
     llm_provider: str = "anthropic"                    # LLM provider backend
     llm_model: str = "claude-3-haiku-20240307"         # model for conflict resolution
     anthropic_api_key: str = ""                        # HIVEMIND_ANTHROPIC_API_KEY — empty = LLM stages skip gracefully
+
+    @property
+    def allowed_hosts_list(self) -> list[str]:
+        """allowed_hosts split into a list, empty entries dropped."""
+        return [host.strip() for host in self.allowed_hosts.split(",") if host.strip()]
 
     model_config = SettingsConfigDict(
         env_prefix="HIVEMIND_",

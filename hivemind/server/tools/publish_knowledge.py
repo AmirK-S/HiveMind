@@ -87,7 +87,7 @@ async def publish_knowledge(id: str, is_public: bool) -> dict:
     """
     # Step 1: Extract auth context from bearer token (org_id NEVER from args)
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _error(str(exc))

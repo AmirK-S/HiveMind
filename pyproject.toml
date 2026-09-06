@@ -10,8 +10,12 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     # MCP server
-    "fastmcp<3",
-    "fastapi",
+    # fastmcp 4.x serves MCP revision 2026-07-28 (no sessions) and the handshake
+    # revisions on the same URL. It builds on the mcp v2 SDK and requires
+    # starlette >= 1.0.1, hence fastapi >= 0.133.0, the first release that accepts
+    # starlette 1.x.
+    "fastmcp>=4.0.3,<5",
+    "fastapi>=0.133.0",
     "uvicorn",
     # Database
     "sqlalchemy[asyncio]>=2.0",
@@ -28,7 +32,8 @@ dependencies = [
     # Embeddings
     "sentence-transformers",
     # Validation and config
-    "pydantic>=2.0",
+    # pydantic >= 2.12: floor of fastmcp 4.0.3 and of the mcp 2.1.1 SDK.
+    "pydantic>=2.12",
     "pydantic-settings",
     # CLI
     "typer",

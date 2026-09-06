@@ -106,7 +106,7 @@ async def manage_roles(
 
     # Step 1: Extract auth context from bearer token
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _error(str(exc))

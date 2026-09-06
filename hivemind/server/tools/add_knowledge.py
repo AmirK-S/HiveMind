@@ -127,7 +127,7 @@ async def add_knowledge(
     # Step 1: Extract auth context from bearer token
     # org_id is NEVER taken from tool arguments (ACL-01)
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _auth_error(str(exc))

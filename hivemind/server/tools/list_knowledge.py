@@ -95,7 +95,7 @@ async def list_knowledge(
     """
     # Extract auth — both org_id and agent_id needed for per-agent isolation
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _auth_error(str(exc))

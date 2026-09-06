@@ -114,7 +114,7 @@ async def report_outcome(
     # Auth: extract JWT from headers (ACL-01 — org_id never from arguments)
     # -----------------------------------------------------------------------
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _error(str(exc))

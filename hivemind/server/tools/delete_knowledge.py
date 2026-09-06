@@ -79,7 +79,7 @@ async def delete_knowledge(id: str) -> dict:
     """
     # Extract auth — org_id and agent_id both needed for ownership check
     try:
-        headers = get_http_headers()
+        headers = get_http_headers(include={"authorization"})
         auth = _extract_auth(headers)
     except ValueError as exc:
         return _auth_error(str(exc))
